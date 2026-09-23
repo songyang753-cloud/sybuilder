@@ -9,7 +9,7 @@ import os
 
 from _workflow import (WorkflowError, canonical_bytes, claim_min, gate_result_dir,
                        load_active_run, load_registry, sha256_file,
-                       validate_manifest)
+                       validate_manifest, gate_evidence, evidence_current, output_was_tested)
 
 
 def _read(path, label='JSON'):
@@ -90,6 +90,7 @@ def issue_result(root, draft_path):
             continue
         seen.add(item['gate'])
         path = os.path.join(gate_result_dir(root, manifest), item['gate'] + '.json')
+        rec = {}
         if not os.path.isfile(path):
             verdict = 'NOT-RUN'
         else:
@@ -99,20 +100,28 @@ def issue_result(root, draft_path):
             valid = (rec.get('runId') == manifest['runId']
                      and rec.get('planHash') == manifest['planHash']
                      and rec.get('claimEligible') is True
-                     and sorted(rec.get('ruleIds') or []) == expected_ids)
+                     and sorted(rec.get('ruleIds') or []) == expected_ids
+                     and evidence_current(rec.get('evidence')))
             verdict = rec.get('verdict') if valid else 'INVALID-BINDING'
         gate_results.append({'gate': item['gate'], 'ruleId': item['ruleId'],
-                             'verdict': verdict, 'recordRef': os.path.relpath(path, root)})
+                             'verdict': verdict, 'recordRef': os.path.relpath(path, root),
+                             'evidence': rec.get('evidence')})
     not_pass = sorted(x['gate'] for x in gate_results if x['verdict'] != 'PASS')
-    if claim == 'module-approved' and not_pass:
+    approved_claim = registry['claimOrder'].index(claim) >= registry['claimOrder'].index('module-approved')
+    if approved_claim and not_pass:
         raise WorkflowError('module-approved 但本模块必跑门未 PASS：%s' % ', '.join(not_pass))
 
     outputs = []
+    if approved_claim and not draft.get('outputs'):
+        raise WorkflowError('module-approved 必须有当前已验证的输出')
     for output in draft.get('outputs') or []:
         ref = output.get('ref')
         full = ref if ref and os.path.isabs(ref) else os.path.join(root, ref or '')
         if not ref or not os.path.isfile(full):
             raise WorkflowError('输出文件不存在：%s' % (ref or '空'))
+        if approved_claim and not any(
+                x['verdict'] == 'PASS' and output_was_tested(full, x.get('evidence')) for x in gate_results):
+            raise WorkflowError('输出没有当前版本的实测门禁绑定：%s' % ref)
         outputs.append({'ref': os.path.abspath(full), 'sha256': sha256_file(full),
                         'authority': output.get('authority', '')})
 
@@ -186,7 +195,14 @@ def verify_result(path):
         if not output.get('ref') or not output.get('sha256') \
                 or not os.path.isfile(output['ref']) or sha256_file(output['ref']) != output['sha256']:
             raise WorkflowError('输出不存在或哈希不符：%s' % output.get('ref'))
-    if data['claimCeiling'] == 'module-approved':
+    if registry['claimOrder'].index(claim) >= registry['claimOrder'].index('module-approved'):
+        if not data['outputs']:
+            raise WorkflowError('module-approved 缺输出')
+        if any(not evidence_current(x.get('evidence')) for x in data['gateResults']):
+            raise WorkflowError('门禁证据已过期或缺版本绑定；历史 PASS 必须重验')
+        if any(not any(output_was_tested(o['ref'], g.get('evidence')) for g in data['gateResults'])
+               for o in data['outputs']):
+            raise WorkflowError('输出没有实测门禁绑定')
         gate_map = {x.get('gate'): x.get('verdict') for x in data['gateResults']}
         context = _read(source_manifest, 'source manifest')
         required_gates = [x['gate'] for x in context['gatePlan']
@@ -305,6 +321,9 @@ def _self_test():
         'manifestHash': sha256_file(manifest_path),
     })
     gates = gate_result_dir(root, manifest)
+    output_path = os.path.join(root, 'definition.md')
+    with io.open(output_path, 'w', encoding='utf-8') as f:
+        f.write('已确认的需求定义')
     for gate in manifest['requiredGates']:
         rule_ids = sorted(item['ruleId'] for item in manifest['gatePlan']
                           if item['gate'] == gate and item['required'])
@@ -314,6 +333,7 @@ def _self_test():
             'planHash': manifest['planHash'],
             'ruleIds': rule_ids,
             'claimEligible': True,
+            'evidence': gate_evidence(os.path.join(os.path.dirname(__file__), gate), [output_path]),
         })
     output_path = os.path.join(root, 'definition.md')
     with io.open(output_path, 'w', encoding='utf-8') as f:
@@ -330,6 +350,25 @@ def _self_test():
     verified = verify_result(result_path)
     chk('正例：模块结果可签发、不可变哈希可复验',
         verified['moduleId'] == 'S1' and verified['claimCeiling'] == 'module-approved')
+
+    with io.open(output_path, 'w', encoding='utf-8') as f:
+        f.write('未经验收的新内容')
+    try:
+        issue_result(root, draft_path)
+        caught, message = False, ''
+    except WorkflowError as e:
+        caught, message = True, str(e)
+    chk('反例：改过产物后旧 PASS 不得签发（锚定本模块必跑门）',
+        caught and '必跑门未 PASS' in message)
+    try:
+        verify_result(result_path)
+        caught, message = False, ''
+    except WorkflowError as e:
+        caught, message = True, str(e)
+    chk('反例：消费端拒绝已变更输出（锚定输出哈希）',
+        caught and '输出不存在或哈希不符' in message)
+    with io.open(output_path, 'w', encoding='utf-8') as f:
+        f.write('已确认的需求定义')
 
     tampered_path = os.path.join(root, 'tampered.json')
     tampered = _read(result_path, 'module result')

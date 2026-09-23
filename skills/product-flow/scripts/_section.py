@@ -222,6 +222,21 @@ def table_rows_at(md, kw, regex=False):
     return None
 
 
+def approved_role(md, role, decisions):
+    """Exact decision cell in a single role row; prose mentions are not approvals.
+
+    This validates a record's structure, not the signer's identity or authority.
+    """
+    rows = table_rows_at(md or '', '角色') or []
+    hits = [r for r in rows if r and r[0].strip('`* ').split('/')[0] == role]
+    return (len(hits) == 1 and len(hits[0]) >= 8
+            and hits[0][1].strip('`* ') in decisions
+            and hits[0][-5].strip() in {'human', 'agent'}
+            and all(c.strip().lower() not in {'', '-', '—', 'n/a', 'none'}
+                    and not re.search(r'<[^>]+>|待填写|待补充|\b(?:TBD|TODO)\b', c, re.I)
+                    for c in hits[0]))
+
+
 def section_or_table(md, kw, regex=False):
     """先按标题取节，取不到再退回「表头命中」的那张表（转成文本）。
 

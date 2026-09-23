@@ -6,8 +6,8 @@
 
 | 入场依据 | 版本 | 原物 | 结论 |
 |---|---|---|---|
-| S9.2 飞书报告 | r9 | 是 | 质量结论必须 PASS；receipt s92.json |
-| 冻结飞书 PRD | r1 | 是 | receipt p.json |
+| S9.2 协作文档报告 | r9 | 是 | 质量结论必须 PASS；receipt s92.json |
+| 冻结协作文档 PRD | r1 | 是 | receipt p.json |
 | Figma | v2 | 是 | receipt f.json |
 | HTML | h3 | 是 | receipt h.json |
 | 最终应用候选构建 | build-17 | 是 | receipt a.json |
@@ -48,7 +48,7 @@ PRD↔应用、HTML↔应用、Figma↔应用分别 PASS，不能互相顶替。
 
 用户可感知偏差登记 deviation-register.md。产品 delta 回 G7.5；影响方案回 S8；实现变化回 S9.2 重测。不得在 S9.3 静默改原物。
 
-## 5. 结论、批准与飞书回读
+## 5. 结论、批准与平台回读
 
 | 汇总项 | 结果 | 证据 |
 |---|---|---|
@@ -56,13 +56,13 @@ PRD↔应用、HTML↔应用、Figma↔应用分别 PASS，不能互相顶替。
 
 产品验收结论：APPROVED。只有 `APPROVED` 才可进入 S9.4；CONDITIONAL 不是合法结论。
 
-| 角色 | 结论 | 人/时间 | 证据 |
-|---|---|---|---|
-| 产品负责人 | 批准 | 张三/2026-09-13 | p.json |
-| 设计负责人 | 四方视觉/交互一致 | 李四/2026-09-13 | d.json |
-| 测试负责人 | 确认同构建 S9.2 PASS 仍有效 | 王五/2026-09-13 | q.json |
+| 角色 | 结论 | 人/时间 | 证据 | 主体类型 | 授权依据 | 产物版本 | 适用范围 | 审批证据来源 |
+|---|---|---|---| --- | --- | --- | --- | --- |
+| 产品负责人 | 批准 | 张三/2026-09-13 | p.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 设计负责人 | 四方视觉/交互一致 | 李四/2026-09-13 | d.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 测试负责人 | 确认同构建 S9.2 PASS 仍有效 | 王五/2026-09-13 | q.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
 
-飞书：https://example.feishu.cn/docx/pm
+协作文档：https://docs.example.com/product-walkthrough
 revision: r3
 receipt: receipts/pm.json
 回读结论：READY

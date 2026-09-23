@@ -56,7 +56,7 @@ ID_PATS = {'M': re.compile(r'\bM-\d+\b'), 'F': re.compile(r'\bF-\d+\b'), 'P': re
 FINER = re.compile(r'\b(FR|AC|NFR|ASM|TBD|OPEN|DELTA|CHG|OBJ|SEC)-\d+\b')
 
 DIAG_DIRS = ('.product-flow/diagrams', 'diagrams', 'docs/diagrams')
-DIAG_EXT = ('.mmd', '.d2', '.puml')
+DIAG_EXT = ('.mmd', '.d2', '.puml', '.source.json')
 
 
 def die(msg):
@@ -119,7 +119,7 @@ def table_ids(md, heading_kw, kind):
     return ids_in(seg, kind)
 
 
-def check(root):
+def check(root, formal=False):
     prd = find_prd(root)
     if not prd:
         return None, ['找不到 PRD（%s 下没有 PRD*.md）—— 本门**没验**，⛔ 不是通过' % root]
@@ -132,8 +132,74 @@ def check(root):
     bad = []
     # ⭐ 在**唯一的读入处**剥注释：A 组（图上的 M/F/P 集合）与 B 组（混族）一起受益。
     #   注释里提到 `M-99` 不等于这张图有 M-99 这个节点 —— 两组是同一个判断。
-    src_text = {p: strip_comments(io.open(p, encoding='utf-8', errors='replace').read())
-                for p in srcs}
+    src_text, kinds = {}, {}
+    from _diagram_contract import validate_source, validate_render, validate_compiled, SLOT_TYPES
+    for p in srcs:
+        raw = io.open(p, encoding='utf-8', errors='replace').read()
+        if p.endswith('.source.json'):
+            try:
+                data = json.loads(raw)
+                ids = validate_source(data)
+                src_text[p] = ' '.join(sorted(ids))
+                kinds[p] = data['diagramType']
+                if formal:
+                    svg = p[:-len('.source.json')]
+                    png = svg[:-4] + '.png'
+                    validate_render(p, svg, png, png + '.render.json')
+            except (ValueError, OSError) as exc:
+                bad.append('图源/渲染契约：' + str(exc))
+        else:
+            src_text[p] = strip_comments(raw)
+            kinds[p] = os.path.basename(p)
+    if formal:
+        from pathlib import Path
+        index_path = Path(root) / 'diagrams' / 'manifest.json'
+        if not index_path.is_file():
+            return None, ['缺 diagrams/manifest.json：必须声明八个图位适用性及各自源/产物']
+        try:
+            entries = json.loads(index_path.read_text()).get('diagrams', [])
+        except ValueError:
+            return False, ['图位清单不是合法 JSON']
+        taxonomy = json.loads((Path(__file__).resolve().parents[1] / 'spec/_taxonomy.json').read_text())
+        slots = {re.sub(r'[*`]', '', row[0]) for row in taxonomy['diagrams']['rows']}
+        contracts = {re.sub(r'[*`]', '', row[0]): (kind, row[1])
+                     for row, kind in zip(taxonomy['diagrams']['rows'], SLOT_TYPES)}
+        if {e.get('slot') for e in entries} != slots or len(entries) != len(slots):
+            bad.append('图位清单必须逐一覆盖 taxonomy 的八个图位，不能静默少图')
+        used = set()
+        for entry in entries:
+            kind, section = contracts.get(entry.get('slot'), ('', ''))
+            trigger = {'product-module': len(table_ids(md, '模块设计', 'M') or []) >= 6,
+                       'functional-architecture': len(table_ids(md, '功能清单', 'F') or []) >= 10,
+                       'information-architecture': len(table_ids(md, '页面结构', 'P') or []) >= 5}.get(kind, False)
+            if trigger and entry.get('applicable') is not True:
+                bad.append('图位数量触发条件已满足，不可声明不适用：' + kind)
+            if not entry.get('rationale') or re.search(r'<|TODO|待填|未评估', entry.get('rationale', ''), re.I) or not isinstance(entry.get('applicable'), bool):
+                bad.append('图位适用性必须有明确依据')
+            elif entry['applicable']:
+                candidate = os.path.realpath(os.path.join(root, entry.get('source', '')))
+                if candidate not in {os.path.realpath(p) for p in srcs}:
+                    bad.append('必交图位缺源：' + str(entry.get('slot')))
+                    continue
+                if candidate in used:
+                    bad.append('图位不得共用同一图源：' + str(entry.get('slot')))
+                used.add(candidate)
+                kind, section = contracts.get(entry.get('slot'), ('', ''))
+                if not candidate.endswith('.source.json'):
+                    try:
+                        svg = Path(root) / entry.get('svg', '')
+                        png = Path(root) / entry.get('png', '')
+                        receipt = Path(root) / entry.get('receipt', '')
+                        ids = set().union(*(ids_in(strip_comments(Path(candidate).read_text()), k) for k in ID_PATS))
+                        validate_compiled(candidate, svg, png, receipt, ids)
+                    except (ValueError, OSError) as exc:
+                        bad.append('图源/真实编译产物：' + str(exc))
+                    data = entry
+                    kinds[candidate] = entry.get('diagramType', '')
+                else:
+                    data = json.loads(Path(candidate).read_text())
+                if data.get('diagramType') != kind or data.get('targetSection') != section:
+                    bad.append('图位/图类型/PRD 章节不对应：' + str(entry.get('slot')))
 
     # ── A 组：双向集合相等 ──
     for kind, kw, where in (('M', '模块设计', '6.1'), ('F', '功能清单', '6.2'), ('P', '页面结构', '6.3')):
@@ -141,9 +207,20 @@ def check(root):
         if tab is None:
             bad.append('A〔%s〕PRD 里找不到「%s」这一节 —— 图对不了账' % (where, kw))
             continue
-        dia = set()
-        for p, t in src_text.items():
-            dia |= ids_in(t, kind)
+        type_names = {'M': ('product-module',), 'F': ('functional-architecture',),
+                      'P': ('page-relation', 'information-architecture')}[kind]
+        candidates = [p for p in src_text if any(n in kinds[p] for n in type_names)]
+        if not candidates:
+            # Legacy single-diagram diagnostics remain usable; no union across files.
+            candidates = [p for p, text in src_text.items() if ids_in(text, kind)]
+        if not candidates and tab:
+            bad.append('A〔%s〕缺独立图源，表上有而图上没有' % where)
+        dia = ids_in(src_text[candidates[0]], kind) if candidates else set()
+        for p in candidates[1:]:
+            other = ids_in(src_text[p], kind)
+            if other != tab:
+                bad.append('A〔%s〕%s 单图 ID 不一致，其他图不能补漏：缺%s 多%s' %
+                           (where, os.path.basename(p), sorted(tab - other), sorted(other - tab)))
         if not dia and not tab:
             continue
         only_dia, only_tab = sorted(dia - tab), sorted(tab - dia)
@@ -368,7 +445,7 @@ if __name__ == '__main__':
     _res = []
 
     def _run():
-        _res.append(check(args[0]))
+        _res.append(check(args[0], formal='--formal' in sys.argv))
     _main_guarded(_run)
     v, bad = _res[0]
     if '--json' in sys.argv:

@@ -104,7 +104,7 @@ def _build_single_file(spec, out, root, force):
     et = spec.get('entryTable')
     if et:
         cols = et.get('requiredColumns', []) + ['优先级', '说明']
-        lines.append('\n### 3.2 功能清单（⚠️ %s）\n' % et.get('note', '')[:60])
+        lines.append('\n### 6.2 功能清单（⚠️ %s）\n' % et.get('note', '')[:60])
         lines.append('| ' + ' | '.join(cols) + ' |')
         lines.append('|' + '---|' * len(cols))
         for i in range(1, 4):

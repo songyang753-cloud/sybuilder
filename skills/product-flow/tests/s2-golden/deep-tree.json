@@ -1,12 +1,12 @@
 {
   "nodes": [
     {
-      "url": "https://x/#/a",
+      "url": "https://example.invalid/#/a",
       "shot": "SHOT-001",
       "depth": 0,
       "els": [
         {
-          "txt": "创建"
+          "txt": "创建任务"
         }
       ]
     }

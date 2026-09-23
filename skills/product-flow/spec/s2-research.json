@@ -10,36 +10,44 @@
   "teardown": {
    "purpose": "单竞品真实遍历、最细功能正文、反向规格与个人飞书交付",
    "template": "templates/competitor-teardown-report.md",
+   "reportTemplate": "templates/competitor-teardown-report.md",
+   "corpusTemplate": "templates/competitive-research-pack.md",
    "requiredGates": [
     "traversal-coverage-gate.py",
     "report-structure-gate.py",
     "audience-gate.py",
-    "feishu-delivery-gate.py"
+    "research-quality-gate.py"
    ]
   },
   "competitive-pack": {
    "purpose": "消费已验收单品包，按业务域、能力族、叶子功能逐级横向比较",
    "template": "templates/research-report.md",
+   "reportTemplate": "templates/research-report.md",
+   "corpusTemplate": "templates/competitive-research-pack.md",
    "requiredGates": [
     "research-gate.py",
     "report-structure-gate.py",
     "audience-gate.py",
-    "feishu-delivery-gate.py"
+    "research-quality-gate.py"
    ]
   },
   "full-research": {
    "purpose": "S2 五条线完整研究与三份定向飞书报告",
    "template": "templates/research-report.md",
+   "reportTemplate": "templates/research-report.md",
+   "corpusTemplate": "templates/competitive-research-pack.md",
    "requiredGates": [
     "research-gate.py",
     "chain-gate.py.G0",
     "traversal-coverage-gate.py",
     "report-structure-gate.py",
     "audience-gate.py",
-    "feishu-delivery-gate.py"
+    "research-quality-gate.py"
    ]
   }
  },
+ "deliveryGateByPlatform": {"feishu": "feishu-delivery-gate.py", "dingtalk": "dingtalk-delivery-gate.py"},
+ "deliveryContract": "references/delivery-quality-contract.md",
  "adaptiveLeafContract": {
   "hierarchyRule": "层级按产品实际结构自适应；固定的是叶子行为合同，不固定三级或四级",
   "pathColumns": ["功能路径", "层级深度", "父节点"],

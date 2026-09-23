@@ -219,11 +219,14 @@ def check(root):
             d = {}
         # ⛔ 只认 receipt（receipt-check 通过 + environment=live + artifactKind 匹配）。
         # 裸时间戳不再计数：三个任意 'T' 曾把冻结上限抬到 integrated-frozen（Codex 三审 P0-4）。
-        # receipt 的第一位真签发方=doc-sync-guard readback（飞书实弹）；figma/html 适配器分期，
+        # receipt 的第一位真签发方=doc-sync-guard readback（所选协作文档平台实弹）；figma/html 适配器分期，
         # 但 receipt-check ④ 要求 rawEvidenceRef 真实存在——伪造成本从「填一个 T」抬到「编一整套凭据」。
         _rcheck = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'receipt-check.py')
         _legacy_key = {'prd': 'lastReadbackAt', 'figma': 'structureReadbackAt', 'html': 'lastRunAt'}
-        for k, rkey, kind, path, label in (('prd', 'readbackReceipt', 'feishu-prd', '⑦', '飞书回读'),
+        _document_platform = str((d.get('prd') or {}).get('documentPlatform') or 'feishu')
+        _prd_kind = '%s-prd' % _document_platform
+        _prd_label = '%s文档回读' % ('飞书' if _document_platform == 'feishu' else '钉钉')
+        for k, rkey, kind, path, label in (('prd', 'readbackReceipt', _prd_kind, '⑦', _prd_label),
                                            ('figma', 'structureReceipt', 'figma', '⑧', 'Figma 结构回读'),
                                            ('html', 'runReceipt', 'html', '⑨', 'HTML 浏览器运行')):
             sec = d.get(k) or {}
@@ -266,7 +269,7 @@ def check(root):
         try:
             _t = json.load(io.open(cm, encoding='utf-8')).get('triad') or {}
             if not _t.get('reverseLinkWritten'):
-                info.append('反向锚未写（triad.reverseLinkWritten=false）—— 飞书/Figma 侧还不知道'
+                info.append('反向锚未写（triad.reverseLinkWritten=false）—— 协作文档/Figma 侧还不知道'
                             '自己对应哪个冻结版本（Linkage 最低标准是两边互记）')
         except Exception:
             pass
@@ -296,7 +299,7 @@ def _entry():
             print('  ℹ️ ' + i)
         print('\n%s' % ('✅ 本地六查全过' if not bad else '❌ %d 处缺口，不能冻结' % len(bad)))
         print(ceiling)
-        print('⚠️ 本门验不了：人工三方联合验收（对着飞书原文/Figma 原图/可运行 HTML 看）——那一步永远要人做。')
+        print('⚠️ 本门验不了：人工三方联合验收（对着协作文档原文/Figma 原图/可运行 HTML 看）——那一步永远要人做。')
     sys.exit(0 if not bad else 1)
 
 

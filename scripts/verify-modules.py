@@ -87,7 +87,8 @@ def prototype_smoke(issues):
             '<script src="app.js"></script>', encoding='utf-8')
         (root / 'app.css').write_text('body{color:#123}', encoding='utf-8')
         (root / 'app.js').write_text('document.body.dataset.ready="1";', encoding='utf-8')
-        (root / 'dot.png').write_bytes(b'\x89PNG\r\n\x1a\n')
+        from PIL import Image
+        Image.new('RGB', (16, 16), '#123456').save(root / 'dot.png')
         output = root / 'bundle.html'
         result = subprocess.run(['node', str(bundle), str(root), str(output)],
                                 capture_output=True, text=True)
@@ -108,7 +109,7 @@ def render_smoke(issues):
             'title': 'SYBuilder',
             'nodes': [{'id': 'a', 'label': 'Research', 'x': 80, 'y': 100},
                       {'id': 'b', 'label': 'Delivery', 'x': 480, 'y': 100}],
-            'arrows': [{'from': 'a', 'to': 'b', 'label': 'evidence'}],
+            'arrows': [{'source': 'a', 'target': 'b', 'label': 'evidence'}],
         })
         generated = subprocess.run([
             'python3', str(diagram / 'scripts' / 'generate-from-template.py'),

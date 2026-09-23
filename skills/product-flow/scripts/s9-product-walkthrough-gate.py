@@ -3,14 +3,14 @@
 """S9.3 产品经理 GUI 走查与四方验收报告结构门。
 
 判据：
-  ① S9.2 同构建 PASS，PRD/Figma/HTML/最终应用四件原物与飞书回读有锚点；
+  ① S9.2 同构建 PASS，PRD/Figma/HTML/最终应用四件原物与协作文档回读有锚点；
   ② 产品经理以独立会话从真实 GUI 入口亲自操作，不能复用测试证据冒充；
   ③ 主流程/关键分支/失败恢复/角色权限有真实分母、PM-GUI 行与逐步证据；
   ④ 产品价值、功能规则、信息、交互、视觉、多端、信任、开放探索八维均有结论；
   ⑤ PRD↔应用、HTML↔应用、Figma↔应用分别对账；
   ⑥ 发现、偏差、回流与重新测试规则完整，未批准高影响偏差为 0；
   ⑦ 结论只能 APPROVED/REJECTED/UNABLE，只有 APPROVED 可进 S9.4；
-  ⑧ 产品/设计/测试三方批准与飞书 URL/revision/receipt 非占位。
+  ⑧ 产品/设计/测试三方批准与协作文档 URL/revision/receipt 非占位。
 
 用法: s9-product-walkthrough-gate.py <S9.3受控源稿.md> [--json] | --self-test
 退出码: 0=结构与签核合同齐 1=有缺口 2=跑不了
@@ -24,7 +24,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _section import section_at
+from _section import section_at, approved_role
 
 
 def die(message):
@@ -39,13 +39,13 @@ def section(md, heading):
 def check(md):
     bad = []
     required = ('文档控制与入场资格', '走查范围、分母与独立性', '产品经理 GUI 逐流程走查',
-                '产品判断与四方一致性', '发现、偏差与回流', '结论、批准与飞书回读')
+                '产品判断与四方一致性', '发现、偏差与回流', '结论、批准与平台回读')
     missing = [name for name in required if not section(md, name)]
     if missing:
         bad.append('① 缺核心章节：%s' % '、'.join(missing))
 
     control = section(md, '文档控制与入场资格')
-    for item in ('S9.2', '飞书 PRD', 'Figma', 'HTML', '最终应用候选构建'):
+    for item in ('S9.2', '协作文档 PRD', 'Figma', 'HTML', '最终应用候选构建'):
         if item not in control:
             bad.append('① 入场缺 %s 原物或版本锚点' % item)
     if not re.search(r'质量结论必须\s*PASS', control) or not re.search(r'(?:commit|构建).*\b[A-Za-z0-9._/-]{2,}', control, re.I | re.S):
@@ -85,7 +85,7 @@ def check(md):
     if not all(x in findings for x in ('G7.5', 'S8', 'S9.2', '不得在 S9.3 静默改')):
         bad.append('⑥ 缺产品 delta 回流、冻结失效或新构建重测规则')
 
-    final = section(md, '结论、批准与飞书回读')
+    final = section(md, '结论、批准与平台回读')
     if not re.search(r'未批准高影响偏差[^\n|]*\|[^\n|]*\b0\b', final):
         bad.append('⑥ 未批准高影响偏差没有明确为 0')
     if not re.search(r'产品验收结论\s*[：:]\s*(?:APPROVED|REJECTED|UNABLE)', final):
@@ -94,13 +94,14 @@ def check(md):
         bad.append('⑦ 缺 S9.4 放行边界或非法 CONDITIONAL 声明')
 
     for role in ('产品负责人', '设计负责人', '测试负责人'):
-        lines = [line for line in final.splitlines() if role in line and line.strip().startswith('|')]
-        if not lines or not any(re.search(r'批准|一致|仍有效', line) and not re.search(r'<[^>]+>', line) for line in lines):
+        decisions = {'产品负责人': {'批准'}, '设计负责人': {'四方视觉/交互一致', '批准'},
+                     '测试负责人': {'确认同构建 S9.2 PASS 仍有效', '批准'}}
+        if not approved_role(final, role, decisions[role]):
             bad.append('⑧ %s 缺非占位批准' % role)
     if not re.search(r'https?://\S+', final) or not re.search(r'revision\s*[:：=]\s*[A-Za-z0-9._-]+', final, re.I) or not re.search(r'receipt\s*[:：=]\s*[A-Za-z0-9._/-]+', final, re.I):
-        bad.append('⑧ 缺飞书 URL、revision 或 receipt 的真实值')
+        bad.append('⑧ 缺协作文档 URL、revision 或 receipt 的真实值')
     if not re.search(r'回读结论\s*[：:]\s*(?:READY|PARTIAL|BLOCKED)', final):
-        bad.append('⑧ 缺飞书回读结论')
+        bad.append('⑧ 缺协作文档回读结论')
     return bad
 
 
@@ -112,6 +113,9 @@ def _entry():
         die('文件不存在：%s' % args[0])
     md = io.open(args[0], encoding='utf-8', errors='replace').read()
     bad = check(md)
+    if '--context' in sys.argv:
+        from _approval import check as check_approval
+        bad += check_approval(args[0], sys.argv[sys.argv.index('--context') + 1], 'S9.3')
     if '--json' in sys.argv:
         print(json.dumps({'bad': bad}, ensure_ascii=False))
     else:
@@ -144,8 +148,8 @@ def _self_test():
 产品/版本/构建/commit：App 1.0 build-17 commit abc123。
 | 入场依据 | 版本 | 原物 | 结论 |
 |---|---|---|---|
-| S9.2 飞书报告 | r9 | 是 | 质量结论必须 PASS；receipt s92.json |
-| 冻结飞书 PRD | r1 | 是 | receipt p.json |
+| S9.2 协作文档报告 | r9 | 是 | 质量结论必须 PASS；receipt s92.json |
+| 冻结协作文档 PRD | r1 | 是 | receipt p.json |
 | Figma | v2 | 是 | receipt f.json |
 | HTML | h3 | 是 | receipt h.json |
 | 最终应用候选构建 | build-17 | 是 | receipt a.json |
@@ -174,17 +178,17 @@ PRD↔应用、HTML↔应用、Figma↔应用分别 PASS，不能互相顶替。
 |---|---|---|---|
 | PM-FIND-001 | 低机会 | pm.png | 下一版本 |
 用户可感知偏差登记 deviation-register.md。产品 delta 回 G7.5；影响方案回 S8；实现变化回 S9.2 重测。不得在 S9.3 静默改原物。
-## 5. 结论、批准与飞书回读
+## 5. 结论、批准与平台回读
 | 汇总项 | 结果 | 证据 |
 |---|---|---|
 | 未批准高影响偏差 | 0 | deviations.md |
 产品验收结论：APPROVED。只有 `APPROVED` 才可进入 S9.4；CONDITIONAL 不是合法结论。
-| 角色 | 结论 | 人/时间 | 证据 |
-|---|---|---|---|
-| 产品负责人 | 批准 | 张三/2026-09-13 | p.json |
-| 设计负责人 | 四方视觉/交互一致 | 李四/2026-09-13 | d.json |
-| 测试负责人 | 确认同构建 S9.2 PASS 仍有效 | 王五/2026-09-13 | q.json |
-飞书：https://example.feishu.cn/docx/pm
+| 角色 | 结论 | 人/时间 | 证据 | 主体类型 | 授权依据 | 产物版本 | 适用范围 | 审批证据来源 |
+|---|---|---|---| --- | --- | --- | --- | --- |
+| 产品负责人 | 批准 | 张三/2026-09-13 | p.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 设计负责人 | 四方视觉/交互一致 | 李四/2026-09-13 | d.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 测试负责人 | 确认同构建 S9.2 PASS 仍有效 | 王五/2026-09-13 | q.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+协作文档：https://docs.example.com/product-walkthrough
 revision: r3
 receipt: receipts/pm.json
 回读结论：READY

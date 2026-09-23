@@ -1,8 +1,11 @@
 {
   "_": "三件套的版本/锚点/回读账本（域权威表见 delivery-pipeline §五）。任一权威载体版本变化 → 旧三方冻结自动失效，只重跑受影响对账但不得沿用旧 PASS。⛔ 其他载体不得手工声称『当前版本』——版本只认这里。",
   "schemaVersion": "1.0",
+  "approvalBindings": {},
+  "_approvalBindings": "S8/S9.2/S9.3/S9.4 按 references/delivery-quality-contract.md 绑定 sourceHash/version/scope/artifacts 与 approvalEvidence；S9.3 另绑定 qualityEvidence/build/qaGuiEvidence/pmGuiEvidence。未批准留空，不预填 APPROVED。",
   "prd": {
-    "feishuUrl": "",
+    "documentPlatform": "<feishu | dingtalk>",
+    "documentUrl": "",
     "revision": "",
     "approvalState": "",
     "lastReadbackAt": "",
@@ -42,5 +45,5 @@
     "unresolvedDeviations": [],
     "stopLines": []
   },
-  "_receipt说明": "readbackReceipt/structureReceipt/runReceipt 填 receipt 文件路径（模板 templates/evidence-receipt.json，校验 receipt-check.py）。G7.5 ⑦⑧⑨ 只认 receipt：receipt-check 通过+environment=live+artifactKind 匹配；裸时间戳=手填自证不再计数。第一位真签发方=doc-sync-guard readback。"
+  "_receipt说明": "readbackReceipt/structureReceipt/runReceipt 填 receipt 文件路径（模板 templates/evidence-receipt.json，校验 receipt-check.py）。PRD receipt 的 artifactKind 必须与 documentPlatform 对应（feishu-prd 或 dingtalk-prd）。G7.5 ⑦⑧⑨ 只认 receipt：receipt-check 通过+environment=live+artifactKind 匹配；裸时间戳=手填自证不再计数。第一位真签发方=doc-sync-guard readback。"
 }

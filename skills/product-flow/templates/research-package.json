@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "competitors": [
+    {
+      "id": "COMP-01",
+      "report": {"path": "single/report.md", "sha256": "<sha256>"},
+      "ledger": {"path": "single/atomic-feature-ledger.md", "sha256": "<sha256>"},
+      "evidence": {"path": "single/evidence-manifest.json", "sha256": "<sha256>"},
+      "events": {"path": "single/traversal-events.json", "sha256": "<sha256>"},
+      "featureMap": {"AF-001": ["AF-001"]}
+    }
+  ],
+  "comparisonNodes": [
+    {"id": "NODE-01", "parent": null, "features": ["AF-001"]},
+    {"id": "NODE-02", "parent": "NODE-01", "features": ["AF-001"]}
+  ]
+}

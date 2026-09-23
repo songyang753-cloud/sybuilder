@@ -13,28 +13,37 @@
 
 // 可点击元素枚举 —— **唯一正本**。probe 与真实枚举必须用它,⛔ 不许另写选择器：
 // 实测用别的选择器探活会「probe 绿而枚举为 0」(loading 页有 3 个 [tabindex] 元素).
-const ENUM_JS = `(()=>{
+const ELEMENT_JS = `function __element(e) {
+  const r=e.getBoundingClientRect(), cs=getComputedStyle(e);
+  if(r.width<4||r.height<4||cs.visibility==='hidden'||cs.display==='none'||parseFloat(cs.opacity)===0) return null;
+  const inHistory=!!e.closest('[class*=history],[class*=conversation],[class*=session],[class*=chat-list],'
+    +'[class*=recent],[class*=thread],[class*=inbox],[class*=doc-list],[class*=file-list],[data-testid*=history],ul>li>a');
+  const input=/^(INPUT|TEXTAREA|SELECT)$/.test(e.tagName)||e.isContentEditable||e.getAttribute('role')==='textbox'||e.getAttribute('contenteditable')==='true';
+  const label=(e.getAttribute('aria-label')||e.getAttribute('placeholder')||'');
+  const raw=(input?label:(e.innerText||label)).trim().replace(/\\s+/g,' ');
+  const txt=inHistory?'[user-content]':raw.slice(0,40);
+  const sig=[e.tagName,e.id||'',txt,inHistory?'':label,
+    typeof e.className==='string'?e.className.split(' ')[0]:''].join('|');
+  const role=e.getAttribute('role')||'';
+  const href=e.getAttribute('href')||'';
+  return {sig,txt,tag:e.tagName,role,userContent:inHistory,disabled:!!e.disabled,
+    safeNavigation:!input&&(role==='tab'||(e.tagName==='A'&&href.startsWith('#/'))),
+    x:Math.round(r.x+r.width/2),y:Math.round(r.y+r.height/2),
+    nav:!inHistory&&!!e.closest('nav,[role=navigation],aside,[class*=sidebar],[class*=side-bar],[class*=menu]')};
+}`;
+const ENUM_JS = `(()=>{${ELEMENT_JS}
   const sel='a,button,[role=button],[role=tab],[role=menuitem],[onclick],[tabindex],input,select,textarea';
   const out=[],seen=new Set();
   for(const e of document.querySelectorAll(sel)){
-    const r=e.getBoundingClientRect(); if(r.width<4||r.height<4) continue;
-    const cs=getComputedStyle(e);
-    if(cs.visibility==='hidden'||cs.display==='none'||parseFloat(cs.opacity)===0) continue;
     // 🚨 会话历史/文档列表/收件箱**长得像导航项**，抓进来就是把用户的私人内容落盘。
     //    实测：WorkBuddy 侧栏 42 个「导航项」里有 30 个是用户真实对话标题。
     //    ⇒ 在**取文本之前**就判定容器，落在历史/列表容器里的一律记为 [user-content]。
-    const inHistory = !!e.closest('[class*=history],[class*=conversation],[class*=session],[class*=chat-list],'
-      +'[class*=recent],[class*=thread],[class*=inbox],[class*=doc-list],[class*=file-list],[data-testid*=history],ul>li>a');
-    const raw=(e.innerText||e.value||e.getAttribute('aria-label')||e.getAttribute('placeholder')||'').trim().replace(/\\s+/g,' ');
-    const txt = inHistory ? '[user-content]' : raw.slice(0,40);
-    const sig=[e.tagName,e.id||'',txt,inHistory?'':(e.getAttribute('aria-label')||''),
-               (e.className&&typeof e.className==='string')?e.className.split(' ')[0]:''].join('|');
+    const meta=__element(e); if(!meta) continue;
+    const {sig}=meta;
     if(seen.has(sig)) continue; seen.add(sig);
     // ⛔ 历史项不算「导航项」：它是**用户数据**，不是产品自己宣告的能力。
     //    算进导航分母会让覆盖率被用户数据稀释（实测 42 个里 30 个是对话标题）。
-    out.push({sig,txt,tag:e.tagName,userContent:inHistory,
-      x:Math.round(r.x+r.width/2),y:Math.round(r.y+r.height/2),
-      nav: !inHistory && !!e.closest('nav,[role=navigation],aside,[class*=sidebar],[class*=side-bar],[class*=menu]')});
+    out.push(meta);
   }
   return {url:location.href,title:document.title,n:out.length,els:out};
 })()`;
@@ -48,12 +57,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
  *     两家竞品连续 UNABLE 我才去查显示器数，差一点写进报告。
  *  ⇒ 先数屏，屏不够就**报 UNABLE 或退回主屏**，⛔ 不许挪到屏外继续采。 */
 function assertVirtualScreen(minScreens = 2) {
-  const { execSync } = require('child_process');
+  const { execFileSync } = require('child_process');
   let n = 1;
   try {
-    n = parseInt(execSync(
-      "system_profiler SPDisplaysDataType 2>/dev/null | grep -c Resolution",
-      { encoding: 'utf8' }).trim()) || 1;
+    const displays = execFileSync('system_profiler', ['SPDisplaysDataType'],
+      { encoding: 'utf8', timeout: 10000 });
+    n = (displays.match(/Resolution:/g) || []).length || 1;
   } catch (e) { /* 数不出来按 1 算，宁可报错也不静默挪到屏外 */ }
   if (n < minScreens) {
     const e = new Error(
@@ -69,15 +78,19 @@ function rpc(getWs) {
   let id = 0;
   return (method, params = {}) => new Promise((res, rej) => {
     const i = ++id, ws = getWs();
+    const cleanup = () => { clearTimeout(timer); ws.removeEventListener('message', h); ws.removeEventListener('close', closed); ws.removeEventListener('error', closed); };
+    const closed = () => { cleanup(); rej(new Error('CDP connection closed: ' + method)); };
     // ⚠️ Node 原生 WebSocket 的 message 事件是 **MessageEvent**,要取 .data。
     //    直接 JSON.parse(事件对象) 得到 "[object MessageEvent]"。
     const h = ev => {
-      const r = JSON.parse(ev.data);
-      if (r.id === i) { ws.removeEventListener('message', h); r.error ? rej(new Error(r.error.message)) : res(r.result); }
+      let r;
+      try { r = JSON.parse(ev.data); } catch (e) { cleanup(); rej(e); return; }
+      if (r.id === i) { cleanup(); r.error ? rej(new Error(r.error.message)) : res(r.result); }
     };
+    const timer = setTimeout(() => { cleanup(); rej(new Error('timeout ' + method)); }, 15000);
     ws.addEventListener('message', h);
-    ws.send(JSON.stringify({ id: i, method, params }));
-    setTimeout(() => rej(new Error('timeout ' + method)), 15000);
+    ws.addEventListener('close', closed); ws.addEventListener('error', closed);
+    try { ws.send(JSON.stringify({ id: i, method, params })); } catch (e) { cleanup(); rej(e); }
   });
 }
 
@@ -124,9 +137,9 @@ async function connect(port, { pick = '', minEls = 3, tries = 25, waitMs = 1500 
  *  拿应用名去起 ⇒ 起的是不存在的路径或 stub ⇒ `--remote-debugging-port` **没传给主进程**
  *  ⇒ 端口从没开过 ⇒ 连不上。而错误现象看起来像「这家竞品把调试端口关了」。 */
 function resolveBinary(appName) {
-  const { execSync } = require('child_process');
+  const { execFileSync } = require('child_process');
   try {
-    const b = execSync(`defaults read "/Applications/${appName}.app/Contents/Info.plist" CFBundleExecutable`,
+    const b = execFileSync('defaults', ['read', `/Applications/${appName}.app/Contents/Info.plist`, 'CFBundleExecutable'],
                        { encoding: 'utf8' }).trim();
     if (b) return b;
   } catch (e) { /* 读不到就退回目录扫描 */ }
@@ -142,10 +155,15 @@ function resolveBinary(appName) {
  *  ② `pkill -f Electron` 会**误杀用户正在用的所有 Electron 应用**。
  *  🚨 并且：验证「端口关了」之前必须先确认**端口开过**——
  *     端口从没开过时 curl 同样失败，会被读成「已回收」这个**假绿**。 */
-async function reclaim(pid, port, everOpened) {
-  const { execSync } = require('child_process');
-  if (pid) { try { execSync(`kill -9 ${pid} 2>/dev/null`); } catch (e) {} }
+async function reclaim(child, port, everOpened) {
+  // Accept the actual ChildProcess returned by this run's spawn, never an arbitrary PID.
+  const { ChildProcess } = require('child_process');
+  if (!(child instanceof ChildProcess) || !child.pid)
+    return {ok:false, why:'UNABLE: cleanup requires the owned ChildProcess handle'};
+  if (child.exitCode === null) child.kill('SIGTERM');
   await sleep(1200);
+  if (child.exitCode === null && child.signalCode === null)
+    return {ok:false, why:'UNABLE: owned process has not exited after SIGTERM; port closure alone is not cleanup'};
   let alive = false;
   try { const r = await fetch(`http://127.0.0.1:${port}/json/version`, { signal: AbortSignal.timeout(1200) }); alive = r.ok; }
   catch (e) { alive = false; }
@@ -155,11 +173,38 @@ async function reclaim(pid, port, everOpened) {
 
 // 回收：⛔ 只 open -a 重开会**复用旧实例**,调试端口关不掉。必须精确杀持有端口的 pid,
 // 杀完还要验证端口真的没了——「声称清理」不等于「清理了」。
-const KILL_HINT = 'pkill -9 -f <binary> && curl -s -m 1 http://127.0.0.1:<port>/json/list && echo 残留 || echo 已回收';
+const KILL_HINT = '仅用本轮 spawn 返回的 ChildProcess 调用 reclaim；既有用户进程不自动回收。核验已打开过的端口已关闭。';
 
 // 破坏性动作黑名单：⛔ **靠机器拦,不靠执行者记得避开**。
-const DESTRUCTIVE = /(退出|登出|注销|删除|移除|清空|卸载|付费|购买|升级|订阅|充值|发送|提交订单|确认支付|sign\s*out|log\s*out|delete|remove|purchase|subscribe|upgrade|pay)/i;
+const DESTRUCTIVE = /(退出|登出|注销|删除|移除|清空|卸载|安装|付费|购买|升级|订阅|充值|发送|提交|支付|解绑|授权|保存|确认|sign\s*out|log\s*out|delete|remove|purchase|subscribe|upgrade|pay|send|submit|install|save|confirm|authorize)/i;
 // AppCrawler 默认排噪：含 ≥2 位连续数字的文本(时间戳/计数/价格)每次看都像新状态。
 const NOISE = /\d{2,}/;
 
-module.exports = { ENUM_JS, connect, rpc, sleep, assertVirtualScreen, resolveBinary, reclaim, KILL_HINT, DESTRUCTIVE, NOISE };
+function loadActionPolicy(file) {
+  if (!file) return [];
+  const raw = JSON.parse(require('fs').readFileSync(file, 'utf8'));
+  if (!Array.isArray(raw.actions) || raw.actions.some(a => !a.url || !a.sig ||
+      !a.authorizationRef || !['navigation', 'side-effect'].includes(a.kind)))
+    throw new Error('UNABLE: action policy requires exact url/sig, kind and authorizationRef');
+  return raw.actions;
+}
+function actionBlockReason(el, url, policy = []) {
+  if (!el || el.userContent || el.disabled || !el.txt) return 'private-or-unavailable';
+  const approval = policy.find(a => a.url === url && a.sig === el.sig && a.authorizationRef);
+  if (DESTRUCTIVE.test(el.txt)) return approval?.kind === 'side-effect' ? '' : 'side-effect-needs-approval';
+  return el.safeNavigation || approval ? '' : 'unclassified-action-needs-approval';
+}
+// DOM synthetic click rechecks identity, visibility and permission atomically; no stale coordinates.
+function clickExpression(sig, policy = []) {
+  return `(()=>{${ELEMENT_JS}
+    const DESTRUCTIVE=${DESTRUCTIVE.toString()};
+    const actionBlockReason=${actionBlockReason.toString()};
+    const hits=[...document.querySelectorAll('a,button,[role=button],[role=tab],[role=menuitem],[onclick],[tabindex],input,select,textarea')]
+      .filter(e=>{const m=__element(e);return m&&m.sig===${JSON.stringify(sig)}&&!actionBlockReason(m,location.href,${JSON.stringify(policy)});});
+    if(hits.length!==1)return false;
+    const e=hits[0];e.scrollIntoView({block:'center'});e.click();return true;
+  })()`;
+}
+
+module.exports = { ENUM_JS, ELEMENT_JS, clickExpression, actionBlockReason, loadActionPolicy,
+  connect, rpc, sleep, assertVirtualScreen, resolveBinary, reclaim, KILL_HINT, DESTRUCTIVE, NOISE };

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "diagramId": "DIA-001",
+  "diagramType": "functional-architecture",
+  "targetSection": "6.2",
+  "templateType": "flowchart",
+  "title": "<填写本图范围与结论>",
+  "style": 1,
+  "width": 1200,
+  "height": 800,
+  "nodes": [
+    {"id": "F-01", "label": "F-01 <填写真实功能>", "x": 200, "y": 200, "width": 280, "height": 100},
+    {"id": "F-02", "label": "F-02 <填写真实功能>", "x": 700, "y": 200, "width": 280, "height": 100}
+  ],
+  "arrows": [{"source": "F-01", "target": "F-02", "label": "<真实关系>"}]
+}

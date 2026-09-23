@@ -161,8 +161,9 @@ python3 scripts/doc-sync-guard.py record .product-flow/prd/PRD.md \
 ```bash
 python3 scripts/research-gate.py research/                       # 出场门禁
 python3 scripts/doc-sync-guard.py record research/<报告>.md --url <链接> --kind feishu
-feishu docx update <url> --mode overwrite --file research/<报告>.md    # 仅首次
-feishu fetch <url> > /tmp/rb.md && python3 scripts/doc-sync-guard.py check research/<报告>.md --readback /tmp/rb.md
+# 新建候选文档；已有文档用 --document，整篇重建须单独获准 --allow-overwrite
+python3 scripts/_documents.py --platform feishu --title "调研报告" --source research/report.md --evidence-manifest research/evidence-manifest.json
+python3 scripts/research-quality-gate.py --source research/report.md --review research/research-quality-review.md --phase final
 ```
 
 ⚠️ **调研的深度由下游反推**（`s2-research.md` 〇之二）：
@@ -183,7 +184,7 @@ FR/NFR/AC 实写，**设计相关章节/字段以 OPEN 项登记留空**（这�
 
 1. **先写到「绝大部分完成」再去做设计**。判据＝**功能清单表不再增删行**。
    还在增删说明范围没定，这时候画稿是白画。
-2. **第四章「设计稿」列先留空**，它在第 ⑤ 步回灌。
+2. **第七章「设计稿」列先留空**，它在第 ⑤ 步回灌。
    ⚠️ **反过来做（先画稿再补 PRD）必然出现「稿子里有的功能 PRD 里没有」**，
    那部分不在任何需求文档里，永远不会被验收和测试覆盖。
 
@@ -196,41 +197,42 @@ python3 scripts/reconcile-gate.py G1 .product-flow/prd/PRD.md           # 功能
 
 ---
 
-## ② 写入飞书（形式转换 #1）
+## ② 写入所选协作文档（形式转换 #1）
+
+使用统一适配器，选择 `feishu` 或 `dingtalk`。本地 Markdown 只是源稿，不是远端完成证据。
 
 ```bash
-feishu docx update <url> --mode overwrite --file .product-flow/prd/PRD.md   # 仅首次建正文
-feishu fetch <url> > /tmp/readback.md                                       # 必须回读
-python3 scripts/doc-sync-guard.py check .product-flow/prd/PRD.md --readback /tmp/readback.md
+python3 scripts/_documents.py --platform feishu --title "PRD" --source .product-flow/prd/PRD.md --evidence-manifest .product-flow/prd/evidence-manifest.json
 ```
+
+已有文档传 `--document`。没有核实远端漂移、没有用户明确批准整篇重建时，不传
+`--allow-overwrite`；不得为了绕过保护另建同名文档。局部更新只能使用当前官方 CLI/API
+已经核实的能力；完成后仍对完整正文、媒体和版本回读。旧第三方 CLI 的定位语法不可复用。
+
+### 正文与实图是同一交付
+
+- 使用 Markdown 普通/引用式图片或官方本地资源写法，把真实截图/渲染图放在相关功能旁。
+- 证据清单区分 GUI 截图与分析图，保留输入版本、文件哈希、用途和未证明内容。
+- 先检查真实图片可解码及逐图隐私审核，再写入；不能用文件头或“见附件”冒充图。
+- 逐段比较标题、文字、表格、链接、代码与顺序；正文丢失、否定词/数值变化均 FAIL。
+- 上传原始返回与原生图片实体逐张匹配，核验媒体所在章节及同一远端版本。
+- 同版本逐图映射不可获取时报告 UNABLE，保留候选源稿，不伪造媒体 ID。
+- 最后逐页检查图片比例、文字可读性、邻接关系、表格和文末；只查首页不算完成。
 
 ### ⚠️ 三条会让你丢东西的地方
 
 | 坑 | 表现 | 守法 |
 |---|---|---|
-| **静默失败** | 返回 success、块数正常，**内容缺一大块** | `doc-sync-guard check` 逐张核表列数、标题集合、图数 |
-| **多列表格被压列** | 4 列落地成 2 列 | 同上，**每张表的列数逐张比对** |
-| **overwrite 销毁图片/白板** | 已上传的图、白板卡片全没了 | **正文定稿后一律改用局部模式**，见下 |
+| overwrite 销毁图片/白板 | 重建正文可能删除已有媒体及协作者修改 | 写前漂移检查、逐图上传映射；整篇覆盖须单独获准 |
+| 多列表格被压列 | 远端少列、少行或错位 | 比较完整单元格、顺序和表头，再检查原生页面 |
+| 静默失败 | 命令返回成功但正文尾部或媒体缺失 | 必须回读全文和同版媒体，不以返回码单独签收 |
 
 ### ⭐ 定稿之后：局部更新，不再 overwrite
 
-飞书 CLI 支持定位更新，**这是回灌与迭代的唯一正确姿势**：
-
-```bash
-feishu docx update <url> --mode replace      --match "<要替换的原文>" --content "<新内容>"
-feishu docx update <url> --mode insert-after --match "<锚点原文>"   --content "<追加内容>"
-```
-
-`overwrite` 只用于**第一次**建正文。之后每次改动都用 `replace` / `insert-after` / `append`
-定位到具体位置——**overwrite 会把已上传的图片与白板一起清掉**，而它不会报错。
-
-### 插图（图必须在正文写完之后再插）
-
-- ⛔ **源 markdown 里根本不要写 `![](…)`** —— 不产生占位就不需要删除，全程零删除
-- 插图用**探针法**：先插一张 → 回读确认落点 → 按实测偏移批量
-- ⛔ **不许全文套一个推算偏移**（实测同一篇 PRD 图表段 −2、功能段 −8）
-- 🚨 **绝不要用 `delete-blocks` 去删「图片占位」**——占位不存在时会删掉紧随其后的表格。
-  真实事故：25 张表被删光，而**图片位置校验全绿**（被删的是它后面的东西）
+⛔ 不许全文套一个推算偏移（实测同一篇 PRD 图表段 −2、功能段 −8）。定位以当前远端块和版本为准，不复用旧位置。
+必须通过 `doc-sync-guard.py readback` 保存回读证据；旧第三方 `feishu fetch` 命令不再作为入口。
+正文可声明本地图片，适配器必须先建立本版正文锚点再上传、绑定真实媒体；不是先写文字占位而不补图。
+设计稿与交互稿完成后，链接必须回到 PRD 第七章的「设计稿」列，每行都要有。
 
 ---
 
@@ -305,17 +307,12 @@ python3 scripts/visual-spec-gate.py .product-flow/demo/demo.html      # 静态�
 
 ## ⑤ 回灌（形式转换 #4，最容易被忘的一步）
 
-设计稿与交互稿完成后，**链接必须回到 PRD 第四章的「设计稿」列**，每行都要有。
+设计稿与交互稿完成后，链接回到 PRD 第七章的「设计稿」列，每个对应功能都要有。
+先更新受控源稿，再按②的当前官方适配器和授权边界更新原链接；核对双锚与完整回读。
 
 ```bash
-# 双锚：node-id 用于直达，图层名是语义锚（node-id 重建后会失效）
-feishu docx update <url> --mode replace \
-  --match "| 导入页 |  | - 支持拖拽" \
-  --content "| 导入页 | [F-01/PC/导入页](https://figma.com/…#node-id=12-34) | - 支持拖拽"
-
-python3 scripts/doc-sync-guard.py figma-anchors .product-flow/prd/PRD.md   # 双锚校验
-feishu fetch <url> > /tmp/rb2.md
-python3 scripts/doc-sync-guard.py check .product-flow/prd/PRD.md --readback /tmp/rb2.md
+python3 scripts/doc-sync-guard.py figma-anchors .product-flow/prd/PRD.md
+python3 scripts/doc-sync-guard.py readback .product-flow/prd/PRD.md
 ```
 
 **回灌的同时还要回灌三样**（否则设计成果只活在 Figma 里），

@@ -13,13 +13,13 @@
   ⑦ 三方案联合对账与产品 delta 处置在案；
   ⑧ coding-standards 有版本锚点、STD 适用映射及 selfcheck 边界；
   ⑨ four-node-review 有版本锚点、风险建议档与 S9.2 执行预案；
-  ⑩ 研发/算法/测试三方批准及飞书 URL/revision/receipt 非占位；
+  ⑩ 研发/算法/测试三方批准及协作文档 URL/revision/receipt 非占位；
   ⑪ 实施任务可验收，无“补测试/完善错误处理/按需调整”等空任务。
 
 用法: s8-solution-gate.py <S8受控源稿.md> [--json] | --self-test
 退出码: 0=通过 1=有缺口 2=跑不了
 ⚠️ 验不了什么：技术选择是否正确、算法是否真的有效、测试是否真能挡住生产缺陷、
-以及飞书远端内容是否与本地一致；后三者必须由专业评审、真实执行与 doc-sync 回读证明。
+以及所选协作文档平台的远端内容是否与本地一致；后三者必须由专业评审、真实执行与 doc-sync 回读证明。
 """
 import io
 import json
@@ -28,7 +28,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _section import section_at
+from _section import section_at, approved_role
 
 
 def die(message):
@@ -54,7 +54,7 @@ def check(md):
         bad.append('① 缺核心章节：%s' % '、'.join(missing))
 
     control = section(md, '文档控制与输入冻结') or ''
-    for name in ('飞书 PRD', 'Figma', 'HTML'):
+    for name in ('协作文档 PRD', 'Figma', 'HTML'):
         if name not in control:
             bad.append('② 输入冻结缺 %s 原件' % name)
     if not re.search(r'READY|PARTIAL|BLOCKED', control):
@@ -106,11 +106,10 @@ def check(md):
 
     approval = section(md, '评审、批准与生效') or ''
     for role in ('研发总监', '算法负责人', '测试负责人'):
-        lines = [line for line in approval.splitlines() if role in line and line.strip().startswith('|')]
-        if not lines or not any(re.search(r'批准|N/A批准', line) and not re.search(r'<[^>]+>', line) for line in lines):
+        if not approved_role(approval, role, {'批准', 'N/A批准'} if role == '算法负责人' else {'批准'}):
             bad.append('⑩ %s 没有非占位批准记录' % role)
     if not re.search(r'https?://\S+', approval) or not re.search(r'revision\s*[:：=]\s*[A-Za-z0-9._-]+', approval, re.I) or not re.search(r'receipt\s*[:：=]\s*[A-Za-z0-9._/-]+', approval, re.I):
-        bad.append('⑩ 缺飞书 URL、revision 或 receipt 的真实值')
+        bad.append('⑩ 缺协作文档 URL、revision 或 receipt 的真实值')
 
     if re.search(r'补测试|完善错误处理|按需调整|后续优化', plan):
         bad.append('⑪ 实施计划含不可验收的空任务')
@@ -127,13 +126,16 @@ def _entry():
         die('文件不存在：%s' % args[0])
     md = io.open(args[0], encoding='utf-8', errors='replace').read()
     bad = check(md)
+    if '--context' in sys.argv:
+        from _approval import check as check_approval
+        bad += check_approval(args[0], sys.argv[sys.argv.index('--context') + 1], 'S8')
     if '--json' in sys.argv:
         print(json.dumps({'bad': bad}, ensure_ascii=False))
     else:
         for item in bad:
             print('  ❌ ' + item)
         print('✅ S8 十一判据全过' if not bad else '❌ %d 处缺口' % len(bad))
-        print('⚠️ 本门只验结构；专业正确性、真实执行与飞书远端一致性须另证。')
+        print('⚠️ 本门只验结构；专业正确性、真实执行与协作文档远端一致性须另证。')
     sys.exit(0 if not bad else 1)
 
 
@@ -158,7 +160,7 @@ def _self_test():
 ## 0. 文档控制与输入冻结
 | 输入 | 版本 | receipt | 回读 |
 |---|---|---|---|
-| 飞书 PRD | r1 | p.json | 是 |
+| 协作文档 PRD | r1 | p.json | 是 |
 | Figma | v2 | f.json | 是 |
 | HTML | b3 | h.json | 是 |
 | coding-standards | /rules@c1 | std.json | 是 |
@@ -241,12 +243,12 @@ four-node-review /review@c2；风险建议档：A；S9.2 由测试负责人定�
 |---|---|---|---|---|
 | VS-01 | 用户可完成导入 | src/a.py | RED/GREEN | FR-001 AC-1 |
 ## 7. 评审、批准与生效
-| 角色 | 结论 | 证据 |
-|---|---|---|
-| 研发总监 | 批准 | 张三 2026-09-13 |
-| 算法负责人 | 批准 | 李四 2026-09-13 |
-| 测试负责人 | 批准 | 王五 2026-09-13 |
-飞书：https://example.feishu.cn/docx/abc
+| 角色 | 结论 | 证据 | 主体类型 | 授权依据 | 产物版本 | 适用范围 | 审批证据来源 |
+|---|---|---| --- | --- | --- | --- | --- |
+| 研发总监 | 批准 | 张三 2026-09-13 | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 算法负责人 | 批准 | 李四 2026-09-13 | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 测试负责人 | 批准 | 王五 2026-09-13 | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+协作文档：https://docs.example.com/s8
 revision: r17
 receipt: receipts/s8.json
 """

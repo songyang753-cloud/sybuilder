@@ -63,3 +63,6 @@ use a green run to back a judgement it can't make.
 
 By contributing you agree your contributions are licensed under the
 [Apache License 2.0](LICENSE).
+
+Identified upstream adaptations retain their own terms. Preserve the suite-root
+NOTICE, THIRD_PARTY.md, licenses/ and component licenses in every distribution.

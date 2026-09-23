@@ -1,0 +1,191 @@
+# 2026-09-23 restoration change authorization and integration note
+
+The maintainer approved the R1–R10 remediation plan and explicitly assigned its implementation, review and GitHub update to Codex. This is the authorization for the affected shared paths below; it is not fabricated peer approval. Work was performed from the current public HEAD, preserving the latest valid architecture and selectively restoring removed internal modules.
+
+## Why these shared areas change
+
+- Entrypoints, dependencies and installation: restore usable bundled modules and route all platforms through explicit adapters.
+- Product/research templates and specs: preserve chapter structure while correcting cross-references, leaf-level body depth, per-competitor comparison and image/version evidence.
+- Diagram rules and examples: preserve existing business semantics; add per-diagram source/render checks and correct visible clipping/overlap.
+- S8/S9 approval and launch files: bind actual scope, source, frozen PRD, build and independent QA→PM GUI order.
+- Script catalogue and measured counts: follow frozen-tree results; never weaken a criterion or reset the no-loss baseline to hide a regression.
+- Ownership ledger: retain original owners and all historical incident notes. Register bounded suite-publication and restored-library paths; reduce the old unregistered inventory only for the three newly registered existing entries.
+- Source publication: disclose current-tree versus historical privacy scope and native-platform verification limits. Public change notes are an additional safe documentation location, not a replacement for private historical proposals.
+
+## Affected paths
+
+- `DEPENDENCIES.md`
+- `PUBLICATION_CHECKLIST.md`
+- `RELEASE_BLOCKERS.md`
+- `THIRD_PARTY.md`
+- `docs/remediation-review-2026-09-23.md`
+- `install.sh`
+- `requirements.txt`
+- `scripts/test-install.sh`
+- `scripts/test-release-regressions.py`
+- `scripts/test-remediation-contracts.py`
+- `scripts/verify-modules.py`
+- `scripts/verify-suite.sh`
+- `skills/product-flow/CONTRIBUTING.md`
+- `skills/product-flow/DEPENDENCIES.md`
+- `skills/product-flow/README.md`
+- `skills/product-flow/RELEASING.md`
+- `skills/product-flow/SKILL.en.md`
+- `skills/product-flow/SKILL.md`
+- `skills/product-flow/adapters/browser/MODULE.md`
+- `skills/product-flow/adapters/dingtalk/MODULE.md`
+- `skills/product-flow/adapters/figma/MODULE.md`
+- `skills/product-flow/adapters/lark/MODULE.md`
+- `skills/product-flow/modules/design-quality/MODULE.md`
+- `skills/product-flow/modules/diagramming/LICENSE`
+- `skills/product-flow/modules/diagramming/MODULE.md`
+- `skills/product-flow/modules/diagramming/assets/samples/sample-style1-flat.png`
+- `skills/product-flow/modules/diagramming/assets/samples/sample-style2-dark.png`
+- `skills/product-flow/modules/diagramming/assets/samples/sample-style3-blueprint.png`
+- `skills/product-flow/modules/diagramming/assets/samples/sample-style4-notion.png`
+- `skills/product-flow/modules/diagramming/assets/samples/sample-style5-glass.png`
+- `skills/product-flow/modules/diagramming/assets/samples/sample-style6-warm.png`
+- `skills/product-flow/modules/diagramming/assets/samples/sample-style7-minimal-green.png`
+- `skills/product-flow/modules/diagramming/assets/samples/sample-style8-dark-luxury.png`
+- `skills/product-flow/modules/diagramming/fixtures/agent-memory-types-style4.json`
+- `skills/product-flow/modules/diagramming/fixtures/api-flow-style7.json`
+- `skills/product-flow/modules/diagramming/fixtures/dark-luxury-style8.svg`
+- `skills/product-flow/modules/diagramming/fixtures/mem0-style1.json`
+- `skills/product-flow/modules/diagramming/fixtures/microservices-style3.json`
+- `skills/product-flow/modules/diagramming/fixtures/multi-agent-style5.json`
+- `skills/product-flow/modules/diagramming/fixtures/system-architecture-style6.json`
+- `skills/product-flow/modules/diagramming/fixtures/tool-call-style2.json`
+- `skills/product-flow/modules/diagramming/package.json`
+- `skills/product-flow/modules/diagramming/references/icons.md`
+- `skills/product-flow/modules/diagramming/references/png-export.md`
+- `skills/product-flow/modules/diagramming/references/style-1-flat-icon.md`
+- `skills/product-flow/modules/diagramming/references/style-2-dark-terminal.md`
+- `skills/product-flow/modules/diagramming/references/style-3-blueprint.md`
+- `skills/product-flow/modules/diagramming/references/style-4-notion-clean.md`
+- `skills/product-flow/modules/diagramming/references/style-5-glassmorphism.md`
+- `skills/product-flow/modules/diagramming/references/style-6-warm-editorial.md`
+- `skills/product-flow/modules/diagramming/references/style-7-minimal-green.md`
+- `skills/product-flow/modules/diagramming/references/style-8-dark-luxury.md`
+- `skills/product-flow/modules/diagramming/references/style-diagram-matrix.md`
+- `skills/product-flow/modules/diagramming/references/svg-layout-best-practices.md`
+- `skills/product-flow/modules/diagramming/scripts/README.md`
+- `skills/product-flow/modules/diagramming/scripts/chrome-svg-to-png.py`
+- `skills/product-flow/modules/diagramming/scripts/generate-diagram.sh`
+- `skills/product-flow/modules/diagramming/scripts/generate-from-template.py`
+- `skills/product-flow/modules/diagramming/scripts/render-diagram.py`
+- `skills/product-flow/modules/diagramming/scripts/render-svg.py`
+- `skills/product-flow/modules/diagramming/scripts/svg2png.js`
+- `skills/product-flow/modules/diagramming/scripts/test-all-styles.sh`
+- `skills/product-flow/modules/diagramming/scripts/validate-svg.sh`
+- `skills/product-flow/modules/diagramming/scripts/validate_svg.py`
+- `skills/product-flow/modules/diagramming/templates/agent-architecture.svg`
+- `skills/product-flow/modules/diagramming/templates/architecture.svg`
+- `skills/product-flow/modules/diagramming/templates/comparison-matrix.svg`
+- `skills/product-flow/modules/diagramming/templates/data-flow.svg`
+- `skills/product-flow/modules/diagramming/templates/er-diagram.svg`
+- `skills/product-flow/modules/diagramming/templates/flowchart.svg`
+- `skills/product-flow/modules/diagramming/templates/sequence.svg`
+- `skills/product-flow/modules/diagramming/templates/state-machine.svg`
+- `skills/product-flow/modules/diagramming/templates/timeline.svg`
+- `skills/product-flow/modules/diagramming/templates/use-case.svg`
+- `skills/product-flow/modules/diagramming/tests/test_skill_compatibility.py`
+- `skills/product-flow/modules/diagramming/tests/test_validate_svg.py`
+- `skills/product-flow/modules/prototyping/MODULE.md`
+- `skills/product-flow/modules/prototyping/WORKFLOW.md`
+- `skills/product-flow/modules/prototyping/asserts.example.js`
+- `skills/product-flow/modules/prototyping/scripts/bundle.mjs`
+- `skills/product-flow/modules/prototyping/scripts/selftest.mjs`
+- `skills/product-flow/modules/research/MODULE.md`
+- `skills/product-flow/references/.selftest-measured.json`
+- `skills/product-flow/references/competitive-research.md`
+- `skills/product-flow/references/craft-layer.md`
+- `skills/product-flow/references/delivery-pipeline.md`
+- `skills/product-flow/references/delivery-quality-contract.md`
+- `skills/product-flow/references/design-quality-gates.md`
+- `skills/product-flow/references/diagram-standards.md`
+- `skills/product-flow/references/iron-rules.md`
+- `skills/product-flow/references/keyboard-contracts.md`
+- `skills/product-flow/references/no-loss-renames.md`
+- `skills/product-flow/references/ownership-inventory-baseline.json`
+- `skills/product-flow/references/path-ownership.json`
+- `skills/product-flow/references/prd-structure.md`
+- `skills/product-flow/references/s2-research.md`
+- `skills/product-flow/references/s2-teardown-runbook.md`
+- `skills/product-flow/references/stage-playbook.md`
+- `skills/product-flow/references/substance-over-theater.md`
+- `skills/product-flow/references/testcases-design.md`
+- `skills/product-flow/references/tool-mapping.md`
+- `skills/product-flow/references/workflow-registry.json`
+- `skills/product-flow/scripts/_approval.py`
+- `skills/product-flow/scripts/_cdp.js`
+- `skills/product-flow/scripts/_delivery_check.py`
+- `skills/product-flow/scripts/_diagram_contract.py`
+- `skills/product-flow/scripts/_dingtalk.py`
+- `skills/product-flow/scripts/_document_sync.py`
+- `skills/product-flow/scripts/_documents.py`
+- `skills/product-flow/scripts/_feishu.py`
+- `skills/product-flow/scripts/_image.py`
+- `skills/product-flow/scripts/_module_contract.py`
+- `skills/product-flow/scripts/_research_package.py`
+- `skills/product-flow/scripts/_section.py`
+- `skills/product-flow/scripts/_workflow.py`
+- `skills/product-flow/scripts/competitor-walk.mjs`
+- `skills/product-flow/scripts/consistency-gate.py`
+- `skills/product-flow/scripts/coordination-gate.py`
+- `skills/product-flow/scripts/deep-walk.cjs`
+- `skills/product-flow/scripts/diagram-id-gate.py`
+- `skills/product-flow/scripts/dingtalk-delivery-gate.py`
+- `skills/product-flow/scripts/doc-sync-guard.py`
+- `skills/product-flow/scripts/feishu-delivery-gate.py`
+- `skills/product-flow/scripts/g75-freeze-gate.py`
+- `skills/product-flow/scripts/gate-run.py`
+- `skills/product-flow/scripts/product-flow-run.py`
+- `skills/product-flow/scripts/receipt-check.py`
+- `skills/product-flow/scripts/report-structure-gate.py`
+- `skills/product-flow/scripts/research-gate.py`
+- `skills/product-flow/scripts/research-quality-gate.py`
+- `skills/product-flow/scripts/s8-solution-gate.py`
+- `skills/product-flow/scripts/s9-launch-rollback-gate.py`
+- `skills/product-flow/scripts/s9-product-walkthrough-gate.py`
+- `skills/product-flow/scripts/s9-quality-report-gate.py`
+- `skills/product-flow/scripts/scaffold.py`
+- `skills/product-flow/scripts/traversal-coverage-gate.py`
+- `skills/product-flow/spec/_taxonomy.json`
+- `skills/product-flow/spec/s2-research.json`
+- `skills/product-flow/spec/s4-prd.json`
+- `skills/product-flow/templates/competitor-teardown-report.md`
+- `skills/product-flow/templates/contract-manifest.json`
+- `skills/product-flow/templates/diagram-manifest.json`
+- `skills/product-flow/templates/diagram-source.json`
+- `skills/product-flow/templates/diagrams/business-process.example.d2`
+- `skills/product-flow/templates/diagrams/functional-architecture.example.d2`
+- `skills/product-flow/templates/diagrams/product-architecture.example.d2`
+- `skills/product-flow/templates/evidence-manifest.json`
+- `skills/product-flow/templates/prd-complete.md`
+- `skills/product-flow/templates/research-package.json`
+- `skills/product-flow/templates/research-quality-review.md`
+- `skills/product-flow/templates/research-report.md`
+- `skills/product-flow/templates/s8-solution-plan.md`
+- `skills/product-flow/templates/s9-launch-rollback.md`
+- `skills/product-flow/templates/s9-product-walkthrough.md`
+- `skills/product-flow/templates/s9-quality-report.md`
+- `skills/product-flow/tests/fixtures/filled/s8-solution-plan.md`
+- `skills/product-flow/tests/fixtures/filled/s9-launch-rollback.md`
+- `skills/product-flow/tests/fixtures/filled/s9-product-walkthrough.md`
+- `skills/product-flow/tests/fixtures/filled/s9-quality-report.md`
+- `skills/product-flow/tests/s2-golden/README.md`
+- `skills/product-flow/tests/s2-golden/capture-demo.cjs`
+- `skills/product-flow/tests/s2-golden/deep-tree.json`
+- `skills/product-flow/tests/s2-golden/demo.html`
+- `skills/product-flow/tests/s2-golden/evidence-manifest.json`
+- `skills/product-flow/tests/s2-golden/ledger.md`
+- `skills/product-flow/tests/s2-golden/readback.xml`
+- `skills/product-flow/tests/s2-golden/report.md`
+- `skills/product-flow/tests/s2-golden/run-golden.py`
+- `skills/product-flow/tests/s2-golden/shot.png`
+- `skills/product-flow/tests/s2-golden/traversal-events.json`
+- `skills/product-flow/tests/traversal-coverage/fixtures/deep-tree.mini.json`
+
+## Verification boundary
+
+Source-branch ownership must be checked against `40c5d2f`, not against an empty post-merge diff. Behavioral tests, no-loss and consistency checks run on the resulting combined suite. A source-preview update does not authorize native cloud writes or certify unperformed project/performance tests. See the remediation review and stable-release blockers.

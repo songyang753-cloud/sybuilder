@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "diagrams": [
+    {
+      "slot": "用户流程图",
+      "applicable": false,
+      "rationale": "<必须依据真实业务判断适用性，未评估不得交付>",
+      "source": "diagrams/user-flow.svg.source.json"
+    },
+    {
+      "slot": "业务流程图",
+      "applicable": false,
+      "rationale": "<必须依据真实业务判断适用性，未评估不得交付>",
+      "source": "diagrams/business-flow.svg.source.json"
+    },
+    {
+      "slot": "产品模块图（M-xx）",
+      "applicable": false,
+      "rationale": "<必须依据真实业务判断适用性，未评估不得交付>",
+      "source": "diagrams/product-module.svg.source.json"
+    },
+    {
+      "slot": "功能架构图/功能树（F-xx）",
+      "applicable": false,
+      "rationale": "<必须依据真实业务判断适用性，未评估不得交付>",
+      "source": "diagrams/functional-architecture.svg.source.json"
+    },
+    {
+      "slot": "信息架构+站点地图（P-xx）",
+      "applicable": false,
+      "rationale": "<必须依据真实业务判断适用性，未评估不得交付>",
+      "source": "diagrams/information-architecture.svg.source.json"
+    },
+    {
+      "slot": "页面关系图（P-xx）",
+      "applicable": false,
+      "rationale": "<必须依据真实业务判断适用性，未评估不得交付>",
+      "source": "diagrams/page-relation.svg.source.json"
+    },
+    {
+      "slot": "状态机图",
+      "applicable": false,
+      "rationale": "<必须依据真实业务判断适用性，未评估不得交付>",
+      "source": "diagrams/state-machine.svg.source.json"
+    },
+    {
+      "slot": "数据生命周期图",
+      "applicable": false,
+      "rationale": "<必须依据真实业务判断适用性，未评估不得交付>",
+      "source": "diagrams/data-lifecycle.svg.source.json"
+    }
+  ]
+}

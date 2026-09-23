@@ -4,7 +4,7 @@
 
 | 输入 | 版本 | receipt | 回读 |
 |---|---|---|---|
-| 飞书 PRD | r1 | p.json | 是 |
+| 协作文档 PRD | r1 | p.json | 是 |
 | Figma | v2 | f.json | 是 |
 | HTML | b3 | h.json | 是 |
 | coding-standards | /rules@c1 | std.json | 是 |
@@ -146,12 +146,12 @@ four-node-review /review@c2；风险建议档：A；S9.2 由测试负责人定�
 
 ## 7. 评审、批准与生效
 
-| 角色 | 结论 | 证据 |
-|---|---|---|
-| 研发总监 | 批准 | 张三 2026-09-13 |
-| 算法负责人 | 批准 | 李四 2026-09-13 |
-| 测试负责人 | 批准 | 王五 2026-09-13 |
+| 角色 | 结论 | 证据 | 主体类型 | 授权依据 | 产物版本 | 适用范围 | 审批证据来源 |
+|---|---|---| --- | --- | --- | --- | --- |
+| 研发总监 | 批准 | 张三 2026-09-13 | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 算法负责人 | 批准 | 李四 2026-09-13 | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 测试负责人 | 批准 | 王五 2026-09-13 | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
 
-飞书：https://example.feishu.cn/docx/abc
+协作文档：https://docs.example.com/s8
 revision: r17
 receipt: receipts/s8.json

@@ -10,7 +10,7 @@ G7.5 的原生三查此前只看 manifest 字段**非空**：三个任意字符�
 
 判据（模板 `templates/evidence-receipt.json`）：
   ① 必填字段齐：receiptId/artifactKind/artifactRef/nativeVersion/observedAt/adapter.name/rawEvidenceRef/environment
-  ② artifactKind ∈ {feishu-prd, figma, html, app}；environment ∈ {live, test}
+  ② artifactKind ∈ {feishu-prd, dingtalk-prd, figma, html, app}；environment ∈ {live, test}
   ③ observedAt 是可解析的时间（RFC3339 形），⛔ 任意字符串 'T' 不算
   ④ rawEvidenceRef 指向的本地文件**真实存在**（没有原始证据的 receipt 不算 receipt）
   ⑤ 占位符（<...>）未清零 = 模板没填完，不算签发
@@ -22,8 +22,9 @@ G7.5 的原生三查此前只看 manifest 字段**非空**：三个任意字符�
   environment=test 的 receipt 即使有效也只证契约，不解除真实声明上限——消费方（g75）负责区分。
 """
 import io, json, os, re, sys
+import hashlib
 
-KINDS = {'feishu-prd', 'figma', 'html', 'app'}
+KINDS = {'feishu-prd', 'dingtalk-prd', 'figma', 'html', 'app'}
 ENVS = {'live', 'test'}
 REQUIRED = ['receiptId', 'artifactKind', 'artifactRef', 'nativeVersion',
             'observedAt', 'adapter', 'rawEvidenceRef', 'environment']
@@ -115,6 +116,25 @@ def check(path):
     if ref and not ref.startswith('<') and not os.path.exists(
             os.path.join(os.path.dirname(os.path.abspath(path)), ref)) and not os.path.exists(ref):
         bad.append('④ rawEvidenceRef=%s 指向的文件不存在 —— 没有原始证据的 receipt 不算 receipt' % ref[:60])
+    if (d.get('adapter') or {}).get('name') == 'doc-sync-guard.readback':
+        try:
+            base = os.path.dirname(os.path.abspath(path))
+            raw = os.path.join(base, d['rawEvidenceRef'])
+            attempt = json.load(io.open(os.path.join(base, d['attemptRef']), encoding='utf-8'))
+            snapshot = json.load(io.open(raw, encoding='utf-8'))
+            if (d.get('receiptSchema') != '2.0' or attempt.get('attemptId') != d.get('attemptId')
+                    or attempt.get('status') != 'PASS' or snapshot.get('validationStatus') != 'PASS'
+                    or snapshot.get('attemptId') != d.get('attemptId')
+                    or str(snapshot.get('remote_revision')) != d.get('nativeVersion')
+                    or (snapshot.get('doc_token') or snapshot.get('url')) != d.get('artifactRef')
+                    or hashlib.sha256(open(raw, 'rb').read()).hexdigest() != d.get('rawEvidenceHash')
+                    or hashlib.sha256(open(d['sourceRef'], 'rb').read()).hexdigest() != d.get('sourceHash')):
+                bad.append('⑥ 当前尝试失败/已变更，或源稿与回读证据不再匹配；历史成功不可复用')
+            for media_path, digest in (snapshot.get('mediaValidation') or {}).get('files', {}).items():
+                if hashlib.sha256(open(media_path, 'rb').read()).hexdigest() != digest:
+                    bad.append('⑥ 媒体源/映射/上传证据变化，须重新验收')
+        except (OSError, KeyError, TypeError, ValueError):
+            bad.append('⑥ 缺当前代次/内容绑定，旧回执只能作为历史证据，须重新回读')
     return d, bad
 
 
@@ -147,7 +167,7 @@ def _self_test():
     GOOD = {'receiptSchema': '1.0', 'receiptId': 'ER-001', 'artifactKind': 'feishu-prd',
             'artifactRef': 'PROEdoc', 'nativeVersion': '4',
             'capabilitiesExercised': ['readback'], 'observedAt': '2026-09-08T23:40:51',
-            'adapter': {'name': 'doc-sync-guard.readback', 'version': '1'},
+            'adapter': {'name': 'synthetic-adapter', 'version': '1'},
             'rawEvidenceRef': raw, 'environment': 'live'}
     ok = True
 

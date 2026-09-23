@@ -5,13 +5,13 @@
 不再共用一条互相覆盖）。
 
 ═══ 为什么需要它（OPP-09）═══
-本流水线有 43 道门禁（口径＝`_roster.gate_names()`，唯一正本）。
+本流水线有 45 道门禁（口径＝`_roster.gate_names()`，唯一正本）。
 ⚠️ 2026-09-10：这里曾长期写着「22 道」——**过期了六道而无人发现**，
    因为 `gate-count` 这条元规则当时**只扫 md，不扫脚本 docstring**。
    ⭐ 不是判据写错了，是**它没往这儿看**。量程已扩（脚本里只认「本流水线共 N 道」这类总数句式）。它们各自都能出声，**而声音落在终端里就没了**。
 于是「一道门从来没跑过」与「跑过且通过」在项目里长得一模一样。三个实测实例：
 
-  · 验证项目 的 `.product-flow/reconcile/` 是**空目录** —— 那份 PRD 有 355 FR / 431 AC，
+  · sample-project 的 `.product-flow/reconcile/` 是**空目录** —— 那份 PRD 有 355 FR / 431 AC，
     G2/G3 **从未产出过任何结论**，无人察觉
   · `browser-audit` 不带 `--all-routes` 只审首屏：同一份 demo「9 通过 1 失败」
     vs「26 通过 **11 失败**」——那 10 个真实失败项一直都在，只是没人看见
@@ -51,10 +51,10 @@
    v2 由 workflow registry 按运行模式与条件计算适用项：**必跑 NOT-RUN 必须挡**。
    没有 v2 计划时只提供旧式诊断，不凭空替项目猜适用性。
 """
-import hashlib, io, json, os, re, subprocess, sys, time
+import hashlib, io, json, os, re, signal, subprocess, sys, time
 
 from _workflow import (WorkflowError, gate_result_dir, load_active_run,
-                       load_registry, resolve_plan, sha256_file)
+                       load_registry, resolve_plan, sha256_file, gate_evidence, evidence_current)
 
 MAX_STDOUT = 256 * 1024          # PRD 附件 E：单个 stdout 上限
 RESULT_DIR = os.path.join('.product-flow', 'gates')
@@ -69,7 +69,7 @@ EXTERNAL_GATES = {
 EXIT_SEMANTICS = {
     'ai-slop-gate.py': STD, 'audience-gate.py': STD, 'cdp-reuse-gate.py': STD,
     'serial-orchestration-gate.py': STD, 'spec-authoring-gate.py': STD, 'report-structure-gate.py': STD,
-    'feishu-delivery-gate.py': STD,
+    'feishu-delivery-gate.py': STD, 'dingtalk-delivery-gate.py': STD, 'research-quality-gate.py': STD,
     'chain-gate.py': STD, 'consistency-gate.py': STD,
     'no-loss-gate.py': STD,
     'diagram-id-gate.py': STD,
@@ -142,10 +142,36 @@ def prereq_state(gate, root, manifest=None):
         if not os.path.exists(f):
             out.append((g, 'NOT-RUN')); continue
         try:
-            out.append((g, (json.load(io.open(f, encoding='utf-8')) or {}).get('verdict', 'UNKNOWN')))
+            record = json.load(io.open(f, encoding='utf-8')) or {}
+            verdict = record.get('verdict', 'UNKNOWN')
+            if verdict == 'PASS' and (not evidence_current(record.get('evidence')) or
+                    (manifest and (record.get('runId') != manifest['runId'] or
+                                   record.get('planHash') != manifest['planHash']))):
+                verdict = 'STALE'
+            out.append((g, verdict))
         except Exception:
             out.append((g, 'UNREADABLE'))
     return out
+
+
+def run_child(cmd, timeout=900):
+    """Own a session so timeout cleanup cannot kill another user's browser."""
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                          text=True, start_new_session=(os.name == 'posix')) as child:
+        try:
+            stdout, stderr = child.communicate(timeout=timeout)
+            return subprocess.CompletedProcess(cmd, child.returncode, stdout, stderr)
+        except subprocess.TimeoutExpired:
+            if os.name == 'posix':
+                try:
+                    os.killpg(child.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            else:
+                child.kill()
+            stdout, stderr = child.communicate()
+            return subprocess.CompletedProcess(cmd, 124, stdout,
+                stderr + '\nUNABLE: gate timed out after %ss' % timeout)
 
 
 def run(argv, root, adhoc=False):
@@ -168,20 +194,40 @@ def run(argv, root, adhoc=False):
         planned = {x.get('gate') for x in manifest.get('gatePlan', [])}
         if key not in planned and not adhoc:
             die('门禁 %s 不在当前运行 gatePlan；调试请显式加 --adhoc' % key)
+        def option(name, default=None):
+            for i, arg in enumerate(argv[1:], 1):
+                if arg == name: return argv[i + 1] if i + 1 < len(argv) else None
+                if arg.startswith(name + '='): return arg.split('=', 1)[1]
+            return default
+        if not adhoc and gate == 'report-structure-gate.py' and option('--mode') != manifest.get('researchMode'):
+            die('报告 mode 必须与当前计划 researchMode 一致；不能用旧摘要门代替正式深拆')
+        if not adhoc and gate == 'research-quality-gate.py' and option('--phase', 'final') != 'final':
+            die('发布前 pre 评审不能充当 S2 最终页面验收；调试请用 --adhoc')
+        if not adhoc and gate == 'diagram-id-gate.py' and '--formal' not in argv:
+            die('正式图交付需要 --formal，旧图源诊断不能抵消图位/渲染验收')
+        if not adhoc and gate in {'s8-solution-gate.py', 's9-quality-report-gate.py',
+                                  's9-product-walkthrough-gate.py', 's9-launch-rollback-gate.py'} and not option('--context'):
+            die('正式批准门需要 --context contract-manifest.json，绑定当前产物与批准版本')
     runner = ('node' if gate.endswith('.mjs')
               else 'bash' if gate.endswith('.sh')
               else sys.executable)
     cmd = [runner, gate_path] + argv[1:]
-    t0 = time.time()
     try:
-        p = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
-    except subprocess.TimeoutExpired as e:   # 单个门禁挂死不该拖住整轮跑手;超时=非通过
-        p = subprocess.CompletedProcess(cmd, 124, e.stdout or '', (e.stderr or '') + '\n⏱️ 门禁超时 900s 被杀（视作非通过）')
+        evidence = gate_evidence(gate_path, argv[1:])
+    except (OSError, WorkflowError) as e:
+        die('无法绑定被测输入：%s' % e)
+    t0 = time.time()
+    p = run_child(cmd)
     out = (p.stdout or '') + (p.stderr or '')
     truncated = len(out) > MAX_STDOUT
     if truncated:
         out = out[:MAX_STDOUT]
     v, why = verdict_of(gate, p.returncode)
+    if p.returncode == 124:
+        v, why = 'UNABLE', '执行超时，未完成验证'
+    stable = evidence_current(evidence)
+    if not stable:
+        v, why = 'UNABLE', '测量期间输入或规则变化；本次结果不可用于批准'
     # ⭐ UNABLE + 前置没跑 = 十有八九是顺序问题，而不是环境问题。
     #    不改退出码（那会挡住合法的单独调试），只把话说清楚。
     unmet = [(g, s) for g, s in prereq_state(gate, root, manifest) if s != 'PASS']
@@ -204,7 +250,8 @@ def run(argv, root, adhoc=False):
         'cmd': ' '.join(cmd),
         'stdout': out,
         'stdoutTruncated': truncated,
-        'claimEligible': not adhoc,
+        'claimEligible': not adhoc and stable,
+        'evidence': evidence,
     }
     if manifest and manifest.get('schemaVersion') == '2.0':
         rec.update({'runId': manifest['runId'], 'planHash': manifest['planHash'],
@@ -229,7 +276,7 @@ def run(argv, root, adhoc=False):
           % (os.path.join(d, key + '.json'), v, p.returncode), file=sys.stderr)
     if why:
         print('⚠️ %s' % why, file=sys.stderr)
-    return p.returncode
+    return p.returncode if stable else 2
 
 
 def status(root, skill_root, blocking=False):
@@ -382,7 +429,8 @@ def status(root, skill_root, blocking=False):
             if (r.get('runId') != manifest.get('runId')
                     or r.get('planHash') != manifest.get('planHash')
                     or sorted(r.get('ruleIds') or []) != expected_rules
-                    or not r.get('claimEligible')):
+                    or not r.get('claimEligible')
+                    or not evidence_current(r.get('evidence'))):
                 binding_bad.append(g)
         blockers = [(g, got[g]) for g in sorted(declared) if g in got
                     and got[g].get('verdict') != 'PASS']
@@ -393,7 +441,7 @@ def status(root, skill_root, blocking=False):
         print('\n❌ --gate：%d 道计划必跑门仍是 NOT-RUN，不许往下走。' % len(required_notrun))
         return 1
     if binding_bad:
-        print('\n❌ --gate：活动运行 ID/planHash 不匹配：%s' % '、'.join(binding_bad))
+        print('\n❌ --gate：运行/计划/规则不匹配或被测输入已过期：%s' % '、'.join(binding_bad))
         return 1
     if meta_stale:
         print('\n❌ --gate：元门禁没跟上门禁的改动，不许往下走：')
@@ -460,7 +508,7 @@ def _self_test():
         '实得 %s' % prereq_state('reconcile-gate.py', _pd))
     os.makedirs(os.path.join(_pd, RESULT_DIR), exist_ok=True)
     for _v in ('UNABLE', 'PASS'):
-        json.dump({'verdict': _v},
+        json.dump({'verdict': _v, 'evidence': gate_evidence(__file__, [])},
                   io.open(os.path.join(_pd, RESULT_DIR, 'demo-anchor-gate.py.json'),
                           'w', encoding='utf-8'))
         chk('前置结论 %s 时读得出来' % _v,
@@ -606,7 +654,8 @@ def _self_test():
             json.dump({'gate': _gate.split('.G')[0], 'verdict': 'PASS', 'exitCode': 0,
                        'ranAt': _future, 'runId': _plan['runId'],
                        'planHash': _plan['planHash'], 'ruleIds': _rules,
-                       'claimEligible': True},
+                       'claimEligible': True,
+                       'evidence': gate_evidence(os.path.join(SK, 'scripts', _gate.split('.G')[0]), [])},
                       io.open(os.path.join(_gdir, _gate + '.json'), 'w', encoding='utf-8'),
                       ensure_ascii=False)
         chk('v2：全部必跑门绑定当前 run/plan/rule 且 PASS 才放行',

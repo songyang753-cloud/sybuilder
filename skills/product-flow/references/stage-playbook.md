@@ -1,5 +1,9 @@
 # 一页纸操作规程(每阶段:入场→动作→出场门禁)
 
+S2 正式出场还必须经过 `research-quality-gate.py --phase final`。平台由当前计划唯一选择：飞书跑 `feishu-delivery-gate.py`，钉钉跑 `dingtalk-delivery-gate.py`，不能交叉顶替；本地预评审不能代替同版原生页面终审。横比结构门必须携带 `research-package.json`。
+
+S8/S9 正式批准均带 `--context` 绑定本版产物，完整用法见 `references/delivery-quality-contract.md`。
+
 > ⭐ 本表是 `SKILL.md` §【SOP】的详版正文,按**渐进式披露**外移:跑到哪个阶段再读这里对应行,SKILL 主文件只留骨架与指针。
 > ⚠️ 出场条件里的编号(①②a②g…)是**历史追加序＝稳定引用键**(有跨文件引用,⛔ 不重排)。
 > ⛔ 门禁不过不许进下一阶段。门禁条数/规则数以 `references/design-quality-gates.md` 为准,本表不复述。

@@ -12,6 +12,7 @@ third-party platform.
 | Python 3.10+ | Gates, contracts, document adapters and tests | Required |
 | PyYAML 6.0.3 | DESIGN.md front matter to tokens | Required for design generation; install `requirements.txt` into a virtual environment, not a global interpreter |
 | markdown-it-py 3.0.0 / mdurl 0.1.2 | Shared document content/media parsing and independent verification | Included in core `requirements.txt`; missing parser is UNABLE, never a pass |
+| Pillow 12.3.0 | Decode screenshot/diagram files and reject corrupt or header-only images | Pinned core dependency; missing decoder is UNABLE |
 | Node.js 22.4+ with native WebSocket/fetch | Browser/HTML gates and selected diagram helpers | Required for web/HTML stages; feature-tested during preparation |
 | Git 2.30+ | Version anchors, diffs and repository enforcement | Required for build/review stages |
 
@@ -33,7 +34,7 @@ a conflicting directory is never overwritten. Failed runtime directories remain 
 | DingTalk documents | [`dws`](https://open.dingtalk.com/dingtalk-cli) | `skills/product-flow/adapters/dingtalk/` | DingTalk delivery is `UNABLE`; local Markdown remains a candidate only |
 | Figma | Official Figma MCP | `skills/product-flow/adapters/figma/` | Native design write/readback is `UNABLE` |
 | Browser/desktop GUI | An authorized local browser or computer-use runtime | `skills/product-flow/adapters/browser/` | GUI-dependent claims are `UNABLE` |
-| Diagram rendering | Bundled diagram module plus D2/Mermaid/Chromium fallbacks | `skills/product-flow/modules/diagramming/` | Missing renderer is `UNABLE`; placeholder text is forbidden |
+| Diagram rendering | Bundled JSON→SVG generator and validated Cairo/rsvg/Chromium render chain; other sources require their actual D2/Mermaid compiler | `skills/product-flow/modules/diagramming/` | Missing renderer is `UNABLE`; placeholder text is forbidden |
 
 ## Document-platform contract
 

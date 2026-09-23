@@ -3,7 +3,7 @@
 """S9.2 工程测试与 four-node-review 终审报告结构门。
 
 判据：
-  ① 版本对象、S8/coding-standards/four-node-review 与飞书回读均有锚点；
+  ① 版本对象、S8/coding-standards/four-node-review 与协作文档回读均有锚点；
   ② 人工风险档、覆盖合同真实分母和 Entry 证据齐；
   ③ 七类测试显式执行，测试工程师从真实 GUI 入口完整实走，SKIPPED/UNABLE 不得静默；
   ④ coding-standards 有 STD 逐项证据，selfcheck 边界写明；
@@ -11,7 +11,7 @@
   ⑥ finding 有修复、预期原因证伪与复验；
   ⑦ 需求/代码/变异覆盖分报，最终 fresh 回归在案；
   ⑧ 风险档与 Open Item 放行规则未被降级；
-  ⑨ 工程结论不冒充 S9.3 四方产品验收，三专业批准及飞书 receipt 齐。
+  ⑨ 工程结论不冒充 S9.3 四方产品验收，三专业批准及协作文档 receipt 齐。
 
 用法: s9-quality-report-gate.py <S9.2受控源稿.md> [--json] | --self-test
 退出码: 0=通过 1=有缺口 2=跑不了
@@ -25,7 +25,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _section import section_at
+from _section import section_at, approved_role
 
 
 def die(message):
@@ -53,7 +53,7 @@ def check(md):
     if not re.search(r'(?:commit|revision|hash).*\b[A-Za-z0-9._/-]{2,}', control, re.I | re.S):
         bad.append('① 缺可复现版本/构建锚点')
     if not re.search(r'https?://\S+', md) or not re.search(r'receipt\s*[:：=]\s*[A-Za-z0-9._/-]+', md, re.I):
-        bad.append('① 缺飞书 URL 或真实 receipt')
+        bad.append('① 缺协作文档 URL 或真实 receipt')
 
     entry = section(md, '风险定档、覆盖合同与入场门')
     if not re.search(r'最终风险档\s*[：:]\s*[SABC]\b', entry):
@@ -107,13 +107,14 @@ def check(md):
 
     approval = section(md, '批准、写入与回读')
     for role in ('测试负责人', '研发负责人', '算法负责人'):
-        if not re.search(r'^\|[^\n]*%s[^\n]*\|[^\n]*(?:批准|已知悉|N-A批准)[^\n]*\|' % role,
-                         approval, re.M):
+        decisions = {'测试负责人': {'批准'}, '研发负责人': {'已知悉并接受修复', '批准'},
+                     '算法负责人': {'N-A批准', '批准'}}
+        if not approved_role(approval, role, decisions[role]):
             bad.append('⑨ %s 缺非占位批准' % role)
     if '不得声称 PRD/Figma/HTML/最终应用已一致' not in final:
         bad.append('⑨ 缺 S9.2 不替代 S9.3 的声明边界')
     if not re.search(r'回读结论\s*[：:]\s*(?:READY|PARTIAL|BLOCKED)', approval):
-        bad.append('⑨ 缺飞书回读结论')
+        bad.append('⑨ 缺协作文档回读结论')
     return bad
 
 
@@ -125,6 +126,9 @@ def _entry():
         die('文件不存在：%s' % args[0])
     md = io.open(args[0], encoding='utf-8', errors='replace').read()
     bad = check(md)
+    if '--context' in sys.argv:
+        from _approval import check as check_approval
+        bad += check_approval(args[0], sys.argv[sys.argv.index('--context') + 1], 'S9.2')
     if '--json' in sys.argv:
         print(json.dumps({'bad': bad}, ensure_ascii=False))
     else:
@@ -156,7 +160,7 @@ def _self_test():
 ## 0. 文档控制、对象与依据
 commit abc123；revision r9；hash h8。S8 / coding-standards / four-node-review 均锚定。
 coding-standards 的 selfcheck 只证明规范源在场且自洽，不证明本次代码已遵守。
-飞书：https://example.feishu.cn/docx/q
+协作文档：https://docs.example.com/quality
 receipt: receipts/q.json
 ## 1. 风险定档、覆盖合同与入场门
 最终风险档：A；决策人：张三；理由：接口迁移。
@@ -207,11 +211,11 @@ precision=1/1。
 S 档：不得有 Open Item；UNABLE 永不等于 PASS。
 移交 S9.3 仅说明工程质量，不得声称 PRD/Figma/HTML/最终应用已一致。
 ## 6. 批准、写入与回读
-| 角色 | 结论 | 人/时间 | 证据 |
-|---|---|---|---|
-| 测试负责人 | 批准 | 王五 | t.json |
-| 研发负责人 | 已知悉并接受修复 | 张三 | d.json |
-| 算法负责人/N-A复核人 | N-A批准 | 李四 | a.json |
+| 角色 | 结论 | 人/时间 | 证据 | 主体类型 | 授权依据 | 产物版本 | 适用范围 | 审批证据来源 |
+|---|---|---|---| --- | --- | --- | --- | --- |
+| 测试负责人 | 批准 | 王五 | t.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 研发负责人 | 已知悉并接受修复 | 张三 | d.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 算法负责人/N-A复核人 | N-A批准 | 李四 | a.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
 回读结论：READY
 """
     chk('正例：九判据全过 → 0', run(good) == 0)

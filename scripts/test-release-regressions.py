@@ -2,6 +2,7 @@
 """Offline regression checks. No account, network, or paid-model access."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
 import subprocess
@@ -10,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+os.environ['PF_RECEIPT_ENV'] = 'test'
 SCRIPTS = ROOT / 'skills/product-flow/scripts'
 sys.path.insert(0, str(SCRIPTS))
 
@@ -171,16 +173,22 @@ class ReleaseRegressionTests(unittest.TestCase):
             with self.subTest(variant=variant), tempfile.TemporaryDirectory(prefix='document path ') as temp:
                 root = Path(temp)
                 source, manifest, upload, picture = (root / p for p in ('report with spaces.md', 'e.json', 'upload.json', 'a.png'))
-                picture.write_bytes(b'synthetic-mechanism-fixture-not-a-real-screenshot')
-                body = '# Report\n\n允许访问。\n\n## Feature\n<!-- evidence:SHOT-1 -->\n![A](<@./a.png>)\n'
+                from PIL import Image
+                Image.new('RGB', (16, 16), 'white').save(picture)
+                body = '# Report\n\n允许访问。\n\n## Feature\n<!-- evidence:SHOT-1 -->\n![SHOT-1](<@./a.png>)\n'
                 source.write_text(body)
                 digest = sync.source_hash(picture)
                 upload.write_text(json.dumps({'sourceHash': digest, 'mediaId': 'media-1'}))
-                manifest.write_text(json.dumps({'evidence': [{'id': 'SHOT-1', 'sourcePath': 'a.png', 'anchor': 'Feature'}],
+                (root / 'events.json').write_text(json.dumps({'events': [
+                    {'id': 'EVENT-1', 'evidenceId': 'SHOT-1', 'classification': 'observed'}]}))
+                manifest.write_text(json.dumps({'evidence': [{'id': 'SHOT-1', 'sourcePath': 'a.png', 'anchor': 'Feature',
+                    'kind': 'gui-screenshot', 'eventsRef': 'events.json', 'eventId': 'EVENT-1',
+                    'privacyReviewed': True, 'privacyReview': {'actorType': 'agent', 'reviewer': 'synthetic-review',
+                    'reviewedAt': '2026-09-23', 'scope': 'synthetic blank pixels', 'result': 'APPROVED'}}],
                     'delivery': {'document': 'doc-1', 'nativeVersion': '7', 'uploadEvidenceRef': 'upload.json',
                     'uploadEvidenceHash': sync.source_hash(upload),
                     'images': [{'evidenceId': 'SHOT-1', 'sourceHash': digest, 'mediaId': 'media-1'}]}}))
-                remote_md = body.replace('![A](<@./a.png>)', '<image token="media-1"/>')
+                remote_md = body.replace('![SHOT-1](<@./a.png>)', '<image token="media-1"/>')
                 if variant == 'changed-body': remote_md = remote_md.replace('允许', '禁止')
                 native = '<title>Report</title><heading>Feature</heading>'
                 if variant != 'no-image': native += '<image token="media-1"/>'

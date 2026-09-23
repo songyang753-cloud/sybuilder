@@ -10,7 +10,7 @@
   ⑤ 回滚有触发条件、步骤、RTO 与**演练证据**——未演练即 UNABLE，不得声称可回滚；
   ⑥ 未消除的停止线命中为 0，灰度上线结论只能 PASS/HOLD/ROLLED-BACK；
   ⑦ 研发总监上线批准与测试/产品的仍有效确认非占位；
-  ⑧ 飞书 URL/revision/receipt 与回读结论非占位；
+  ⑧ 协作文档 URL/revision/receipt 与回读结论非占位；
   ⑨ 灰度/监测/演练证据绑定被部署 build 指纹，换构建即作废重跑(借 gstack Review Freshness 的上线态形态)。
 
 用法: s9-launch-rollback-gate.py <S9.4受控源稿.md> [--json] | --self-test
@@ -25,7 +25,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _section import section_at
+from _section import section_at, approved_role
 
 
 def die(message):
@@ -40,7 +40,7 @@ def section(md, heading):
 def check(md):
     bad = []
     required = ('文档控制与入场资格', '灰度计划与放量梯度', '监测与告警口径',
-                '回滚方案与演练', '上线记录、结论与飞书回读')
+                '回滚方案与演练', '上线记录、结论与平台回读')
     missing = [name for name in required if not section(md, name)]
     if missing:
         bad.append('① 缺核心章节：%s' % '、'.join(missing))
@@ -75,21 +75,23 @@ def check(md):
     if '未演练' not in rollback:
         bad.append('⑤ 缺「未演练即 UNABLE」的演练强制')
 
-    final = section(md, '上线记录、结论与飞书回读')
+    final = section(md, '上线记录、结论与平台回读')
     if not re.search(r'未消除的停止线命中[^\n|]*\|[^\n|]*\b0\b', final):
         bad.append('⑥ 未消除停止线命中没有明确为 0')
     if not re.search(r'灰度上线结论\s*[：:]\s*(?:PASS|HOLD|ROLLED-BACK)', final):
         bad.append('⑥ 缺合法灰度上线结论（PASS/HOLD/ROLLED-BACK）')
 
     for role in ('研发总监', '测试负责人', '产品负责人'):
-        lines = [line for line in final.splitlines() if role in line and line.strip().startswith('|')]
-        if not lines or not any(re.search(r'批准|上线|回滚|仍有效', line) and not re.search(r'<[^>]+>', line) for line in lines):
+        decisions = {'研发总监': {'批准上线', '批准回滚'},
+                     '测试负责人': {'确认同构建 S9.2 PASS 仍有效'},
+                     '产品负责人': {'确认 S9.3 APPROVED 仍有效'}}
+        if not approved_role(final, role, decisions[role]):
             bad.append('⑦ %s 缺非占位批准' % role)
 
     if not re.search(r'https?://\S+', final) or not re.search(r'revision\s*[:：=]\s*[A-Za-z0-9._-]+', final, re.I) or not re.search(r'receipt\s*[:：=]\s*[A-Za-z0-9._/-]+', final, re.I):
-        bad.append('⑧ 缺飞书 URL、revision 或 receipt 的真实值')
+        bad.append('⑧ 缺协作文档 URL、revision 或 receipt 的真实值')
     if not re.search(r'回读结论\s*[：:]\s*(?:READY|PARTIAL|BLOCKED)', final):
-        bad.append('⑧ 缺飞书回读结论')
+        bad.append('⑧ 缺协作文档回读结论')
     if '证据构建绑定' not in final or '换构建' not in final:
         bad.append('⑨ 缺灰度/监测/演练证据的 build 指纹绑定与「换构建作废」声明（借 M1 新鲜度）')
     return bad
@@ -103,6 +105,9 @@ def _entry():
         die('文件不存在：%s' % args[0])
     md = io.open(args[0], encoding='utf-8', errors='replace').read()
     bad = check(md)
+    if '--context' in sys.argv:
+        from _approval import check as check_approval
+        bad += check_approval(args[0], sys.argv[sys.argv.index('--context') + 1], 'S9.4')
     if '--json' in sys.argv:
         print(json.dumps({'bad': bad}, ensure_ascii=False))
     else:
@@ -135,7 +140,7 @@ def _self_test():
 产品/版本/构建/commit：App 1.0 build-20 commit def456。
 | 入场依据 | 版本 | 原物 | 结论 |
 |---|---|---|---|
-| S9.3 飞书报告 | r9 | 是 | 产品验收结论必须 APPROVED；receipt s93.json |
+| S9.3 协作文档报告 | r9 | 是 | 产品验收结论必须 APPROVED；receipt s93.json |
 | S9.2 同构建 | r8 | 是 | PASS；receipt s92.json |
 | 最终上线候选构建 | build-20 commit def456 | 是 | receipt build.json |
 ## 1. 灰度计划与放量梯度
@@ -155,19 +160,19 @@ def _self_test():
 | 回滚步骤 | 关灰度开关→切回 build-19 |
 | RTO | 5 分钟 |
 | 回滚演练证据 | 2026-09-17 预发演练通过 receipt drill.json；未演练即 UNABLE |
-## 4. 上线记录、结论与飞书回读
+## 4. 上线记录、结论与平台回读
 | 汇总项 | 结果 | 证据 |
 |---|---|---|
 | 未消除的停止线命中 | 0 | dash.png |
 | 回滚演练 | 已演练 | drill.json |
 | 证据构建绑定 | 灰度/监测/演练证据均绑定 build-20/def456；换构建即作废重跑 | dash.png |
 灰度上线结论：PASS。只有 `PASS` 才算完成上线。
-| 角色 | 结论 | 人/时间 | 证据 |
-|---|---|---|---|
-| 研发总监 | 批准上线 | 张三/2026-09-18 | r.json |
-| 测试负责人 | 确认同构建 S9.2 PASS 仍有效 | 王五/2026-09-18 | q.json |
-| 产品负责人 | 确认 S9.3 APPROVED 仍有效 | 李四/2026-09-18 | p.json |
-飞书：https://example.feishu.cn/docx/launch
+| 角色 | 结论 | 人/时间 | 证据 | 主体类型 | 授权依据 | 产物版本 | 适用范围 | 审批证据来源 |
+|---|---|---|---| --- | --- | --- | --- | --- |
+| 研发总监 | 批准上线 | 张三/2026-09-18 | r.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 测试负责人 | 确认同构建 S9.2 PASS 仍有效 | 王五/2026-09-18 | q.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 产品负责人 | 确认 S9.3 APPROVED 仍有效 | 李四/2026-09-18 | p.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+协作文档：https://docs.example.com/launch
 revision: r5
 receipt: receipts/launch.json
 回读结论：READY

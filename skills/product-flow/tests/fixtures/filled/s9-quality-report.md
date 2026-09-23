@@ -4,7 +4,7 @@
 
 commit abc123；revision r9；hash h8。S8 / coding-standards / four-node-review 均锚定。
 coding-standards 的 selfcheck 只证明规范源在场且自洽，不证明本次代码已遵守。
-飞书：https://example.feishu.cn/docx/q
+协作文档：https://docs.example.com/quality
 receipt: receipts/q.json
 
 ## 1. 风险定档、覆盖合同与入场门
@@ -79,10 +79,10 @@ S 档：不得有 Open Item；UNABLE 永不等于 PASS。
 
 ## 6. 批准、写入与回读
 
-| 角色 | 结论 | 人/时间 | 证据 |
-|---|---|---|---|
-| 测试负责人 | 批准 | 王五 | t.json |
-| 研发负责人 | 已知悉并接受修复 | 张三 | d.json |
-| 算法负责人/N-A复核人 | N-A批准 | 李四 | a.json |
+| 角色 | 结论 | 人/时间 | 证据 | 主体类型 | 授权依据 | 产物版本 | 适用范围 | 审批证据来源 |
+|---|---|---|---| --- | --- | --- | --- | --- |
+| 测试负责人 | 批准 | 王五 | t.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 研发负责人 | 已知悉并接受修复 | 张三 | d.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 算法负责人/N-A复核人 | N-A批准 | 李四 | a.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
 
 回读结论：READY

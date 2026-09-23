@@ -1542,6 +1542,7 @@ GATE_TEMPLATE_PAIRS = (
 # 显式豁免表 —— 与配对表互补，**合起来必须覆盖每一道门禁**（规则 gate-pairing-declared）。
 # ⛔ 豁免不是「先欠着」，是「已经决定不配，理由在此」；空理由不算豁免。
 GATE_PAIRING_EXEMPT = {
+    'research-quality-gate.py': '跨报告/图片/平台回执/三角色评审做版本对账；模板 research-quality-review.md，自证与 test-remediation-contracts.py 覆盖空评审和版本失效',
     'audience-gate.py':        '吃**任意交付文档**（竞品分析/PRD/设计稿/交互稿），不绑单一模板；'
                                '口径来自 spec/_audience.json，自证内建 8 个夹具（含「内部路径写在附件里→放行」正例）',
     'coordination-gate.py':    '读 git 状态与路径清单做协同检查，不读任何项目模板；自证内建清单夹具',
@@ -1572,6 +1573,7 @@ GATE_PAIRING_EXEMPT = {
     'cdp-reuse-gate.py':       '吃遍历器源码 + competitive-research.md 查 CDP 落地坑复用，无 md 产物模板；自证内建',
     'report-structure-gate.py': '吃竞品调研报告 md（交付文档非固定模板），与 audience-gate 配用同守报告；自证内建',
     'feishu-delivery-gate.py': '吃本地报告、飞书 XML 回读与证据清单做跨载体守恒，不绑单一模板；自证内建',
+    'dingtalk-delivery-gate.py': '吃本地报告、钉钉回读与证据清单做跨载体守恒，不绑单一模板；自证内建',
     'serial-orchestration-gate.py': '吃编排器 competitor-sweep.mjs 源码查「串行无并发旋钮」，无 md 模板；自证内建',
     'spec-authoring-gate.py':  '吃 spec/*.json + scaffold/converge 数结构红棘轮，无 md 产物模板；自证内建',
 }
@@ -1781,6 +1783,7 @@ def r_ref_reach(root):
 # 跨阶段基础设施参考:不归任何单一阶段(SKILL 的机制/铁律/PRD 结构/复盘等节的正文,
 # 或渐进式披露外移的正文),显式登记归属+理由。⛔ 空理由不算;新参考要么被某阶段路由、要么进这里。
 MODULE_INFRA_REFS = {
+    'delivery-quality-contract.md': 'S2–S9 正文、真实图片、平台回读、图位与审批版本的跨阶段交付契约',
     'iron-rules.md':         '铁律正文(SKILL `## 铁律` 节迁出),贯穿全阶段',
     'mechanisms.md':         'M1–M9 贯穿机制正文,跨全阶段',
     'prd-structure.md':      'PRD 结构正文(SKILL `## PRD 结构` 节迁出),S4/S5 共用',
@@ -2678,6 +2681,39 @@ def p_verify(root):
 GEN_MARK = re.compile(r'自动生成|勿手改|请勿手动|DO NOT EDIT|AUTO-?GENERATED', re.I)
 
 
+def product_claim_text(text):
+    """Remove this gate's exact diagnostic blocks, not files or arbitrary code fences.
+
+    A preserved rule description is not a product claim. Keep all surrounding prose;
+    this is a lint distinction, not authentication of the transcript or its verdict.
+    """
+    headers = {f'{icon} [{r["id"]}] {r["desc"]}'
+               for r in PROJECT_RULES for icon in ('✅', '❌', '➖')}
+
+    def strip_diagnostics(value):
+        lines, diagnostic = [], False
+        for line in value.splitlines():
+            if line in headers:
+                diagnostic = True
+                continue
+            if diagnostic and line.startswith('      '):
+                continue
+            diagnostic = False
+            lines.append(line)
+        return '\n'.join(lines)
+
+    try:
+        record = json.loads(text)
+    except (ValueError, TypeError):
+        record = None
+    if (isinstance(record, dict) and record.get('gate') == 'consistency-gate.py'
+            and isinstance(record.get('stdout'), str)):
+        # Only clean the transcript field; other fields remain subject to inspection.
+        record['stdout'] = strip_diagnostics(record['stdout'])
+        return json.dumps(record, ensure_ascii=False)
+    return strip_diagnostics(text)
+
+
 # ⚠️ 判据是「有脚本**写**它」，不是「有脚本**提到**它」。
 #    首版用 `base in t`，于是 asserts.js 注释里的一句
 #    `node selftest.mjs sample-interaction-demo.html` 就让它判「有生成器」——
@@ -2714,6 +2750,7 @@ def p_claim_ladder(root):
                             r'[\s「『"*_`（(]{0,4}$')
     hits = []
     for rel, text in walk_text(root, {'.md'}):
+        text = product_claim_text(text)
         for lvl in ('integrated-frozen', 'production-validated'):
             for _m in re.finditer(re.escape(lvl), text):
                 _lo = text.rfind('\n', 0, _m.start()) + 1
@@ -2862,6 +2899,7 @@ def p_gen(root):
     for rel, text in walk_text(root):
         if os.path.splitext(rel)[1].lower() in {'.py', '.js', '.mjs', '.cjs', '.sh'}:
             continue                      # 脚本自己带这类字样通常是在描述别人
+        text = product_claim_text(text)
         # 「自动生成」标记按惯例在文件头部：锚前 10 行，不锚字符数
         if not GEN_MARK.search('\n'.join(text.split('\n')[:10])):
             continue
@@ -3020,7 +3058,7 @@ MUTATIONS = [
     #   ⭐ 加这一发是因为：我扩完量程第一次自验时选中了非规范句式的那张图 ⇒ 没红，
     #     「扩了量程」和「扩了个死的」在产物上一模一样。这发变异专门钉住图源在量程内。
     ("gate-count", "templates/diagrams/product-architecture.example.d2",
-     lambda s: s.replace("43 道确定性门禁", "97 道确定性门禁", 1)),
+     lambda s: s.replace("45 道确定性门禁", "97 道确定性门禁", 1)),
     # 🚨 2026-09-09 第五轮：给**字面量定位段**这条新分支配靶 ——
     #   量程扩了却没有变异守着，等于「没人守的判据」（本仓 §14.4 的原话）。
     ("no-positional-window", "scripts/retro-gate.py",

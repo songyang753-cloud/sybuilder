@@ -3,7 +3,7 @@
 产品/版本/构建/commit：App 1.0 build-20 commit def456。
 | 入场依据 | 版本 | 原物 | 结论 |
 |---|---|---|---|
-| S9.3 飞书报告 | r9 | 是 | 产品验收结论必须 APPROVED；receipt s93.json |
+| S9.3 协作文档报告 | r9 | 是 | 产品验收结论必须 APPROVED；receipt s93.json |
 | S9.2 同构建 | r8 | 是 | PASS；receipt s92.json |
 | 最终上线候选构建 | build-20 commit def456 | 是 | receipt build.json |
 ## 1. 灰度计划与放量梯度
@@ -27,19 +27,19 @@
 | 数据兼容与不可逆点 | 无不可逆迁移 |
 | RTO | 5 分钟 |
 | 回滚演练证据 | 2026-09-17 预发演练通过 receipt drill.json；未演练即 UNABLE |
-## 4. 上线记录、结论与飞书回读
+## 4. 上线记录、结论与平台回读
 | 汇总项 | 结果 | 证据 |
 |---|---|---|
 | 未消除的停止线命中 | 0 | dash.png |
 | 回滚演练 | 已演练 | drill.json |
 | 证据构建绑定 | 灰度/监测/演练证据均绑定 build-20/def456；换构建即作废重跑 | dash.png |
 灰度上线结论：PASS。只有 `PASS` 才算完成上线。
-| 角色 | 结论 | 人/时间 | 证据 |
-|---|---|---|---|
-| 研发总监 | 批准上线 | 张三/2026-09-18 | r.json |
-| 测试负责人 | 确认同构建 S9.2 PASS 仍有效 | 王五/2026-09-18 | q.json |
-| 产品负责人 | 确认 S9.3 APPROVED 仍有效 | 李四/2026-09-18 | p.json |
-飞书：https://example.feishu.cn/docx/launch
+| 角色 | 结论 | 人/时间 | 证据 | 主体类型 | 授权依据 | 产物版本 | 适用范围 | 审批证据来源 |
+|---|---|---|---| --- | --- | --- | --- | --- |
+| 研发总监 | 批准上线 | 张三/2026-09-18 | r.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 测试负责人 | 确认同构建 S9.2 PASS 仍有效 | 王五/2026-09-18 | q.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+| 产品负责人 | 确认 S9.3 APPROVED 仍有效 | 李四/2026-09-18 | p.json | agent | SYNTHETIC-AUTH-001 | fixture-v1 | synthetic-scope | synthetic-approval.json |
+协作文档：https://docs.example.com/launch
 revision: r5
 receipt: receipts/launch.json
 回读结论：READY

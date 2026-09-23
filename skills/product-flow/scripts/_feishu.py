@@ -14,7 +14,7 @@
 
 ═══ 它验不了什么（诚实边界）═══
 ⛔ 验不了正文**写得好不好、结论对不对**——那是 audience-gate + 人读的事。
-⛔ 本模块只保证「本地有的语义单元，飞书上没被静默丢」，不保证语义没被改坏。
+⛔ 检查标题、表格列、标记与长度等结构；不是每句语义的等价证明。图片身份和图文位置仍需逐张核对。
 
 用法（作为库）:
   from _feishu import create_and_verify, verify_readback
@@ -53,6 +53,14 @@ def verify_readback(source_md: str, readback_md: str, extra_markers=None):
     """纯函数：比源 md 与飞书回读 md，列出被静默丢掉的东西。
     返回 (ok, issues)。飞书回读会把表格序列化成 <lark-table>，所以表格按两种口径归一比。"""
     issues = []
+    from _document_sync import guard
+    sync = guard()
+    render_only = lambda text: re.sub(r'```mermaid\b.*?```', '', text, flags=re.S)
+    left = sync.fingerprint(render_only(source_md))
+    right = sync.fingerprint(sync._lark2md(render_only(readback_md)))
+    # Images are verified through native image entities, not Markdown syntax.
+    left['image_count'] = right['image_count'] = 0
+    issues.extend(sync.diff_fp(left, right, '本地', '远端'))
     # ① 方括号标记逐个对账（先剥围栏:mermaid 渲染成图后源文本不在回读里,不算丢失）
     src_b, rb_b = _brackets(_strip_fences(source_md)), _brackets(_strip_fences(readback_md))
     for k, n in src_b.items():
@@ -78,8 +86,8 @@ def verify_readback(source_md: str, readback_md: str, extra_markers=None):
     return (len(issues) == 0, issues)
 
 
-def _run(args):
-    return subprocess.run(['lark-cli'] + args, capture_output=True, text=True)
+def _run(args, *, cwd=None):
+    return subprocess.run(['lark-cli'] + args, cwd=cwd, capture_output=True, text=True, timeout=180)
 
 
 def _json_output(r, action):
@@ -124,10 +132,13 @@ def verify_user_identity():
 
 
 def create(title: str, md_path: str) -> str:
+    from _document_sync import before_create
+    before_create(md_path)
     verify_user_identity()
     path = os.path.abspath(md_path)
     data = _json_output(_run(['docs', '+create', '--as', 'user', '--title', title,
-                              '--doc-format', 'markdown', '--content', '@' + path]),
+                              '--doc-format', 'markdown', '--content', '@./' + os.path.basename(path)],
+                             cwd=os.path.dirname(path)),
                         'lark-cli docs +create')
     tok = _find_value(data, {'document_id', 'documentId', 'doc_token', 'docToken', 'token'})
     if not tok:
@@ -167,52 +178,91 @@ def create_chunked(title: str, md_path: str) -> str:
     return create(title, md_path)
 
 
-def fetch(doc_token: str, doc_format: str = 'markdown') -> str:
+def fetch_data(doc_token: str, doc_format: str = 'markdown'):
     verify_user_identity()
-    data = _json_output(_run(['docs', '+fetch', '--as', 'user', '--doc', doc_token,
+    return _json_output(_run(['docs', '+fetch', '--as', 'user', '--doc', doc_token,
                               '--scope', 'full', '--detail', 'full', '--doc-format', doc_format]),
                         'lark-cli docs +fetch')
+
+
+def fetch(doc_token: str, doc_format: str = 'markdown') -> str:
+    data = fetch_data(doc_token, doc_format)
     content = _find_value(data, {'content', 'markdown', 'xml', 'body'})
     if not isinstance(content, str):
         raise RuntimeError('fetch 成功但找不到 %s 正文' % doc_format)
     return content
 
 
-def update(doc_token: str, md_path: str) -> str:
-    """原地覆盖更新已有飞书文档(保持同一 URL,不再每次建新文档)。
-    退出码 0=成功、3=成功但有警告(如 mermaid 渲染警告),都算成功。"""
+def update(doc_token: str, md_path: str, allow_overwrite=False) -> str:
+    """显式授权并通过远端漂移检查后覆盖同一 URL；非零退出或 ok=false 均失败。"""
     verify_user_identity()
+    from _document_sync import before_update
+    before_update(md_path, 'feishu', doc_token, allow_overwrite)
     r = _run(['docs', '+update', '--as', 'user', '--doc', doc_token, '--command', 'overwrite',
-              '--doc-format', 'markdown', '--content', '@' + os.path.abspath(md_path)])
+              '--doc-format', 'markdown', '--content', '@./' + os.path.basename(md_path)],
+             cwd=os.path.dirname(os.path.abspath(md_path)))
     _json_output(r, 'lark-cli docs +update')
     return doc_token
 
 
-def create_and_verify(title: str, md_path: str, extra_markers=None, doc_token: str = None,
-                      evidence_manifest: str = None):
+def _write_and_verify(title: str, md_path: str, extra_markers=None, doc_token: str = None,
+                      evidence_manifest: str = None, allow_overwrite=False):
     """写 + 回读校验一步到位。返回 (doc_token, ok, issues)。⭐ ok=False 时别当成功交付。
     传 doc_token=已有文档 → 原地更新(保持 URL);不传 → 建新文档。
-    ⭐ 新建且 ≥3 张图时自动分块(单次写会静默出空壳),调用方无需操心。"""
+    使用官方 CLI 整篇导入；未声称自动分块，必须以真实回读结果验收。"""
     src = io.open(md_path, encoding='utf-8').read()
+    from _document_sync import preflight, save_readback, delivery_receipt
+    preflight(md_path, evidence_manifest)
     if doc_token:
-        tok = update(doc_token, md_path)
+        tok = update(doc_token, md_path, allow_overwrite)
     else:
         tok = create(title, md_path)
-    ok, issues = verify_readback(src, fetch(tok, 'markdown'), extra_markers)
-    if ok and evidence_manifest:
-        xml_tmp = _tmp(fetch(tok, 'xml'))
-        try:
-            r = subprocess.run([sys.executable, os.path.join(_HERE, 'feishu-delivery-gate.py'),
-                                '--source', md_path, '--readback', xml_tmp,
-                                '--evidence-manifest', evidence_manifest],
-                               capture_output=True, text=True)
-            if r.returncode != 0:
-                issues.append('飞书图片交付门未通过:\n' + (r.stdout or '') + (r.stderr or ''))
-            ok = ok and r.returncode == 0
-        finally:
-            try: os.remove(xml_tmp)
-            except OSError: pass
+        from _document_sync import register_created
+        register_created(md_path, 'feishu', tok)
+    remote_data = fetch_data(tok, 'markdown')
+    remote_md = _find_value(remote_data, {'content', 'markdown', 'body'})
+    revision = _find_value(remote_data, {'revision_id', 'revisionId', 'version', 'revision'})
+    if not isinstance(remote_md, str) or revision is None:
+        raise RuntimeError('UNABLE: 回读缺完整正文或原生版本，不能签发交付通过')
+    save_readback(md_path, remote_md, 'md')
+    ok, issues = verify_readback(src, remote_md, extra_markers)
+    from _document_sync import media_sources
+    if ok and (evidence_manifest or media_sources(src)):
+        if not evidence_manifest:
+            return tok, False, issues + ['有图片但无证据清单，不能声明图片交付已核验']
+        xml_data = fetch_data(tok, 'xml')
+        xml = _find_value(xml_data, {'content', 'xml', 'body'})
+        xml_revision = _find_value(xml_data, {'revision_id', 'revisionId', 'version', 'revision'})
+        if not isinstance(xml, str) or str(xml_revision) != str(revision):
+            raise RuntimeError('UNABLE: 文本与媒体回读版本不同或缺版本')
+        xml_tmp = save_readback(md_path, xml, 'xml')
+        r = subprocess.run([sys.executable, os.path.join(_HERE, 'feishu-delivery-gate.py'),
+                            '--source', md_path, '--readback', xml_tmp,
+                            '--readback-markdown', md_path + '.remote.md',
+                            '--evidence-manifest', evidence_manifest],
+                           capture_output=True, text=True, timeout=180)
+        if r.returncode != 0:
+            issues.append('飞书图片交付门未通过:\n' + (r.stdout or '') + (r.stderr or ''))
+        ok = ok and r.returncode == 0
+        if ok:
+            from _document_sync import verify_media_delivery
+            verify_media_delivery(md_path, evidence_manifest, xml, tok, revision)
+    from _document_sync import finish
+    ok, issues = finish(md_path, ok, issues, expected_revision=revision)
+    delivery_receipt(md_path, 'feishu', tok, ok, issues)
     return tok, ok, issues
+
+
+def create_and_verify(title, md_path, extra_markers=None, doc_token=None,
+                      evidence_manifest=None, allow_overwrite=False):
+    from _document_sync import begin_attempt, delivery_receipt
+    begin_attempt(md_path)
+    try:
+        return _write_and_verify(title, md_path, extra_markers, doc_token,
+                                 evidence_manifest, allow_overwrite)
+    except Exception as exc:
+        delivery_receipt(md_path, 'feishu', doc_token, False, [str(exc)])
+        raise
 
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -228,7 +278,7 @@ def audience_ok(md_path: str):
 
 
 def push_deliverable(title: str, md_path: str, extra_markers=None,
-                     doc_token: str = None, evidence_manifest: str = None):
+                     doc_token: str = None, evidence_manifest: str = None, allow_overwrite=False):
     """推**人看版交付物**(竞品分析/PRD/设计稿)前先过 audience-gate,红了**拒绝推送**。
     ⇒ 「正文给人看、不装我的日志」从散文变成推送链路上物理拦得住的红线。
     ⭐ 传 doc_token=已有文档 → **原地更新保持同一 URL**(修「每次建新文档堆积过时版本」);不传 → 建新。
@@ -239,7 +289,7 @@ def push_deliverable(title: str, md_path: str, extra_markers=None,
             "⛔ 拒绝推送:audience-gate 判这份交付物正文混入了不该给读者看的东西"
             "(过程日志/内部路径/自检编号/把读者支出去)。先按下面清理,再推:\n\n" + out)
     return create_and_verify(title, md_path, extra_markers, doc_token=doc_token,
-                             evidence_manifest=evidence_manifest)
+                             evidence_manifest=evidence_manifest, allow_overwrite=allow_overwrite)
 
 
 def self_test():
@@ -254,7 +304,7 @@ def self_test():
            "| 列1 | 列2 |\n|---|---|\n| a | b |\n\n结论段落，够长够长够长够长。\n")
     # 正例：回读完整（表格转成 lark-table）
     clean = ("# 标题\n\n证据分 [取证] [取证] [推断]。\n\n"
-             "<lark-table><lark-tr><lark-td>a</lark-td></lark-tr></lark-table>\n\n"
+             "<lark-table><lark-tr><lark-td>列1</lark-td><lark-td>列2</lark-td></lark-tr><lark-tr><lark-td>a</lark-td><lark-td>b</lark-td></lark-tr></lark-table>\n\n"
              "结论段落，够长够长够长够长。\n")
     ok1, iss1 = verify_readback(src, clean)
     case("正例 回读完整（含 lark-table 归一）→ 无问题", ok1 and not iss1)
@@ -265,7 +315,7 @@ def self_test():
     case("反例 [取证] 少一个 → 抓到", (not ok2) and any('取证' in i for i in iss2))
 
     # 反例②：表格被吞
-    drop_table = clean.replace("<lark-table><lark-tr><lark-td>a</lark-td></lark-tr></lark-table>", "")
+    drop_table = re.sub(r'<lark-table>.*?</lark-table>', '', clean, flags=re.S)
     ok3, iss3 = verify_readback(src, drop_table)
     case("反例 表格丢失 → 抓到", (not ok3) and any('表格' in i for i in iss3))
 

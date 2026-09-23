@@ -91,6 +91,10 @@ repository, public threshold, engineering idea or book does not mean its source
 code, article text, images or complete templates are included. Do not treat a
 citation, star count or this manifest as permission to copy additional material.
 
+Pillow is an installed image-decoding runtime dependency (HPND license), pinned in
+`requirements.txt`; its implementation is not copied into this repository. Preserve
+the distribution's own notices when distributing runtime packages.
+
 Feishu/Lark CLI, DingTalk Workspace CLI, Figma MCP, browsers, D2, Mermaid and
 optional review/model tools remain external implementations. Users install and
 authorize them separately. Their accounts, logos, credentials, client binaries

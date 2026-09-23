@@ -55,7 +55,7 @@ gate is the single one-way hand-off between them.
 Open-source **development preview** (not a stable release). Known gaps, help wanted:
 
 - English translation of the deeper `references/` layer (the entry layer is already bilingual).
-- Decoupling the optional sibling-skill and delivery-channel dependencies fully into adapters.
+- Internal modules and platform adapters are included; native-platform end-to-end compatibility still requires authorized trials.
 - The multi-agent coordination tooling (`coordination-gate.py` + `path-ownership.json`) assumes
   the skill sits at `skills/<name>/` under the repo root; making it portable to other layouts
   is a to-do.
@@ -76,4 +76,6 @@ python3 scripts/selftest-all.py            # touched a self-testing script: re-m
 
 ## License
 
-[Apache License 2.0](LICENSE).
+[Apache License 2.0](LICENSE) for original work. Upstream adaptations retain their terms:
+see the suite-root [NOTICE](../../NOTICE), [THIRD_PARTY.md](../../THIRD_PARTY.md) and
+[licenses](../../licenses/). Distribute the complete suite, not this directory alone.

@@ -6,6 +6,7 @@ import io
 import json
 import os
 import sys
+from pathlib import Path
 
 
 SKILL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,6 +30,103 @@ def sha256_file(path):
         for chunk in iter(lambda: f.read(1024 * 1024), b''):
             h.update(chunk)
     return h.hexdigest()
+
+
+_EVIDENCE_EXCLUDED = {'.git', '.product-flow', '__pycache__', 'node_modules', '.venv',
+                      '.selftest-measured.json', '.selftest-progress.jsonl', '.selftest-cache'}
+
+
+def evidence_snapshot(roots):
+    """Deterministic input/rule inventory. Generated execution state is excluded.
+
+    Local content binding is not authentication and does not prove a GUI action.
+    Directory symlinks are rejected rather than silently omitting their contents.
+    """
+    files = {}
+    for spec in roots:
+        path = Path(spec['path'])
+        excluded = set(spec.get('generatedOutputs') or [])
+        if not path.exists():
+            raise WorkflowError('证据路径不存在：%s' % path)
+        paths = [path]
+        if path.is_dir():
+            paths = []
+            for folder, dirs, names in os.walk(path):
+                dirs[:] = sorted(d for d in dirs if d not in _EVIDENCE_EXCLUDED)
+                for d in dirs:
+                    if Path(folder, d).is_symlink():
+                        raise WorkflowError('证据目录链接需显式展开为输入：%s' % Path(folder, d))
+                paths += [Path(folder, n) for n in sorted(names) if n not in _EVIDENCE_EXCLUDED
+                          and not n.endswith(('.pyc', '.pyo'))]
+        for file in paths:
+            if str(file.absolute()) in excluded:
+                continue
+            if not file.is_file():
+                raise WorkflowError('证据不是可读文件：%s' % file)
+            key = str(file.absolute())
+            files[key] = {'sha256': sha256_file(key), 'realpath': str(file.resolve()),
+                          'kind': spec['kind']}
+    return {'schemaVersion': '1.0', 'roots': roots, 'files': files}
+
+
+def gate_evidence(gate_path, args):
+    gate = Path(gate_path).absolute()
+    rules = gate.parent.parent if gate.parent.name == 'scripts' else gate
+    # Only registered output flags may be omitted; arbitrary existing arguments
+    # remain inputs. A previous receipt must not make a valid rerun look unstable.
+    output_flags = {'feishu-delivery-gate.py': {'--receipt'},
+                    'dingtalk-delivery-gate.py': {'--receipt'}}.get(gate.name, set())
+    inputs, outputs = [], []
+    cursor = iter(args)
+    for arg in cursor:
+        flag = arg.split('=', 1)[0]
+        if flag in output_flags:
+            value = arg.split('=', 1)[1] if '=' in arg else next(cursor, '')
+            if value: outputs.append(str(Path(value).absolute()))
+        else:
+            inputs.append(arg)
+    roots = [{'path': str(rules), 'kind': 'rule', 'generatedOutputs': outputs}]
+    def option(name):
+        for i, arg in enumerate(args):
+            if arg == name and i + 1 < len(args): return args[i + 1]
+            if arg.startswith(name + '='): return arg.split('=', 1)[1]
+    if gate.name == 'report-structure-gate.py' and option('--package-manifest'):
+        from _research_package import load_inputs
+        try: inputs += load_inputs(option('--package-manifest'))[1]
+        except (OSError, ValueError) as exc: raise WorkflowError(str(exc)) from exc
+    if gate.name == 'research-quality-gate.py':
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('quality_inputs', str(gate))
+        helper = importlib.util.module_from_spec(spec); spec.loader.exec_module(helper)
+        try: inputs += helper.bound_inputs(option('--source'), option('--review'))
+        except (OSError, ValueError, TypeError) as exc: raise WorkflowError(str(exc)) from exc
+    stages = {'s8-solution-gate.py': 'S8', 's9-quality-report-gate.py': 'S9.2',
+              's9-product-walkthrough-gate.py': 'S9.3', 's9-launch-rollback-gate.py': 'S9.4'}
+    if gate.name in stages and option('--context'):
+        from _approval import inputs as approval_inputs
+        try: inputs += approval_inputs(option('--context'), stages[gate.name])[1]
+        except (OSError, ValueError) as exc: raise WorkflowError(str(exc)) from exc
+    for arg in inputs:
+        value = arg.split('=', 1)[1] if arg.startswith('--') and '=' in arg else arg
+        if not value.startswith('-') and Path(value).exists():
+            spec = {'path': str(Path(value).absolute()), 'kind': 'input', 'generatedOutputs': outputs}
+            if spec not in roots:
+                roots.append(spec)
+    return evidence_snapshot(roots)
+
+
+def evidence_current(evidence):
+    if not isinstance(evidence, dict) or evidence.get('schemaVersion') != '1.0' or not evidence.get('roots'):
+        return False
+    try:
+        return evidence_snapshot(evidence['roots']) == evidence
+    except (OSError, KeyError, TypeError, WorkflowError):
+        return False
+
+
+def output_was_tested(ref, evidence):
+    item = (evidence or {}).get('files', {}).get(os.path.abspath(ref), {})
+    return item.get('kind') == 'input' and item.get('sha256') == sha256_file(ref)
 
 
 def load_registry(path=REGISTRY_PATH):
@@ -157,7 +255,8 @@ def validate_full_contains_modules(registry_path=REGISTRY_PATH):
 def resolve_plan(mode, requested=None, start=None, product_type='web',
                  delivery_intent='production', execution_mode='handoff',
                  html_profile=None, evidence_capability='native',
-                 registry_path=REGISTRY_PATH, research_mode=None):
+                 registry_path=REGISTRY_PATH, research_mode=None,
+                 document_platform='feishu'):
     registry, registry_hash = load_registry(registry_path)
     requested = requested or []
     if product_type not in ('web', 'mobile', 'dual', 'other'):
@@ -172,6 +271,8 @@ def resolve_plan(mode, requested=None, start=None, product_type='web',
     effective_research_mode = research_mode or 'full-research'
     if effective_research_mode not in ('teardown', 'competitive-pack', 'full-research'):
         raise WorkflowError('researchMode 必须是 teardown/competitive-pack/full-research')
+    if document_platform not in ('feishu', 'dingtalk'):
+        raise WorkflowError('documentPlatform 必须是 feishu/dingtalk')
 
     if mode == 'full':
         selected = list(registry['stageOrder'])
@@ -207,7 +308,8 @@ def resolve_plan(mode, requested=None, start=None, product_type='web',
     context = {'productType': product_type, 'deliveryIntent': delivery_intent,
                'executionMode': execution_mode, 'htmlProfile': html_profile,
                'evidenceCapability': evidence_capability,
-               'researchMode': effective_research_mode}
+               'researchMode': effective_research_mode,
+               'documentPlatform': document_platform}
     outputs, external_inputs = [], []
     chosen = set(selected)
     for module_id in selected:
@@ -250,6 +352,7 @@ def resolve_plan(mode, requested=None, start=None, product_type='web',
         'executionMode': execution_mode,
         'htmlProfile': html_profile,
         'evidenceCapability': evidence_capability,
+        'documentPlatform': document_platform,
         'modules': selected,
         'externalInputs': external_inputs,
         'expectedOutputs': outputs,
@@ -267,7 +370,7 @@ def resolve_plan(mode, requested=None, start=None, product_type='web',
 def validate_manifest(manifest, registry_path=REGISTRY_PATH):
     required = ('schemaVersion', 'runId', 'registryVersion', 'registryHash', 'mode',
                 'productType', 'deliveryIntent', 'executionMode', 'htmlProfile',
-                'evidenceCapability', 'modules', 'requiredGates', 'gatePlan',
+                'evidenceCapability', 'documentPlatform', 'modules', 'requiredGates', 'gatePlan',
                 'claimCeiling', 'planHash', 'inputs', 'inputsHash')
     missing = [k for k in required if k not in manifest]
     if missing:
@@ -278,7 +381,7 @@ def validate_manifest(manifest, registry_path=REGISTRY_PATH):
         manifest['mode'], manifest.get('requested') or [], manifest.get('from') or None,
         manifest['productType'], manifest['deliveryIntent'], manifest['executionMode'],
         manifest['htmlProfile'], manifest['evidenceCapability'], registry_path,
-        manifest.get('researchMode'))
+        manifest.get('researchMode'), manifest['documentPlatform'])
     for key in ('registryVersion', 'registryHash', 'modules', 'externalInputs',
                 'expectedOutputs', 'requiredGates', 'gatePlan', 'claimCeiling', 'planHash'):
         if manifest.get(key) != expected.get(key):

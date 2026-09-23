@@ -324,14 +324,14 @@
 技术架构图（附件 N）    → @plantuml/core + C4-PlantUML（已无需 Java）
 ```
 
-**产品架构图为什么必须 D2+TALA**（实测）：同一张四层架构图，一旦出现**节点级跨层连线**（真实架构图必然有），Mermaid 的 `direction` **失效**、层散开（官方已知限制），D2-grid **塌成一条横带**。只有 TALA 扛住。TALA 已于 2026-09-07 开源（MPL-2.0），无需 license key。
+**复杂产品架构图优先 D2+TALA 的历史实测依据**：当时同一张四层架构图的节点级跨层连线在 Mermaid 与 D2-grid 布局中失真，TALA 达到了该样本要求。这个结论不等于所有架构图必须依赖同一布局器；内置结构化 JSON 也可交付，但必须保留关系并经过真实渲染目检。TALA 的可用性和许可按实际安装版本核验。
 
-**交付**：文本源（`.mmd` / `.d2` / `.puml`）**进 git 作为正本** → PNG@2x → 飞书图片块。
+**交付**：文本源（`.source.json` / `.mmd` / `.d2` / `.puml`）**进 git 作为正本** → SVG/PNG + 同版渲染记录 → 飞书或钉钉图片块。统一用 `modules/diagramming/scripts/render-diagram.py` 调用已安装的旧格式编译器，缺工具报 UNABLE；内置 JSON 使用 generate-from-template 与 render-svg。正式验收契约见 `references/delivery-quality-contract.md`。
 ⛔ **PNG 是产物不是正本**——改图改源，不改 PNG。
 
 ### ⚠️ 三条防假绿断言（都是实测踩出来的）
 
-1. **`feishu docx` 退出码 3 = 文档建成但图渲染失败**，警告只打到 stderr ⇒ **必须显式判退出码**，否则得到一份「有标题没有图」的文档
+1. 历史第三方 CLI 曾出现文档建成而图片失败。当前仅使用官方文档适配器，必须显式判退出码，并回读完整正文和同版图片；写入成功不等于交付成功。
 2. **D2 出 PNG：要么一个字体参数都不传，要么 `--font-regular` 与 `--font-bold` 成对传。**
    🚨 **本条 2026-09-12 按本机实测订正过**——原文写「**必须**同时传」，暗示必须传，**那是错的**：
 

@@ -9,6 +9,19 @@ if [ "$#" -lt 1 ] || [ "$#" -gt 2 ] || [[ "$1" != /* ]] || [[ "${2:-}" != "" && 
 fi
 
 TARGET="$1"
+for module in research diagramming design-quality prototyping; do
+  test -f "${ROOT}/skills/product-flow/modules/${module}/MODULE.md" || {
+    echo "Incomplete suite: missing internal module ${module}" >&2; exit 1;
+  }
+done
+for adapter in lark dingtalk figma browser; do
+  test -f "${ROOT}/skills/product-flow/adapters/${adapter}/MODULE.md" || {
+    echo "Incomplete suite: missing adapter ${adapter}" >&2; exit 1;
+  }
+done
+for required in LICENSE NOTICE THIRD_PARTY.md shared/module-registry.json skills/product-flow/modules/diagramming/LICENSE skills/product-flow/scripts/_documents.py skills/product-flow/modules/prototyping/scripts/bundle.mjs; do
+  test -f "${ROOT}/${required}" || { echo "Incomplete suite: ${required}" >&2; exit 1; }
+done
 mkdir -p "${TARGET}"
 
 for name in product-flow coding-standards four-node-review; do

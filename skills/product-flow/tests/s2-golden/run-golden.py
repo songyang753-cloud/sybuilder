@@ -19,7 +19,10 @@ G = os.path.join(HERE, '..', '..', 'scripts')
 
 def _rs(d):   # report-structure teardown
     return subprocess.run([sys.executable, os.path.join(G, 'report-structure-gate.py'),
-                           '--mode', 'teardown', os.path.join(d, 'report.md')],
+                           '--mode', 'teardown', os.path.join(d, 'report.md'),
+                           '--atomic-ledger', os.path.join(d, 'ledger.md'),
+                           '--events', os.path.join(d, 'traversal-events.json'),
+                           '--evidence-manifest', os.path.join(d, 'evidence-manifest.json')],
                           capture_output=True, text=True).returncode
 
 
@@ -47,7 +50,7 @@ def _fresh():
     """把黄金 fixture 拷到临时目录(变异在副本上做,不脏化提交的 fixture)。"""
     d = tempfile.mkdtemp(prefix='s2-golden-')
     for f in ('report.md', 'deep-tree.json', 'traversal-events.json',
-              'evidence-manifest.json', 'readback.xml', 'shot.png'):
+              'evidence-manifest.json', 'readback.xml', 'shot.png', 'ledger.md'):
         shutil.copy(os.path.join(HERE, f), os.path.join(d, f))
     return d
 
@@ -130,7 +133,7 @@ def main():
         try:
             mut(d)
             rc = GATES[target](d)
-            ok = rc != 0
+            ok = rc == 1  # UNABLE or a crash is not a successfully caught defect.
             print('  %s 反例〔%s〕→ %s 应红  rc=%d' % ('✅' if ok else '❌', cname, target, rc))
             if not ok:
                 fails.append('反例「%s」未能让 %s 变红(rc=%d)' % (cname, target, rc))

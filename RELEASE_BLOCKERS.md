@@ -16,7 +16,7 @@ is unchecked**. No stable tag or production-readiness claim should be made yet.
 - [ ] Validate native Feishu and DingTalk delivery with authorized test accounts: text, tables, real images, per-image identity/section placement, raw readback, conflict behavior and delivery receipts. Offline fixtures are not native compatibility evidence.
 - [ ] Compare representative research/PRD/design/interactive deliverables under the same brief and runtime. Rule preservation and unit tests alone do not establish quality or performance equivalence.
 - [ ] Close testcases design versus execution approval, engineering-standard traceability, compound-requirement coverage and standalone run-instruction gaps; see [the forward trial](docs/forward-trial-2026-09.md). Do not weaken execution evidence to approve design-only work.
-- [ ] Correct overlap/clipping in bundled diagram examples and re-inspect rendered images. Successful rendering is not visual-quality approval.
+- [x] Corrected overlap/clipping in bundled diagram fixtures and regenerated all eight previews; rendered PNGs were visually inspected on 2026-09-23. Actual project diagrams still require their own semantic and visual review.
 
 ## Existing foundations (not substitutes for the open items)
 

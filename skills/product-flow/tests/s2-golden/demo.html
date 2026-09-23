@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>本地任务盒 · 测试样本</title>
+<style>body{font:20px system-ui;margin:60px;background:#f1f5f9;color:#183048}main{max-width:800px;background:white;border:1px solid #cbd5e1;border-radius:16px;padding:36px}label{display:block;margin:24px 0 8px}input,button{font:inherit;padding:12px;border:1px solid #8c9dad;border-radius:8px}button{background:#183e69;color:white;margin-left:12px}#result{padding:20px;background:#e2f5eb;margin-top:24px}small{display:block;margin-top:36px;color:#607080}</style></head>
+<body><main><h1>本地任务盒</h1><p>离线教学应用，仅用于验证报告与截图交付链。</p>
+<label for="name">任务名称（必填，最多20个字符）</label><input id="name" maxlength="20" placeholder="输入任务名称"><button id="create">创建任务</button>
+<p id="result" role="status">尚未创建任务</p><ul id="tasks"></ul>
+<small>测试数据，无真实账号；不连接外部服务。刷新页面后清空。</small></main>
+<script>document.querySelector('#create').onclick=()=>{const input=document.querySelector('#name'),name=input.value.trim(),result=document.querySelector('#result');if(!name){result.textContent='请输入任务名称';input.focus();return;}const item=document.createElement('li');item.textContent=name;document.querySelector('#tasks').appendChild(item);result.textContent='任务已创建：'+name;input.value='';};</script></body></html>

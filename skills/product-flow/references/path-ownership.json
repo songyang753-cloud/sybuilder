@@ -35,6 +35,23 @@
       "skills/product-flow/tests/fixtures/filled/s9-launch-rollback.md"
     ],
     "codex": [
+      "skills/product-flow/scripts/_approval.py",
+      "skills/product-flow/scripts/_delivery_check.py",
+      "skills/product-flow/scripts/_diagram_contract.py",
+      "skills/product-flow/scripts/_document_sync.py",
+      "skills/product-flow/scripts/_documents.py",
+      "skills/product-flow/scripts/_dingtalk.py",
+      "skills/product-flow/scripts/_image.py",
+      "skills/product-flow/scripts/_research_package.py",
+      "skills/product-flow/scripts/dingtalk-delivery-gate.py",
+      "skills/product-flow/scripts/research-quality-gate.py",
+      "skills/product-flow/adapters/**",
+      "skills/product-flow/modules/**",
+      "skills/product-flow/references/delivery-quality-contract.md",
+      "skills/product-flow/templates/diagram-manifest.json",
+      "skills/product-flow/templates/diagram-source.json",
+      "skills/product-flow/templates/research-package.json",
+      "skills/product-flow/templates/research-quality-review.md",
       "skills/product-flow/scripts/_workflow.py",
       "skills/product-flow/scripts/_module_contract.py",
       "skills/product-flow/scripts/product-flow-run.py",
@@ -82,6 +99,37 @@
       "skills/product-flow/tests/fixtures/filled/s9-quality-report.md"
     ],
     "shared": [
+      "DEPENDENCIES.md",
+      "PUBLICATION_CHECKLIST.md",
+      "RELEASE_BLOCKERS.md",
+      "THIRD_PARTY.md",
+      "install.sh",
+      "requirements.txt",
+      "scripts/test-install.sh",
+      "scripts/test-release-regressions.py",
+      "scripts/test-remediation-contracts.py",
+      "scripts/verify-modules.py",
+      "scripts/verify-suite.sh",
+      "docs/remediation-review-2026-09-23.md",
+      "docs/change-notes/**",
+      "skills/product-flow/CONTRIBUTING.md",
+      "skills/product-flow/DEPENDENCIES.md",
+      "skills/product-flow/README.md",
+      "skills/product-flow/RELEASING.md",
+      "skills/product-flow/SKILL.en.md",
+      "skills/product-flow/references/.selftest-measured.json",
+      "skills/product-flow/references/craft-layer.md",
+      "skills/product-flow/references/keyboard-contracts.md",
+      "skills/product-flow/scripts/_section.py",
+      "skills/product-flow/scripts/deep-walk.cjs",
+      "skills/product-flow/templates/contract-manifest.json",
+      "skills/product-flow/tests/s2-golden/**",
+      "skills/product-flow/tests/traversal-coverage/fixtures/deep-tree.mini.json",
+      "skills/product-flow/references/diagram-standards.md",
+      "skills/product-flow/scripts/diagram-id-gate.py",
+      "skills/product-flow/scripts/s9-launch-rollback-gate.py",
+      "skills/product-flow/templates/s9-launch-rollback.md",
+      "skills/product-flow/tests/fixtures/filled/s9-launch-rollback.md",
       ".github/**",
       ".github/workflows/**",
       ".gitignore",
@@ -174,6 +222,7 @@
     ]
   },
   "_shared_note": [
+    "2026-09-23 用户批准 R1–R10 恢复与文档质量整改，并明确由 Codex 逐项修改后复核/发布。为本次跨模块修复补登记套件发布面、样例与下游图/发布门的精确 shared 路径，保留原 Claude/Codex 主责，不追溯改写历史。原因及逐路径清单见 docs/change-notes/2026-09-23-restoration.md；该公开说明目录不含私有会话、账号或运行日志，不替代旧 .proposals 的历史记录。",
     "⭐ shared 的初始承重文件是 2026-09-12 **实测**出来的重叠，不是拍脑袋列的；后续控制面按交接记录补入：",
     "   comm -12 两侧 diff --name-only 的结果。",
     "⚠️ 2026-09-15 补登孤儿 design-to-tokens.py：它是 DESIGN.md front matter → tokens.json 的生成器，与 PRD/设计模板同族 ⇒ 归 claude。它被报成孤儿是因为 CI 首跑揪出它的自证把「缺 PyYAML 的跳过」当成了失败（ADR-0013 复发），修它时才碰到这个文件。",
@@ -234,6 +283,7 @@
   ],
   "sharedRequiresNote": true,
   "noteDirs": [
-    "skills/product-flow/.proposals"
+    "skills/product-flow/.proposals",
+    "docs/change-notes"
   ]
 }

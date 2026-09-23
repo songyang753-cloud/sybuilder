@@ -1,11 +1,13 @@
 ---
 name: product-flow
-description: 从需求到上线再到复盘的产品全流程（意图捕获→深度研究→业务梳理与产品定义→产品结构→PRD v0.9→设计交互三锁协同：Figma 高精度稿+HTML 可交互 demo→PRD v1.0 回灌与三方冻结 G7.5→飞书技术/算法/测试联合方案→研发、验证与上线→数据复盘；S1–S10 为执行编号）。当用户说「按标准流程做这个产品」「我给你产品定义你做到底」「出 PRD 然后做 demo 再上 Figma 最后写代码」「做技术方案、算法方案和测试方案」「产品方案评审几轮直到收敛」「把这个需求从头做到能上线」时使用。也用于只跑其中某个阶段（`--from` / `--only`）：「按模板出 PRD」「用模板写需求文档」「出 PRD 和设计方案」「PRD 加设计加交互全套出」「做一个产品方案」「出一份技术算法测试联合方案」「出一套设计系统和交互规格」「跑一轮多视角产品评审」，尤其是单跑用例工程：「把这份 PRD 变成测试用例」「根据需求文档写测试用例」「验收标准转成用例集」「这个需求要测哪些点」「需求覆盖率对一下」「哪些需求没有用例」。适用于 web / 移动端 / 双端产品，与具体公司无关。
+description: 从需求到上线再到复盘的产品全流程（意图捕获→深度研究→业务梳理与产品定义→产品结构→PRD v0.9→设计交互三锁协同：Figma 高精度稿+HTML 可交互 demo→PRD v1.0 回灌与三方冻结 G7.5→飞书或钉钉技术/算法/测试联合方案→研发、验证与上线→数据复盘；S1–S10 为执行编号）。当用户说「按标准流程做这个产品」「我给你产品定义你做到底」「出 PRD 然后做 demo 再上 Figma 最后写代码」「做技术方案、算法方案和测试方案」「产品方案评审几轮直到收敛」「把这个需求从头做到能上线」时使用。也用于只跑其中某个阶段（`--from` / `--only`）：「按模板出 PRD」「用模板写需求文档」「出 PRD 和设计方案」「PRD 加设计加交互全套出」「做一个产品方案」「出一份技术算法测试联合方案」「出一套设计系统和交互规格」「跑一轮多视角产品评审」，尤其是单跑用例工程：「把这份 PRD 变成测试用例」「根据需求文档写测试用例」「验收标准转成用例集」「这个需求要测哪些点」「需求覆盖率对一下」「哪些需求没有用例」。适用于 web / 移动端 / 双端产品，与具体公司无关。
 ---
 
 # product-flow · 产品全流程流水线（十阶段）
 
 把「一句话产品方向」做成「可上线的产品 + 可交接的研发物料」，中间不丢信息、不编造事实、不假装收敛。
+
+S2–S9 正式交付必读补充契约：`references/delivery-quality-contract.md`。它规定最细功能正文与截图、单品包逐级横比、内置制图/原型、同版平台回读及独立终审；不会用本地全绿替代原生文档验收。
 
 ## 核心信条（这套东西的灵魂，偏离即失效）
 
@@ -19,6 +21,22 @@ description: 从需求到上线再到复盘的产品全流程（意图捕获→�
    那些属于 `.proposals/` 与 commit message。口径真源 `spec/_audience.json`，
    门禁 `scripts/audience-gate.py`。⚠️ 它只拦机械可判的混入，**拦不住「写得好不好读」**——那归人审。
 6. **能看见的问题和能读出来的问题不是一类。** 文档评审再多轮也发现不了「界面上那句话是反的」。所以第 6 阶段的可交互 demo 不是可选项，是**唯一一次让方案脱离文字被眼睛检验**的机会。
+
+## 内置能力与外部适配器（开箱边界）
+
+SYBuilder 安装后，运行 `product-flow` 不应再要求用户逐个安装零散 Skill：
+
+| 类型 | 内置/适配项 | 规则 |
+|---|---|---|
+| 内置模块 | `modules/research` · `modules/diagramming` · `modules/design-quality` · `modules/prototyping` | 属于本 Skill 的库；按阶段渐进读取，不单独触发、不另建正本 |
+| 套件 Skill | `coding-standards` · `four-node-review` | 随同一仓库安装，以共享契约接入 S8/S9；不把全文复制进本文件 |
+| 平台适配器 | `adapters/lark` · `adapters/dingtalk` · `adapters/figma` · `adapters/browser` | 调用平台官方能力；不可用时仅该平台报 `UNABLE`，不伪造回执 |
+| 研究来源 | 外部文章、标准、其他 Skill | 可引用事实与方法来源；许可不明确时不复制表达、代码、模板或资产 |
+
+协作文档正文只维护一份 Markdown 语义源；交付平台由用户选择飞书或钉钉，统一从
+`scripts/_documents.py` 进入。飞书固定使用官方 `lark-cli` 的用户身份，钉钉固定使用官方
+`dws`。飞书适配器实际调用时显式传 `--as user`。两个平台都必须写后回读并验证真实图片实体；某一平台不可用时不得偷偷改投另一
+平台，也不得把本地稿称为平台原生交付。
 
 ## ⭐⭐ 前置分流表（30 秒读完，先答三个问题再往下看）
 
@@ -38,7 +56,7 @@ description: 从需求到上线再到复盘的产品全流程（意图捕获→�
 |---|---|
 | **一个人两小时能重写、没人要交接/验收/追责** | ⛔ **不要用本流水线**。直接迭代原型（社区实践：**做一版的成本 < 写清规格的成本时，原型 > PRD**） |
 | 改文案、修 bug | 直接改 |
-| 纯技术重构、无产品面 | `engineering-standards` + `four-node-review` |
+| 纯技术重构、无产品面 | `coding-standards`（含内置 `repository-enforcement`）+ `four-node-review` |
 | **有人要接手，而他不在你脑子里** | ✅ 往下走 |
 
 ⭐ 最后一行是这套 SOP 一大半机制存在的**唯一理由**——
@@ -79,7 +97,7 @@ ID 链、双向对账、格式边界、元素身份，全都是为「接手的�
 
 **用**：新产品从零定义并做到上线；大版本迭代要走完整评审；需要给老板演示 + 给研发交接的完整链路。
 
-**不用**：改个文案、修个 bug（直接改）；纯技术重构无产品面（用 `engineering-standards` + `four-node-review`）；只要一份 PRD 不做后续（`--only prd`＝只写 PRD 本体 S4B；`--only S4`＝连产品结构 S4A 一起做——没有现成产品结构就选后者）；只要一个 demo（直接用 `demo-html`）。
+**不用**：改个文案、修个 bug（直接改）；纯技术重构无产品面（用 `coding-standards` 的内置仓库执法模块 + `four-node-review`）；只要一份 PRD 不做后续（`--only prd`＝只写 PRD 本体 S4B；`--only S4`＝连产品结构 S4A 一起做——没有现成产品结构就选后者）；只要一个 demo（直接调用本 skill 的内置 `modules/prototyping`）。
 
 ⚠️ **一条要认真对待的反对意见**（来自社区实践综述 `shanraisshan/claude-code-best-practice`，2026-08-16 查证）：**当构建成本足够低时，「原型 > PRD」**——直接做 20~30 个版本，比先写规格更快找到对的东西。
 **判据**：做一版的成本 < 写清规格的成本，且没有多人协作/交接需求 → **不要用本流水线**，直接迭代原型。
@@ -104,10 +122,10 @@ ID 链、双向对账、格式边界、元素身份，全都是为「接手的�
 | S6 | HTML 可执行 UX 基准 | S4B+S5（与 S7 **并行协同**） | 交互稿（=demo：同一交互逻辑的 HTML 形式；目录版开发、bundle 单文件分发） | 演示工程 | **是**（B/C 锁交互半边） |
 | S7 | Figma 高精度视觉母版 | S4B+S5（与 S6 **并行协同**；⛔ 不再等 S6 锁定） | Figma 文件 + 设计系统 | 设计执行 | **是**（B/C 锁视觉半边） |
 | **G7.5** | **三方回灌与冻结** | A/B/C 三锁齐 | **PRD v1.0**（OPEN 项清零或显式延期，附件 M 回灌协议填齐）+ 三方对账记录 + ⭐ **第十五查：`diagram-id-gate.py` 通过**（六张图与表的 ID 对账无差集）且**图源文件已入库**；⭐ **第十六查（AI 产品）：附件 A.4 里标为「冻结阻断项」的技术指标全部达标** —— ⛔ 未达标即不予冻结；⚠️ 标「否」的观测指标**只记录不阻断**（别让一个观测指标卡住冻结）（⛔ 只有 PNG 没有 `.mmd`/`.d2` 源 ⇒ 下一轮没人改得动） —— **`g75-freeze-gate.py <项目根>` 通过**（本地六查真跑：OPEN/backfill/偏差/INS 处置/reconcile 在案/切片登记；原生证据三查缺则冻结上限=本地契约验证，报告模板 `templates/triad-reconciliation.md`） | 产品+设计+交互 | **是**（冻结） |
-| **S8** | **技术、算法与测试方案** | G7.5 | **飞书原生联合方案** + 可编辑技术架构图 + 模块接口/数据/存储/性能容量方案 + 算法/N-A 方案 + 七类测试方案 + 测试工程师/产品经理两次 GUI 实走预案 + `TECH/ALG/TEST/STD` 双向追溯 + `four-node-review` 终审预案 + 三专业批准/回读 receipt（⛔ 不得反向篡改产品合同） | 研发总监 + 算法负责人 + 测试负责人 | **是**（三方分别批准；算法 N/A 也须复核） |
-| **S9.1** | 开发与持续验证 | S8 已批准（模板 `templates/s8-solution-plan.md`；偏离时同 commit 定位更新飞书与镜像） | 可运行应用 + 按锚定 `coding-standards` 实施的 RED/GREEN、单元/组件/契约/集成与构建证据（**开发切片交付：模板 `templates/s9-dev-slice.md` + 门禁 `scripts/s9-dev-slice-gate.py`**——合同先行/RED-GREEN 绑 commit/AI 生成记录/算法离线评测门；⚠️ selfcheck≠代码合规；**降门槛监测 `scripts/bar-weakening-scan.py`** 扫本次 diff 抓抑制注释/删测试/剥断言/阈值改小/假实现，命中须豁免） | 研发 | 否 |
-| **S9.2** | 工程测试、审计与质量验收 | S9.1 | **飞书工程测试与四节点终审报告** + 功能/边界/接口/性能/安全/兼容无障碍/算法七域证据 + **测试工程师对当前构建的 GUI 全流程实走证据** + four-node 风险档/覆盖/收敛/证伪记录；`coverage_check.py`、`s9-quality-report-gate.py` | 测试负责人 + 研发/算法复核 | **是**（质量；必须 PASS） |
-| **S9.3** | 产品经理 GUI 走查与四方一致性验收 | **S9.2 同构建 PASS** | **飞书产品经理 GUI 走查与四方验收报告** + 产品经理基于冻结 PRD 的独立 GUI 实走 + PRD/Figma/HTML/最终应用分别对账 + 未批准高影响偏差清零；`s9-product-walkthrough-gate.py` | 产品负责人 + 设计/测试复核 | **是**（产品） |
+| **S8** | **技术、算法与测试方案** | G7.5 | **协作文档原生联合方案（飞书或钉钉）** + 可编辑技术架构图 + 模块接口/数据/存储/性能容量方案 + 算法/N-A 方案 + 七类测试方案 + 测试工程师/产品经理两次 GUI 实走预案 + `TECH/ALG/TEST/STD` 双向追溯 + `four-node-review` 终审预案 + 三专业批准/回读 receipt（⛔ 不得反向篡改产品合同） | 研发总监 + 算法负责人 + 测试负责人 | **是**（三方分别批准；算法 N/A 也须复核） |
+| **S9.1** | 开发与持续验证 | S8 已批准（模板 `templates/s8-solution-plan.md`；偏离时同 commit 定位更新协作文档正本与镜像） | 可运行应用 + 按锚定 `coding-standards` 实施的 RED/GREEN、单元/组件/契约/集成与构建证据（**开发切片交付：模板 `templates/s9-dev-slice.md` + 门禁 `scripts/s9-dev-slice-gate.py`**——合同先行/RED-GREEN 绑 commit/AI 生成记录/算法离线评测门；⚠️ selfcheck≠代码合规；**降门槛监测 `scripts/bar-weakening-scan.py`** 扫本次 diff 抓抑制注释/删测试/剥断言/阈值改小/假实现，命中须豁免） | 研发 | 否 |
+| **S9.2** | 工程测试、审计与质量验收 | S9.1 | **飞书或钉钉工程测试与四节点终审报告** + 功能/边界/接口/性能/安全/兼容无障碍/算法七域证据 + **测试工程师对当前构建的 GUI 全流程实走证据** + four-node 风险档/覆盖/收敛/证伪记录；`coverage_check.py`、`s9-quality-report-gate.py` | 测试负责人 + 研发/算法复核 | **是**（质量；必须 PASS） |
+| **S9.3** | 产品经理 GUI 走查与四方一致性验收 | **S9.2 同构建 PASS** | **飞书或钉钉产品经理 GUI 走查与四方验收报告** + 产品经理基于冻结 PRD 的独立 GUI 实走 + PRD/Figma/HTML/最终应用分别对账 + 未批准高影响偏差清零；`s9-product-walkthrough-gate.py` | 产品负责人 + 设计/测试复核 | **是**（产品） |
 | **S9.4** | 灰度与正式上线 | S9.3 | 灰度结论 + 监测/回滚条件 + 上线记录（**模板 `templates/s9-launch-rollback.md` + 门禁 `scripts/s9-launch-rollback-gate.py`**——放量梯度单向门/SLI 绑不可伪造数据源/回滚必须演练过） | 研发总监 | **是**（上线） |
 | **S10**（流程效率账见 `references/flow-metrics.md`，工具 `flow-metrics.py`——只进复盘不做门禁） | **上线后复盘** | 线上数据（**无真实数据只能 PENDING**） | `retro.md` + 回流 `lessons.md` | 产品总监 + CEO | **是**（结论） |
 
@@ -127,7 +145,7 @@ ID 链、双向对账、格式边界、元素身份，全都是为「接手的�
 | `DEC-xxx / DELTA-xxx / DEV-xxx` | 设计决策 / 回灌项 / 已批准偏差 | design-decisions / prd-backfill / deviation-register |
 | **A/B/C 三锁** | 概念锁→代表切片锁→全量锁（S5/S6/S7 共同收敛的里程碑） | 架构正本 `delivery-pipeline.md` §四 |
 | **切片** | B 锁选的 1–3 个代表画面（四覆盖类型） | `templates/slice-registry.md` |
-| **原生证据三查** | 飞书回读 / Figma 结构回读 / HTML 浏览器真跑 | `contract-manifest.json` + g75 门 |
+| **原生证据三查** | 所选协作文档平台回读 / Figma 结构回读 / HTML 浏览器真跑 | `contract-manifest.json` + g75 门 |
 | G0/G0.5/G0.6/G0.8/G0.9 | `chain-gate.py` 的链路前段对账方向（数量以门禁目录为准，不在此复述） | 门禁目录 `design-quality-gates.md` |
 | G1/G2/G3 · G4 · G7.5 | `reconcile-gate.py` · `coverage_check.py` · `g75-freeze-gate.py` | 同上 |
 
@@ -136,7 +154,7 @@ ID 链、双向对账、格式边界、元素身份，全都是为「接手的�
 | 入口 | 什么时候用 | 怎么走 |
 |---|---|---|
 | **全流程** | 从零定义产品、要交接要验收 | **S1→S10** 顺序执行（⚠️ **S10 在上线后，别把它当可选尾巴**），`.product-flow/` 目录承载全部产物 |
-| **单跑某阶段** | 手上已有上游产物，只要某一步 | `--only S6` 做 demo、`--only S8` 出飞书技术/算法/测试联合方案、`--only testcases` 出独立测试用例、`--only S9` 跑研发到上线…… 此时**不需要建 `.product-flow/` 全套目录** |
+| **单跑某阶段** | 手上已有上游产物，只要某一步 | `--only S6` 做 demo、`--only S8` 出协作文档技术/算法/测试联合方案、`--only testcases` 出独立测试用例、`--only S9` 跑研发到上线…… 此时**不需要建 `.product-flow/` 全套目录** |
 
 ⭐ 具名模块入口（等价于对应编号；合同表见 `flow-tailoring.md`「各独立模块的硬边界」）：
 `--only business`=S3A · `definition`=S3B · `structure`=S4A · `prd`=S4B · `research`=S2 ·
@@ -178,7 +196,7 @@ ID 链、双向对账、格式边界、元素身份，全都是为「接手的�
 | S4→S5 | 有功能没人设计 | M4 对账：每个 `F-xx` 是否都有交互说明 |
 | S5→S6 | demo 看着完整实则漏演关键路径 | M4 对账：每个 `FR/AC` 有场景或显式「不演示·理由」 |
 | S6→S7→S8→S9 | 方案遗漏设计状态；研发测了没人要的东西 | M4 双向对账：**正向漏与反向漏同等对待** |
-| **md → 飞书 / Figma / HTML** | **表格被静默压列、内容缺一大块而返回 success；远端被别人改过而本地不知道，下次覆写抹掉** | **M9 格式边界守卫** |
+| **md → 飞书/钉钉 / Figma / HTML** | **表格被静默压列、内容缺一大块而返回 success；远端被别人改过而本地不知道，下次覆写抹掉** | **M9 格式边界守卫** |
 
 ⚠️ **第四行是最容易被漏掉的一类交接**：前三行是「我的上游 → 我的下游」，
 而第四行是「**我的产物 → 别人的系统**」。它不在任何阶段的内部，所以**每个阶段都以为它不归自己管**。
@@ -248,7 +266,7 @@ ID 链、双向对账、格式边界、元素身份，全都是为「接手的�
 | 脚手架生成 | 生成出来就是对的 |
 
 **适用范围**：凡是「跑起来才知道、光读判据看不出」的落地细节——CDP 连接与枚举、
-飞书写入与回读、Figma 写入契约、浏览器节流与窗口摆放——都按这条办：
+协作文档写入与回读、Figma 写入契约、浏览器节流与窗口摆放——都按这条办：
 先抽成模块，再用门禁强制复用，⛔ 不要只写进文档就算解决了。
 
 **判据自己的边界**：`cdp-reuse-gate` 只保证「不再各写一份、各踩一遍」，
@@ -283,15 +301,15 @@ ID 链、双向对账、格式边界、元素身份，全都是为「接手的�
     downstream-coverage.md ← 研究 ↔ PRD/Figma/HTML 双向覆盖与去向
     lines.md            ← 五条线结论「或本轮不做+理由」· 需求侧竞品 · Can't/Won't 判断
     insights.md         ← 码本 → 主题 → 核心范畴 → 机会 → 解法候选（给 S3 的判据）
-    功能调研报告.md      ← 喂 S3 提案表 · PRD 3.2/第四章/附件 D/E　（飞书一篇）
-    设计视觉调研报告.md  ← 喂 S5.1 设计系统 · S7 Figma　　　　　　（飞书一篇）
-    交互调研报告.md      ← 喂 S5.2 交互规格 · S6 demo　　　　　　（飞书一篇）
+    功能调研报告.md      ← 喂 S3 提案表 · PRD 3.2/第四章/附件 D/E　（飞书/钉钉一篇）
+    设计视觉调研报告.md  ← 喂 S5.1 设计系统 · S7 Figma　　　　　　（飞书/钉钉一篇）
+    交互调研报告.md      ← 喂 S5.2 交互规格 · S6 demo　　　　　　（飞书/钉钉一篇）
     sources.md          ← 每条结论可回溯到 URL + 访问日期
   definition-final.md   ← S3 产品定义（覆盖下游 18 项，模板 templates/definition-final.md）
   proposals.md          ← S3 功能增删提案表（每条带 S2 证据，单独成表等用户拍板）
   no-build.md           ← ⭐ 证据不支持做时的合法产出（停在这里是成功，不是失败）
   constitution.md       ← 可选：产品级不可违背原则 5–10 条，违反即 CRITICAL
-  prd/                  ← S4/S5 PRD 本地副本（**飞书为对外正本**，这里留可 diff 的版本）
+  prd/                  ← S4/S5 PRD 本地副本（**选定的飞书或钉钉节点为对外正本**，这里留可 diff 的版本）
   business-map.md       ← S3A 业务梳理（模板 templates/business-map.md）
   product-structure.md  ← S4A 产品结构（模板 templates/product-structure.md）
   run-manifest.json     ← 本次运行合同（claimCeiling 硬上限；gate-run --status 读它分栏）
@@ -311,8 +329,8 @@ ID 链、双向对账、格式边界、元素身份，全都是为「接手的�
   interaction-spec.md   ← S5.2 交互规格书（动效规格的唯一权威源）
   demo/                 ← S6 交互稿（目录开发 · bundle 分发）
   figma-link.md         ← S7 Figma 文件链接 + 各 F-xx 的 node-id
-  handoff/              ← S8 联合方案受控镜像/接口契约/算法评测与测试用例集（飞书是方案正本）
-  quality/              ← S9.2 工程测试与 four-node 终审受控镜像/执行证据（飞书是报告正本）
+  handoff/              ← S8 联合方案受控镜像/接口契约/算法评测与测试用例集（选定平台节点是方案正本）
+  quality/              ← S9.2 工程测试与 four-node 终审受控镜像/执行证据（选定平台节点是报告正本）
   reviews/rN-<视角>.md  ← 每轮评审留痕（M3 要求）
   reconcile/<交接>.md   ← 每次对账报告（M4 要求）
   lessons.md            ← 逃逸缺陷回流（M7 要求，跨阶段常驻）
@@ -331,8 +349,8 @@ ID 链、双向对账、格式边界、元素身份，全都是为「接手的�
 
 | 阶段 | 读哪份 |
 |---|---|
-| S2 深度研究 | 先选 `researchMode`：`teardown`（单品最细拆解）、`competitive-pack`（多竞品逐级横比）或 `full-research`（五线全量研究）；共同遵守**先真实遍历、再写正文，颗粒度按实际能力自适应下钻到最细可独立验收单元**。执行主线读 `references/s2-research.md`，单品逐功能拆解读 `references/s2-teardown-runbook.md`，横向竞品规则读 `references/competitive-research.md`；模板分别为 `templates/competitor-teardown-report.md`、`templates/competitive-research-pack.md` 与 `templates/research-report.md`。任何正式交付都必须有逐功能正文、真实内联截图、状态/异常/恢复、证据事件账、下游 PRD/设计/技术/测试输入，并通过模式对应门禁与飞书回读校验。 |
-| **格式边界**（任何外发写入前后） | **`references/format-boundaries.md`** —— md ↔ 飞书/Figma/HTML 会丢什么、会留下什么；**远端被别人改过**怎么发现；`doc-sync-guard.py` 用法；⭐ **消费侧边界**（一份 md 能证明什么、不能证明什么——摘要不得作下一阶段唯一输入，截图与结构元数据互不替代） |
+| S2 深度研究 | 先选 `researchMode`：`teardown`（单品最细拆解）、`competitive-pack`（多竞品逐级横比）或 `full-research`（五线全量研究），再选唯一 `documentPlatform`：`feishu` 或 `dingtalk`；共同遵守**先真实遍历、再写正文，颗粒度按实际能力自适应下钻到最细可独立验收单元**。执行主线读 `references/s2-research.md`，单品逐功能拆解读 `references/s2-teardown-runbook.md`，横向竞品规则读 `references/competitive-research.md`；模板分别为 `templates/competitor-teardown-report.md`、`templates/competitive-research-pack.md` 与 `templates/research-report.md`。任何正式交付都必须有逐功能正文、真实内联截图、状态/异常/恢复、证据事件账、下游 PRD/设计/技术/测试输入，并通过模式对应门禁与所选平台回读校验。 |
+| **格式边界**（任何外发写入前后） | **`references/format-boundaries.md`** —— md ↔ 飞书/钉钉/Figma/HTML 会丢什么、会留下什么；**远端被别人改过**怎么发现；`doc-sync-guard.py` 用法；⭐ **消费侧边界**（一份 md 能证明什么、不能证明什么——摘要不得作下一阶段唯一输入，截图与结构元数据互不替代） |
 | **S3 产品定义** | **`references/s3-definition.md`** —— 它做的是**从 S1 需求 + S2 调研中给出产品定义**（不是打磨 S1）；**覆盖下游 18 项** · 三候选生成 · **单向门 vs 双向门** · 逆向思维 · 前提挑战 · `no-build` 是合法结论。模板 `templates/definition-final.md`，门禁 `scripts/definition-gate.py` |
 | S4 产品方案 | `references/s3-s4-product.md`　→ 配套 **`requirements-quality.md`**（需求的单元测试：五维度 · 措辞黑白名单 · 歧义扫描 · 最多问 5 个） ＋ ⭐ **结构口径规格**：`spec/*.json` 单一真源，三处消费（门禁判结构 / `scripts/scaffold.py` 生骨架 / `scripts/gen-docs.py` 写文档）—— `references/product-structure-gate.md`（S4A 结构门禁口径）· `references/chain-reconcile.md`（G0–G0.9 跨产物对账口径）|
 | S5 设计交互 / S6 demo | `references/s5-s6-design.md`　→ 配套 `design-orchestration.md`（S5.1 编排 + 令牌单一真源 + 字体裁决）、`interaction-patterns.md`（**状态模型唯一权威源** / 响应时间矩阵 / 9 种交互模式）、**`motion-spec.md`（动效四问闸门 / 时长 / 缓动 / reduced-motion 降级）** |
@@ -350,19 +368,19 @@ ID 链、双向对账、格式边界、元素身份，全都是为「接手的�
 | **多 agent 并行改本仓时**（协同期，不属十阶段） | **`scripts/coordination-gate.py`** + 路径所有权清单 **`references/path-ownership.json`** —— 各自改各自的，重叠区显式登记。合并前必须 `--merge-check <对方分支>`：**造出合并结果并在结果上**跑全套门禁。⭐ 2026-09-12 实测：两边分别都绿，**合完元门禁 41→39、零丢失变红** ⇒ ⛔「我这边是绿的」不构成合并依据。⚠️ 它**验不了**两边都对但合起来语义矛盾 —— 那层靠 `.proposals/` 闭环对话 |
 | **改造本 skill / 开源共创**（先读架构与解耦地图） | **`references/architecture.md`** —— 四层架构（SKILL 地图 / L1 单一真源 / L2 逻辑模块 / L3 生成 / L4 门禁）· 模块依赖 DAG · **单一真源清单**（每个事实一个作者:改哪处、影响哪些）· 渐进式披露 · **怎么安全地加一道门/一个分类/一份参考/一个阶段** · 每次改完必跑。⛔ 改一处却波及一堆看似无关文件时回这里对照 |
 | **改造本 skill 时**（维护期，不属十阶段） | **`scripts/no-loss-gate.py`** + 改名映射表 **`references/no-loss-renames.md`** —— 改结构/改章序/改名之前先 `--snapshot` 抽基线，改完跑差集：**旧的语义单元一条都不许消失**。⛔ 改名必须在映射表里登记，且新名必须真的存在（假登记挡不住）。⚠️ 它**验不了**内容有没有被改坏，那一层靠评审与变异测试 |
-| **门禁总目录**（全流程共用） | **`references/design-quality-gates.md`** —— **43 道门禁 + 5 个专项扫描**的判据、用法与**诚实边界**；新增门禁不进这张表会被元门禁拦下。⭐ **每次阶段交接跑一次 `consistency-gate.py --project <项目目录>`** —— 查**交付物**里的声称≠实际（查证指针悬空 / 自称「自动生成」却没有生成器 / 正本路径指错）。⚠️ 2026-08-31 实测：这套门禁此前**只照自己**，交付物里的 8 个此类缺陷一个都没抓到 |
+| **门禁总目录**（全流程共用） | **`references/design-quality-gates.md`** —— **45 道门禁 + 5 个专项扫描**的判据、用法与**诚实边界**；新增门禁不进这张表会被元门禁拦下。⭐ **每次阶段交接跑一次 `consistency-gate.py --project <项目目录>`** —— 查**交付物**里的声称≠实际（查证指针悬空 / 自称「自动生成」却没有生成器 / 正本路径指错）。⚠️ 2026-08-31 实测：这套门禁此前**只照自己**，交付物里的 8 个此类缺陷一个都没抓到 |
 | **S6 端形态**（双端产品） | **`references/platform-parity.md`** —— PC 形态像 PC app、移动形态像移动 app：**必须不同的 12 项形式** vs **必须相同的 6 项实质**；配门禁 `scripts/platform-parity-gate.mjs` 与登记表 `templates/spec/end-differences.json` |
 | **S7 建基座库** | **`references/figma-baseline.md`** —— Variables/Text Styles/Components 的完整 API 序列与坑；**开工前必须先探的两个底** |
 | **任何阶段的多视角评审** | `references/review-perspectives.md` —— 11 视角库；⭐⭐ **九个薄视角已补完七个**（市场/营销/CEO/研发负责人/算法负责人/算法总监/架构，20 行 0 表 → 47–57 行 3–14 表）：唯一功能测试 · **砍到 MVP 的顺序表** · 激活漏斗五步必须填数 · **五秒测试必须找外人真做** · **增量交付切片表** · ⭐**技术债登记位**（此前全流程没有这个位置）· **AI 接口契约的产品侧那一面**（每格都是「用户看到什么」）· **单向门清单（S4 拍板，S8 拍不了）**；⛔ **视角 9/10 刻意不加厚**——它们的判据已在别处（模板三选一 / `ai-slop-gate`），**给已有判据的东西再叠一张表就是过度形式化**（铁律 38 用在自己身上）；视角 1/8 的边界已切清（含专问什么 + 典型发现 + 防锚定隔离机制），S4 终审 / S5.3 / S6 出场前都用它 |
 | S7 Figma / S9 研发测试 | `references/s7-s9-build.md` |
-| **S8 技术、算法与测试方案** | **`references/s8-solution-plan.md`** + 飞书模板 `templates/s8-solution-plan.md` + 门禁 `scripts/s8-solution-gate.py` —— 技术架构图、模块接口、数据、存储、性能容量、算法/N-A、七类测试与 GUI 双角色实走共享一份接口/指标/失败合同；`coding-standards` 做适用映射，`four-node-review` 只配 S9.2 预案；飞书为正本，本地 md 为受控镜像 |
+| **S8 技术、算法与测试方案** | **`references/s8-solution-plan.md`** + 协作文档模板 `templates/s8-solution-plan.md` + 门禁 `scripts/s8-solution-gate.py` —— 技术架构图、模块接口、数据、存储、性能容量、算法/N-A、七类测试与 GUI 双角色实走共享一份接口/指标/失败合同；`coding-standards` 做适用映射，`four-node-review` 只配 S9.2 预案；选定的飞书或钉钉节点为正本，本地 md 为受控镜像 |
 | **流程裁剪**（开工前第一件事） | **`references/flow-tailoring.md`** —— ⭐⭐ **被裁掉的环节和「跑了但没发现问题」的环节，在产物上长得一模一样** → 必须开工前一次性声明进 `.product-flow/scope.md` 并写「如果这个判断错了会怎样」。五问定档（⭐**第 3 问「谁来接」权重最大**：一大半机制存在的唯一理由是「有人要接手而他不在你脑子里」）。⚠️ **档位表是推演的不是跑出来的，当参考不当判据，且刻意不给它配门禁** |
 | **证据等级 E0–E5**（S3 拍板必填） | **`references/evidence-levels.md`** —— ⭐⭐⭐ **「连续两大轮零结构性发现」是文档收敛的信号，不是市场风险收敛的信号**。单向门/S3 拍板最低 **E2**（和真实用户谈过）；⛔ 写 E0 不违规，**写了 E0 却不写停止线才违规** |
 | **S10 上线后复盘** | **`references/s10-retro.md`** + 模板 `templates/retro.md` + 门禁 `scripts/retro-gate.py` —— ⛔ **只有实测值、没有决定的 retro 不算跑过 S10**；⭐**验证测量必须在验证效果之前**；⚠️**「没有变化」有三种来源**（机制没生效/样本不够/判据出界），样本不足要写「读不出来」 |
 | **实质 vs 摆设**（S3 收口 · **S4 出场前必跑** · 任何一次门禁全绿之后） | **`references/substance-over-theater.md`** —— ⭐⭐ 门禁判的是「填了没有」，这一层判「填了但是不是家具」：**四种摆设**（人设/创新/NFR/愿景）· **互换测试**（换成竞品还成立＝没有信息）· **形态适配**（过度形式化与形式化不足**同样是缺陷**）· 七维度四档 · **RAT Top-5 假设按「错了产品就不成立」排序** |
 | **技术方案就绪度**（S4 出场 · S7 定稿后各跑一遍） | **`references/techspec-readiness.md`** —— 判「S2–S7 够不够写出技术方案」（T1–T14）。⭐ 与用例就绪度对称：**不够就报缺口，绝不猜补**；⛔ 不存在「基本可以，我按常规假设一下」——**那是把技术假设伪装成需求** |
 | **S8 测试方案 / 独立用例工程** | S8 联合方案的测试章读 `references/s8-testcases.md`；用例工程也可 `--only testcases` 单跑 → 配套 `testcases-readiness.md`（就绪度判定）、`testcases-design.md`（用例设计七类，含安全用例）、`testcases-adapters.md`（四种 PRD 形态）、**五件套模板 `templates/testcases-pack.md`**；对账门 `coverage_check.py` **四态退出码，0 才算完成（3=不能声称被测充分）**。⛔ 方案与用例生成不等于 S9.2 已执行 |
-| **S9 质量与产品验收** | `references/s9-quality-gates.md`；S9.2 用飞书模板 `templates/s9-quality-report.md` + `scripts/s9-quality-report-gate.py`，要求测试工程师对当前构建做 GUI 全流程实走；S9.3 用飞书模板 `templates/s9-product-walkthrough.md` + `scripts/s9-product-walkthrough-gate.py`，只在同构建质量 `PASS` 后由产品经理依据冻结 PRD 独立 GUI 走查。S9.1 用 `templates/s9-dev-slice.md` + `scripts/s9-dev-slice-gate.py`（开发切片交付：合同先行/RED-GREEN 绑 commit/AI 生成记录/算法离线评测门）；S9.4 用 `templates/s9-launch-rollback.md` + `scripts/s9-launch-rollback-gate.py`（灰度上线回滚：放量梯度单向门/SLI 绑不可伪造数据源/回滚必须演练过）。⛔ `coding-standards`/`four-node-review` 只引用锚定正本；Node qa、自动化或测试录像都不能替代产品经理亲自验收 |
+| **S9 质量与产品验收** | `references/s9-quality-gates.md`；S9.2 用协作文档模板 `templates/s9-quality-report.md` + `scripts/s9-quality-report-gate.py`，要求测试工程师对当前构建做 GUI 全流程实走；S9.3 用协作文档模板 `templates/s9-product-walkthrough.md` + `scripts/s9-product-walkthrough-gate.py`，只在同构建质量 `PASS` 后由产品经理依据冻结 PRD 独立 GUI 走查。S9.1 用 `templates/s9-dev-slice.md` + `scripts/s9-dev-slice-gate.py`（开发切片交付：合同先行/RED-GREEN 绑 commit/AI 生成记录/算法离线评测门）；S9.4 用 `templates/s9-launch-rollback.md` + `scripts/s9-launch-rollback-gate.py`（灰度上线回滚：放量梯度单向门/SLI 绑不可伪造数据源/回滚必须演练过）。⛔ `coding-standards`/`four-node-review` 只引用锚定正本；Node qa、自动化或测试录像都不能替代产品经理亲自验收 |
 | **交付流水线**（PRD→Figma→回灌→HTML） | **`references/delivery-pipeline.md`** —— 三种终态形式的执行契约与顺序；**回灌是最容易被忘的一步** |
 | 任何交接 | `references/reconcile-gate.md`　→ 跑 `scripts/reconcile-gate.py G1/G2/G3` + `coverage_check.py`(G4) |
 | 想知道某条规则的依据 | `references/external-sources.md`（外部来源与取舍记录） |

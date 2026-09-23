@@ -3,7 +3,11 @@
     {
       "id": "SHOT-001",
       "sourcePath": "shot.png",
-      "anchor": "功能A"
+      "anchor": "4.1.1 AF-001 功能A",
+      "kind": "gui-screenshot",
+      "eventsRef": "traversal-events.json",
+      "eventId": "EVENT-001",
+      "scope": "local-test-app-only"
     }
   ]
 }

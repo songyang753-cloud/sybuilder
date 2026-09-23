@@ -17,9 +17,16 @@
 退出码(与全队标准一致 STD): 0=通过; 1=有未覆盖或未披露未走全(红); 2=输入缺失/自身异常(UNABLE，绝不折叠成绿)
 """
 import argparse, json, re, sys, os, collections
+from urllib.parse import urlsplit
 
 def route_of(node):
-    m = re.search(r'#(/[^?]*)', node.get('url') or ''); return m.group(1) if m else '/'
+    if node.get('routeId'):
+        return str(node['routeId'])  # explicit role/state-aware scope key, shared by event/report
+    url = urlsplit(node.get('url') or '/')
+    base = url.path or '/'
+    if url.fragment.startswith('/'):
+        return (base.rstrip('/') + url.fragment) + ('?' + url.query if url.query else '')
+    return base + ('?' + url.query if url.query else '') + ('#' + url.fragment if url.fragment else '')
 
 def is_usercontent(t):
     if re.search(r'\*{4,}\d{3,}', t): return True     # 掩码手机号
@@ -27,27 +34,14 @@ def is_usercontent(t):
     return False
 
 def denoise_controls(nodes):
-    """从 deep-tree 计算每路由的（非内容）功能控件宇宙。
-
-    ⭐ 产品无关：chrome（侧栏/全局导航等在多数路由重复出现的控件）**动态识别**，
-    不硬编任何具体产品/账号的标签——这样门对任何被调研产品都成立，也不夹带隐私。
-    """
+    """从 deep-tree 计算每路由的（非内容）功能控件宇宙——与报告生成用同一套过滤。"""
     routes = collections.defaultdict(set)
     for n in nodes:
         r = route_of(n)
         for e in n.get('els', []):
             t = (e.get('txt') or '').strip()
             if not t or t == '[user-content]' or e.get('userContent'): continue
-            if len(t) > 24 or is_usercontent(t): continue
             routes[r].add(t)
-    # 出现在过半路由上的控件判为 chrome（全局重复），从各路由功能集里剔除
-    if len(routes) >= 2:
-        freq = collections.Counter()
-        for ctrls in routes.values():
-            for c in ctrls:
-                freq[c] += 1
-        chrome = {c for c, cnt in freq.items() if cnt > len(routes) / 2}
-        routes = collections.defaultdict(set, {r: (ctrls - chrome) for r, ctrls in routes.items()})
     return routes
 
 MARKER = re.compile(r'<!--\s*screen\s+route=(\S+)\s+shot=(\S+)\s+type=(\S+)\s*-->')
@@ -116,7 +110,13 @@ def validate_events(path, manifest_path, data_routes, md):
     for route, target in extra:
         errors.append(f'[事件无来源] route={route} target={target} 不在 deep-tree 去噪控件全集')
     done = sum(1 for key in universe if len(by_key.get(key, [])) == 1)
-    lines.append(f'  事件账覆盖 {done}/{len(universe)} = {(done / len(universe) if universe else 1):.0%}')
+    verified = sum(1 for key in universe if len(by_key.get(key, [])) == 1
+                   and by_key[key][0].get('classification') == 'verified')
+    if not universe:
+        errors.append('[无可验证范围] 分母为空，不能用 0/0 声称 100%')
+    else:
+        lines.append(f'  处置有交代 {done}/{len(universe)} = {done / len(universe):.0%}；'
+                     f'实测 verified {verified}/{len(universe)} = {verified / len(universe):.0%}')
     return errors, lines
 
 def main():
@@ -137,6 +137,8 @@ def main():
     md = open(a.report, encoding='utf-8').read()
 
     data_routes = denoise_controls(nodes)
+    if not nodes or not any(data_routes.values()):
+        print('UNABLE: 未取得可验证的功能范围，0/0 不等于全部通过', file=sys.stderr); return 2
     all_routes = set(route_of(n) for n in nodes)
     all_shots = set(n['shot'] for n in nodes)
     screens, ledger = parse_report(md)
@@ -163,8 +165,7 @@ def main():
     cov_report = []
     for r in sorted(all_routes):
         if r not in screens: continue
-        if screens[r]['type'] == 'feed':
-            cov_report.append(f'  {r:16} type=feed 内容排除，仅查屏存在 ✓'); continue
+        # Feed content is excluded only by per-element userContent; real controls stay in scope.
         universe = data_routes.get(r, set())
         if not universe:
             cov_report.append(f'  {r:16} 无功能控件（空屏）✓'); continue

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "registryVersion": "2026-09-21.1",
+  "registryVersion": "2026-09-21.2",
   "description": "product-flow 的机器正本：模块、依赖、输出、门禁、运行别名与 HTML 完成度由本文件计算。文档负责解释，不再另抄一份可执行清单。",
   "claimOrder": [
     "exploration",
@@ -171,6 +171,13 @@
       "gateKind": "machine"
     },
     {
+      "id": "R-S2-QUALITY",
+      "modules": ["S2"],
+      "gate": "research-quality-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
       "id": "R-S2-AUDIENCE",
       "modules": ["S2"],
       "gate": "audience-gate.py",
@@ -181,7 +188,16 @@
       "id": "R-S2-FEISHU",
       "modules": ["S2"],
       "gate": "feishu-delivery-gate.py",
-      "ruleType": "required",
+      "ruleType": "conditional",
+      "when": {"documentPlatform": "feishu"},
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S2-DINGTALK",
+      "modules": ["S2"],
+      "gate": "dingtalk-delivery-gate.py",
+      "ruleType": "conditional",
+      "when": {"documentPlatform": "dingtalk"},
       "gateKind": "machine"
     },
     {
@@ -633,7 +649,7 @@
         "research/atomic-feature-ledger.md",
         "research/traversal-events.json",
         "research/evidence-manifest.json",
-        "research/feishu-delivery-receipt.json",
+        "research/document-delivery-receipt.json",
         "research-decision-ledger.md",
         "research-traceability.json"
       ],
@@ -644,7 +660,7 @@
         "research/atomic-feature-ledger.md": "template",
         "research/traversal-events.json": "template",
         "research/evidence-manifest.json": "template",
-        "research/feishu-delivery-receipt.json": "generated:feishu-delivery-gate 双格式回读后生成，手写即伪造",
+        "research/document-delivery-receipt.json": "generated:所选文档平台交付门回读后生成，手写即伪造",
         "research-decision-ledger.md": "template",
         "research-traceability.json": "generated:research-gate 对账时产出的追溯映射，手写即伪造"
       },
@@ -737,13 +753,13 @@
         "business-map.md"
       ],
       "outputs": [
-        "飞书 PRD v0.9",
+        "协作文档 PRD v0.9",
         "PRD.md 镜像",
         "prd-backfill.md"
       ],
       "maxClaim": "module-approved",
       "outputKinds": {
-        "飞书 PRD v0.9": "external:飞书原生文档，本地无模板；镜像用 prd-complete.md",
+        "协作文档 PRD v0.9": "external:所选飞书或钉钉原生文档，本地无模板；镜像用 prd-complete.md",
         "PRD.md 镜像": "template",
         "prd-backfill.md": "template"
       },
@@ -854,14 +870,14 @@
         "三方联合验收"
       ],
       "outputs": [
-        "飞书 PRD v1.0",
+        "协作文档 PRD v1.0",
         "contract-manifest.json",
         "triad-reconciliation.md",
         "三方批准 receipt"
       ],
       "maxClaim": "integrated-frozen",
       "outputKinds": {
-        "飞书 PRD v1.0": "external:飞书原生文档",
+        "协作文档 PRD v1.0": "external:所选飞书或钉钉原生文档",
         "contract-manifest.json": "template",
         "triad-reconciliation.md": "template",
         "三方批准 receipt": "evidence:三方批准回执，进 state.md"
@@ -887,17 +903,17 @@
         "four-node-review 版本与终审约束"
       ],
       "outputs": [
-        "飞书技术、算法与测试方案",
+        "协作文档技术、算法与测试方案",
         "S8 受控镜像",
         "技术/算法/测试追溯矩阵",
         "三专业批准与回读 receipt"
       ],
       "maxClaim": "module-approved",
       "outputKinds": {
-        "飞书技术、算法与测试方案": "external:飞书原生文档；受控镜像用 s8-solution-plan.md",
+        "协作文档技术、算法与测试方案": "external:所选飞书或钉钉原生文档；受控镜像用 s8-solution-plan.md",
         "S8 受控镜像": "template",
         "技术/算法/测试追溯矩阵": "evidence:TECH/ALG/TEST 对账矩阵，随方案交付",
-        "三专业批准与回读 receipt": "evidence:批准与飞书回读回执"
+        "三专业批准与回读 receipt": "evidence:批准与所选平台回读回执"
       },
       "outputTemplates": {
         "S8 受控镜像": "templates/s8-solution-plan.md"
@@ -945,7 +961,7 @@
         "锚定的 coding-standards 与 four-node-review"
       ],
       "outputs": [
-        "飞书工程测试与四节点终审报告",
+        "协作文档工程测试与四节点终审报告",
         "S9.2 受控镜像",
         "用例执行证据",
         "测试工程师对当前构建的 GUI 全流程逐步证据",
@@ -956,7 +972,7 @@
       ],
       "maxClaim": "module-approved",
       "outputKinds": {
-        "飞书工程测试与四节点终审报告": "external:飞书原生文档；受控镜像用 s9-quality-report.md",
+        "协作文档工程测试与四节点终审报告": "external:所选飞书或钉钉原生文档；受控镜像用 s9-quality-report.md",
         "S9.2 受控镜像": "template",
         "用例执行证据": "evidence:用例执行留痕",
         "测试工程师对当前构建的 GUI 全流程逐步证据": "evidence:逐步 GUI 实走证据，必须绑定当前构建",
@@ -983,7 +999,7 @@
         "角色/账号/测试数据"
       ],
       "outputs": [
-        "飞书产品经理 GUI 走查与四方验收报告",
+        "协作文档产品经理 GUI 走查与四方验收报告",
         "S9.3 受控镜像",
         "产品经理独立 GUI 逐步证据",
         "PRD↔应用/HTML↔应用/Figma↔应用三条对账",
@@ -992,7 +1008,7 @@
       ],
       "maxClaim": "module-approved",
       "outputKinds": {
-        "飞书产品经理 GUI 走查与四方验收报告": "external:飞书原生文档；受控镜像用 s9-product-walkthrough.md",
+        "协作文档产品经理 GUI 走查与四方验收报告": "external:所选飞书或钉钉原生文档；受控镜像用 s9-product-walkthrough.md",
         "S9.3 受控镜像": "template",
         "产品经理独立 GUI 逐步证据": "evidence:产品经理亲自实走的逐步证据",
         "PRD↔应用/HTML↔应用/Figma↔应用三条对账": "evidence:四方对账结果，写进走查报告",

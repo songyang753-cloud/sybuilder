@@ -1,0 +1,45 @@
+{
+  "name": "@sybuilder/internal-diagramming",
+  "version": "1.0.5-vendored",
+  "private": true,
+  "description": "Vendored internal diagramming module for SYBuilder; not a separately discoverable Skill.",
+  "keywords": [
+    "claude-code",
+    "codex",
+    "openai-codex",
+    "agent-skills",
+    "skill",
+    "diagram",
+    "svg",
+    "architecture",
+    "flowchart",
+    "uml",
+    "sequence-diagram",
+    "er-diagram",
+    "visualization"
+  ],
+  "license": "MIT",
+  "sybuilderVendoredFrom": {
+    "name": "@yizhiyanhua-ai/fireworks-tech-graph",
+    "version": "1.0.5",
+    "repository": "https://github.com/yizhiyanhua-ai/fireworks-tech-graph"
+  },
+  "files": [
+    "MODULE.md",
+    "README.md",
+    "README.zh.md",
+    "LICENSE",
+    "agents/",
+    "references/",
+    "scripts/",
+    "tests/",
+    "fixtures/",
+    "templates/",
+    "assets/",
+    "!**/__pycache__/**",
+    "!**/*.pyc"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

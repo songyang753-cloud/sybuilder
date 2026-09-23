@@ -3,12 +3,12 @@
     {
       "id": "EVENT-001",
       "route": "/a",
-      "target": "创建",
+      "target": "创建任务",
       "classification": "verified",
-      "beforeState": "空闲",
-      "action": "点击创建",
-      "afterState": "完成",
-      "result": "成功提示",
+      "beforeState": "空提交后显示请输入任务名称；输入整理需求",
+      "action": "点击创建任务",
+      "afterState": "列表出现整理需求，输入框清空",
+      "result": "任务已创建：整理需求",
       "evidenceId": "SHOT-001"
     }
   ]

@@ -30,6 +30,7 @@ python3 "${ROOT}/skills/product-flow/scripts/_feishu.py" --self-test
 python3 "${ROOT}/skills/product-flow/scripts/dingtalk-delivery-gate.py" --self-test
 python3 "${ROOT}/skills/product-flow/scripts/doc-sync-guard.py" --self-test
 python3 "${ROOT}/scripts/test-release-regressions.py"
+python3 "${ROOT}/scripts/test-remediation-contracts.py"
 node "${ROOT}/scripts/test-crawler-regressions.cjs"
 python3 "${ROOT}/scripts/test-w5.py"
 python3 "${ROOT}/skills/product-flow/tests/s2-golden/run-golden.py"

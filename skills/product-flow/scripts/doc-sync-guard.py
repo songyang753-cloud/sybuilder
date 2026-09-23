@@ -4,7 +4,7 @@
 格式边界守卫 —— md（中间格式）↔ 飞书/钉钉文档 · Figma · HTML 的信息丢失与遗留。
 
 ═══ 它要治的病 ═══
-本 skill 的中间格式是 md，而三个终点分别是**飞书文档 / Figma / HTML**。
+本 skill 的中间格式是 md，终点包括**飞书或钉钉文档 / Figma / HTML**。
 md「只有内容没有格式」带来的问题**不是排版难看**，而是下面这三类，且都静默：
 
   ① 写出去丢（md → 远端）
@@ -14,7 +14,7 @@ md「只有内容没有格式」带来的问题**不是排版难看**，而是�
      · 图片位置靠偏移推算，而**偏移在同一篇文档内会漂移**
 
   ② 读不回来（远端 → md）——**最危险的一类，此前完全没有机制**
-     链接一旦发出去，别人就会直接在飞书里改。而本地 `prd/` 只是「可 diff 的副本」。
+     链接一旦发出去，别人就会直接在飞书或钉钉里改。而本地 `prd/` 只是「可 diff 的副本」。
      **没有任何机制检测远端被别人改过** → 下一次本地覆写＝静默覆盖别人的修改，不可恢复。
      这不是"格式丢失"，这是**内容丢失**，而且丢的是别人的工作。
 
@@ -33,7 +33,7 @@ md「只有内容没有格式」带来的问题**不是排版难看**，而是�
   doc-sync-guard.py record <file.md> --url <远端链接> --kind feishu|dingtalk|figma
   doc-sync-guard.py check  <file.md> [--readback <回读下来的.md>]
   doc-sync-guard.py figma-anchors <PRD.md>                     # 校验第四章的 Figma 链接双锚
-  doc-sync-guard.py lease    <file.md>    # 写前租约：经飞书 CLI 取远端 revision，没动过才许覆写
+  doc-sync-guard.py lease    <file.md>    # 写前租约：经 sidecar 所选平台官方 CLI 回读版本，没动过才许覆写
   doc-sync-guard.py readback <file.md>    # 写后回读：真拿远端内容对结构+刷新基线（写 lastReadbackAt）
   doc-sync-guard.py --self-test
 退出码: 0=一致 1=不一致（丢失/漂移） 2=跑不了
@@ -69,6 +69,7 @@ def tables(s):
     return out
 
 def fingerprint(s):
+    from _document_sync import content_model, media_sources
     heads = re.findall(r'^(#{1,4})\s*(.+?)\s*$', s, re.M)
     tb = tables(s)
     return {
@@ -78,7 +79,8 @@ def fingerprint(s):
         "heading_count": len(heads),
         "table_count": len(tb),
         "table_cols": tb,
-        "image_count": len(re.findall(r'!\[[^\]]*\]\(', s)),
+        "image_count": len(media_sources(s)),
+        "content_model": content_model(_lark2md(s)),
         "_raw": s,
         "link_count": len(re.findall(r'(?<!!)\[[^\]]+\]\(', s)),
         # 抽查锚：每章第一个独有长串，用于判「内容缺一大块」
@@ -87,7 +89,7 @@ def fingerprint(s):
 
 def side(p): return p + ".sync.json"
 
-def cmd_record(p, url, kind, replace_reason=None):
+def cmd_record(p, url, kind, replace_reason=None, preserve_attempt=False):
     fp = fingerprint(read(p))
 
     # ⭐ 正本唯一性（2026-09-16 补）：**登记新远端之前**先问「这份交付是不是已经有正本」。
@@ -106,12 +108,15 @@ def cmd_record(p, url, kind, replace_reason=None):
             print("   `record %s --url <新> --replace-reason \"<为什么旧的作废>\"`" % p, file=sys.stderr)
             return 1
 
+    from _document_sync import begin_attempt
+    if not preserve_attempt:
+        begin_attempt(p)  # re-registration invalidates old success, even for the same URL
     io.open(side(p), 'w', encoding='utf-8').write(json.dumps({
         "local": p, "kind": kind, "url": url,
         "pushed_at": time.strftime('%Y-%m-%d %H:%M:%S'),
         "local_fp": fp, "remote_fp_at_push": None,
         "replaced": replace_reason,
-        "note": "remote_fp_at_push 由 check --readback 回填；没有它就无法判断远端是否被人改过",
+        "note": "check 只诊断；remote_fp_at_push 仅由成功的原生 readback 推进",
     }, ensure_ascii=False, indent=1))
     if replace_reason:
         print("⚠️ 覆盖了既有正本登记，理由：%s" % replace_reason)
@@ -123,6 +128,8 @@ def cmd_record(p, url, kind, replace_reason=None):
 
 def diff_fp(a, b, la, lb):
     bad = []
+    if a.get('content_model') != b.get('content_model'):
+        bad.append('正文块内容或顺序不一致（段落、列表、表格值、代码与链接均参与）')
     # 🚨 2026-09-17 实测：飞书 `docx create/update` **不上传本地图片**
     #    （`images_processed` 恒为 0），但它**照样建图块**，回读是 `<image token="" …/>`
     #    —— 文档里一排 100×100 的空框，而 write 返回 success。
@@ -183,13 +190,13 @@ def cmd_check(p, readback):
                 print("   → **绝对不许直接覆写**。先把远端改动读下来合并进本地，再推。")
                 print("   这类丢失不是格式问题，是把别人的工作静默删掉，且不可恢复。")
             else:
+                rc = 1
                 print("⚠️ 本地与远端都变了 —— 需要人工合并，不许单向覆盖")
-        rec["remote_fp_at_push"] = rb
-        rec["checked_at"] = time.strftime('%Y-%m-%d %H:%M:%S')
-        io.open(sp, 'w', encoding='utf-8').write(json.dumps(rec, ensure_ascii=False, indent=1))
+        # Diagnostic reads never advance an accepted baseline, even if repeated.
     else:
         print("⚠️ 未提供 --readback：**只校验了本地，没有校验远端**。")
         print("   这不是「通过」——远端是否收全、是否被人改过，本次没有验。")
+        rc = 2
     return rc
 
 def cmd_figma(p):
@@ -216,30 +223,46 @@ def cmd_figma(p):
 
 # ---------------------------------------------------- 编辑租约（登记册 #4，2026-09-08）
 def _feishu_read(ref):
-    """经飞书 CLI 取远端 {revision_id, content}。CLI 缺席/失败 → (None, 原因)——UNABLE 不冒充。"""
+    """经官方 lark-cli 取远端版本与 Markdown；缺席/失败即 UNABLE。"""
     import shutil
-    if not shutil.which('feishu'):
-        return None, "本机没有 feishu CLI"
-    def _read(tok):
-        try:
-            r = subprocess.run(['feishu', 'docx', 'read', tok],
-                               capture_output=True, text=True, timeout=90)
-            d = json.loads(r.stdout)
-            return d if isinstance(d, dict) and 'revision_id' in d else None
-        except Exception:
-            return None
-    m = re.search(r'([A-Za-z0-9]{20,})', ref or '')
-    d = _read(m.group(1)) if m else None
-    if d is None and ref:
-        try:
-            r = subprocess.run(['feishu', 'fetch', ref], capture_output=True, text=True, timeout=180)
-            tok = json.loads(r.stdout).get('token')
-            d = _read(tok) if tok else None
-        except Exception:
-            d = None
-    if d is None:
-        return None, "飞书回读失败（token 解析不出或 CLI 报错）"
-    return d, None
+    if not shutil.which('lark-cli'):
+        return None, "本机没有官方 lark-cli"
+    try:
+        r = subprocess.run(['lark-cli', 'docs', '+fetch', '--as', 'user', '--doc', ref,
+                            '--scope', 'full', '--detail', 'full', '--doc-format', 'markdown'],
+                           capture_output=True, text=True, timeout=180)
+        if r.returncode != 0:
+            return None, "lark-cli docs +fetch 失败:%s" % (r.stderr or r.stdout)
+        raw = json.loads(r.stdout)
+        if isinstance(raw, dict) and raw.get('ok') is False:
+            return None, "lark-cli 未授权或回读失败:%s" % raw.get('error')
+        md = _deep_value(raw, {'markdown', 'content', 'body'})
+        if not isinstance(md, str) or not md:
+            return None, "lark-cli 回读没有 Markdown 正文"
+        revision = _deep_value(raw, {'revision_id', 'revisionId', 'version', 'revision'})
+        if revision in (None, ''):
+            revision = hashlib.sha256(md.encode('utf-8')).hexdigest()[:16]
+        return {'revision_id': revision, 'markdown': md,
+                'native_revision': _deep_value(raw, {'revision_id', 'revisionId', 'version', 'revision'}) is not None}, None
+    except Exception as e:
+        return None, "lark-cli 回读失败:%s" % e
+
+
+def _deep_value(obj, keys):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k in keys and v not in (None, ''):
+                return v
+        for v in obj.values():
+            got = _deep_value(v, keys)
+            if got not in (None, ''):
+                return got
+    if isinstance(obj, list):
+        for v in obj:
+            got = _deep_value(v, keys)
+            if got not in (None, ''):
+                return got
+    return None
 
 
 def _lark_cell(td):
@@ -248,7 +271,7 @@ def _lark_cell(td):
 
 
 def _lark2md(src):
-    """`feishu fetch` 的 markdown 字段里表是 <lark-table> 包裹 —— 转成 md 表再指纹。
+    """飞书官方回读里的 <lark-table> 转成 Markdown 表再做指纹。
     相邻表之间补空行（BIG-60 实测坑：不补两表并成一张）。"""
     def one(m):
         rows = []
@@ -263,38 +286,65 @@ def _lark2md(src):
 
 
 def _feishu_markdown(ref):
-    """经 `feishu fetch` 取远端 **markdown**（结构保真的那份）。
+    """经官方 `lark-cli docs +fetch` 取结构保真的 Markdown。
 
     🔴 2026-09-09 实录：`docx read` 的 `content` 字段是**拍平纯文本**（标题表格全没了），
     拿它做结构指纹得到 0 表 + 5 个「幽灵标题」（正文里字面以 `# ` 开头的行）——
     remote_fp_at_push 自 09-08 起记的就是这份垃圾，漂移检测武装的是幽灵基线，
     而真远端（fetch .markdown + lark 表转换后）与本地 195/125 零差异。
     ⛔ 指纹只许打在 markdown 上；拿不到 markdown = UNABLE，不许退回 content。"""
+    data, err = _feishu_read(ref)
+    if data is None:
+        return None, err
+    return _lark2md(data['markdown']), None
+
+
+def _dingtalk_read(ref):
+    """经官方 dws 回读远端版本与 Markdown。"""
     import shutil
-    if not shutil.which('feishu'):
-        return None, "本机没有 feishu CLI"
+    if not shutil.which('dws'):
+        return None, "本机没有官方 dws"
     try:
-        r = subprocess.run(['feishu', 'fetch', ref], capture_output=True, text=True, timeout=180)
-        md = json.loads(r.stdout).get('markdown')
-        if not md:
-            return None, "fetch 结果没有 markdown 字段"
-        return _lark2md(md), None
+        r = subprocess.run(['dws', 'doc', '+fetch', '--node', ref, '--format', 'json'],
+                           capture_output=True, text=True, timeout=180)
+        if r.returncode != 0:
+            return None, "dws doc +fetch 失败:%s" % (r.stderr or r.stdout)
+        raw = json.loads(r.stdout)
+        if isinstance(raw, dict) and (raw.get('success') is False or raw.get('error')):
+            return None, "dws 回读失败:%s" % (raw.get('error') or raw)
+        md = _deep_value(raw, {'markdown', 'content', 'body', 'text'})
+        if not isinstance(md, str) or not md:
+            return None, "dws 回读没有正文"
+        revision = _deep_value(raw, {'revision_id', 'revisionId', 'version', 'revision'})
+        if revision in (None, ''):
+            revision = hashlib.sha256(md.encode('utf-8')).hexdigest()[:16]
+        return {'revision_id': revision, 'markdown': md,
+                'native_revision': _deep_value(raw, {'revision_id', 'revisionId', 'version', 'revision'}) is not None}, None
     except Exception as e:
-        return None, "feishu fetch 失败：%s" % e
+        return None, "dws 回读失败:%s" % e
+
+
+def _platform_read(kind, ref):
+    if kind == 'feishu':
+        return _feishu_read(ref)
+    if kind == 'dingtalk':
+        return _dingtalk_read(ref)
+    return None, "kind=%s 没有原生回读适配器" % kind
 
 
 def cmd_lease(p):
     """写前租约：远端 revision 与上次回读一致才许覆写。
 
     治的是 docstring ② 那类：链接发出去后别人在飞书里改了——本地下一次覆写＝
-    静默删掉别人的工作。有了 revision 原语（2026-09-08 实测 feishu docx read 暴露
-    revision_id，写后递增），漂移从「靠人记得」变成机器判定。
+    静默删掉别人的工作。官方回读提供 revision 时使用 revision；不提供时使用结构化
+    Markdown 内容哈希，漂移从「靠人记得」变成机器判定。
     """
     sp = side(p)
     if not os.path.exists(sp):
         print("UNABLE: 没有 %s —— 先 record 登记远端" % sp, file=sys.stderr); sys.exit(2)
     rec = json.loads(read(sp))
-    d, err = _feishu_read(rec.get('doc_token') or rec.get('url') or '')
+    kind = rec.get('kind') or 'feishu'
+    d, err = _platform_read(kind, rec.get('doc_token') or rec.get('url') or '')
     if d is None:
         print("UNABLE: %s —— 租约建立不了＝**不许写**（这不是通过）" % err, file=sys.stderr)
         sys.exit(2)
@@ -307,7 +357,7 @@ def cmd_lease(p):
         return 0
     if rev != base:
         print("🔴 远端漂移：本地基于 revision=%s，远端已是 %s —— **禁止覆写**。" % (base, rev))
-        print("   先把远端改动读下来合并（`feishu docx read`），再 `readback` 刷新基线。")
+        print("   先用选定平台官方 CLI 回读并合并远端改动，再 `readback` 刷新基线。")
         print("   这不是格式问题：直接覆写＝把别人的修改静默删掉，不可恢复。")
         return 1
     io.open(sp, 'w', encoding='utf-8').write(json.dumps(rec, ensure_ascii=False, indent=1))
@@ -315,7 +365,7 @@ def cmd_lease(p):
     return 0
 
 
-def cmd_readback(p):
+def cmd_readback(p, expected_revision=None):
     """写后回读：**真拿远端内容**对结构（压列/缺章抓现行），刷新 revision 基线。
 
     与 `check --readback <文件>` 的差别：那条要人工导出回读文件，这条自己去取——
@@ -326,42 +376,70 @@ def cmd_readback(p):
     if not os.path.exists(sp):
         print("UNABLE: 没有 %s —— 先 record 登记远端" % sp, file=sys.stderr); sys.exit(2)
     rec = json.loads(read(sp))
-    d, err = _feishu_read(rec.get('doc_token') or rec.get('url') or '')
+    from _document_sync import begin_attempt, source_hash
+    attempt = begin_attempt(p) if expected_revision is None else json.loads(read(p + '.attempt.json'))
+    rec['validationStatus'] = 'UNABLE'
+    rec['attemptId'] = attempt['attemptId']
+    io.open(sp, 'w', encoding='utf-8').write(json.dumps(rec, ensure_ascii=False, indent=1))
+    kind = rec.get('kind') or 'feishu'
+    d, err = _platform_read(kind, rec.get('doc_token') or rec.get('url') or '')
     if d is None:
         print("UNABLE: %s —— 没回读到＝没验证（这不是通过）" % err, file=sys.stderr)
         sys.exit(2)
     # ⛔ 结构指纹只许打在 markdown 上（`content` 是拍平文本，见 _feishu_markdown 实录）
-    md, merr = _feishu_markdown(rec.get('url') or rec.get('doc_token') or '')
-    if md is None:
-        print("UNABLE: %s —— 拿不到结构保真的 markdown＝没验证（⛔ 不退回拍平文本冒充）" % merr,
-              file=sys.stderr)
-        sys.exit(2)
+    md = _lark2md(d['markdown']) if kind == 'feishu' else d['markdown']
     rb = fingerprint(md)
     lost = diff_fp(fingerprint(read(p)), rb, "本地", "远端")
+    if d.get('native_revision') is False:
+        lost.append('UNABLE: 平台未返回原生版本；内容哈希不能证明文本与媒体同版')
+    if expected_revision is not None and str(d['revision_id']) != str(expected_revision):
+        lost.append('回读期间远端版本变化，文本与媒体不能拼接签发')
+    if source_hash(p) != attempt['sourceHash']:
+        lost.append('回读期间本地源稿变化，不能批准新内容')
+    from _document_sync import current_media_validation
+    try:
+        rec['mediaValidation'] = current_media_validation(
+            p, attempt, rec.get('doc_token') or rec.get('url'), d['revision_id'])
+    except RuntimeError as exc:
+        lost.append(str(exc))
+    if lost:
+        rec['validationStatus'] = 'FAIL'
+        rec['validationIssues'] = lost
+        io.open(sp, 'w', encoding='utf-8').write(json.dumps(rec, ensure_ascii=False, indent=1))
+        print('🔴 写入丢失（真实回读对不上）；不刷新已验基线，不签通过回执：')
+        for issue in lost:
+            print('   · ' + issue)
+        return 1
+    rec['validationStatus'] = 'PASS'
+    rec['validationIssues'] = []
     rec['remote_revision'] = d['revision_id']
     rec['remote_fp_at_push'] = rb
     rec['lastReadbackAt'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+    rec['local_fp'] = fingerprint(read(p))
     io.open(sp, 'w', encoding='utf-8').write(json.dumps(rec, ensure_ascii=False, indent=1))
     # 签发 receipt（登记册 #3 本地半场）：一次真实回读一张凭据，rawEvidence=sidecar 本身。
     # PF_RECEIPT_ENV=test 只能把凭据降为 test（不解真实上限）——方向安全；默认 live。
     rcpt_path = p + '.receipt.json'
+    raw_path = p + '.readback.' + attempt['attemptId'] + '.json'
+    io.open(raw_path, 'w', encoding='utf-8').write(json.dumps(rec, ensure_ascii=False, indent=1))
+    attempt['status'] = 'PASS'
+    io.open(p + '.attempt.json', 'w', encoding='utf-8').write(json.dumps(attempt))
     io.open(rcpt_path, 'w', encoding='utf-8').write(json.dumps({
-        'receiptSchema': '1.0',
-        'receiptId': 'ER-feishu-%s' % time.strftime('%Y%m%d%H%M%S'),
-        'artifactKind': 'feishu-prd',
-        'artifactRef': (rec.get('doc_token') or rec.get('url') or '')[:80],
+        'receiptSchema': '2.0',
+        'receiptId': 'ER-%s-%s' % (kind, time.strftime('%Y%m%d%H%M%S')),
+        'artifactKind': '%s-prd' % kind,
+        'artifactRef': rec.get('doc_token') or rec.get('url') or '',
         'nativeVersion': str(d['revision_id']),
         'capabilitiesExercised': ['readback'],
         'observedAt': rec['lastReadbackAt'],
-        'adapter': {'name': 'doc-sync-guard.readback', 'version': '1'},
-        'rawEvidenceRef': os.path.basename(sp),
+        'adapter': {'name': 'doc-sync-guard.readback', 'version': '2'},
+        'rawEvidenceRef': os.path.basename(raw_path),
+        'rawEvidenceHash': hashlib.sha256(open(raw_path, 'rb').read()).hexdigest(),
+        'attemptRef': os.path.basename(p + '.attempt.json'), 'attemptId': attempt['attemptId'],
+        'sourceRef': os.path.abspath(p), 'sourceHash': attempt['sourceHash'],
         'environment': 'test' if os.environ.get('PF_RECEIPT_ENV') == 'test' else 'live',
+        'validationStatus': 'PASS',
     }, ensure_ascii=False, indent=1))
-    if lost:
-        print("🔴 写入丢失（真实回读对不上）：")
-        for x in lost: print("   · %s" % x)
-        print("   → 重写再回读。write 返回 success 不等于内容进去了。")
-        return 1
     print("✅ 回读一致（revision=%s）。receipt 已签发：%s" % (d['revision_id'], rcpt_path))
     print("   → contract-manifest 填 prd.readbackReceipt=<该文件路径>（G7.5 ⑦ 只认 receipt，裸时间戳不算）")
     return 0
@@ -469,31 +547,20 @@ def self_test():
     case("反例：链接缺 node-id",
          run('figma-anchors', w('pc.md', PRD_OK.replace("?node-id=1-2", ""))), 1)
 
-    # lease/readback：假 feishu 挡在 PATH 最前（⛔ 探针不打真网——真 CLI 排在后面轮不到）
+    # lease/readback：假 lark-cli 挡在 PATH 最前（⛔ 探针不打真网）
     bindir = os.path.join(t, 'bin'); os.makedirs(bindir, exist_ok=True)
-    fake_out = os.path.join(t, 'fake-feishu-out.json')
-    fake_fetch = os.path.join(t, 'fake-feishu-fetch.json')
-    # ⚠️ 假 CLI 必须复现真 CLI 的**格式契约**（09-09 实录：旧夹具让 content 装着
-    #    结构化 md，而真 `docx read` 的 content 是拍平文本 ⇒ 自测绿、生产指纹全是垃圾——
-    #    「夹具必须复现前置条件」的整形实例）。现按子命令分发：fetch → markdown JSON。
-    io.open(os.path.join(bindir, 'feishu'), 'w', encoding='utf-8').write(
-        '#!/bin/sh\nif [ "$1" = "fetch" ]; then cat "$FAKE_FEISHU_FETCH"; '
-        'else cat "$FAKE_FEISHU_OUT"; fi\n')
-    os.chmod(os.path.join(bindir, 'feishu'), 0o755)
-    envF = dict(os.environ, PATH=bindir + ':/usr/bin:/bin', FAKE_FEISHU_OUT=fake_out,
-                FAKE_FEISHU_FETCH=fake_fetch,
+    fake_out = os.path.join(t, 'fake-lark-out.json')
+    io.open(os.path.join(bindir, 'lark-cli'), 'w', encoding='utf-8').write(
+        '#!/bin/sh\ncat "$FAKE_LARK_OUT"\n')
+    os.chmod(os.path.join(bindir, 'lark-cli'), 0o755)
+    envF = dict(os.environ, PATH=bindir + ':/usr/bin:/bin', FAKE_LARK_OUT=fake_out,
                 PF_RECEIPT_ENV='test')   # 假 CLI 签的凭据必须是 test —— 不许冒充 live
-    envNone = dict(os.environ, PATH='/usr/bin:/bin')          # 无 feishu 的世界
+    envNone = dict(os.environ, PATH='/usr/bin:/bin')          # 无 lark-cli 的世界
     def rune(env, *a): return subprocess.call([sys.executable, os.path.abspath(__file__)] + list(a),
                                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
-    def _flatten(md):
-        # 模拟真 `docx read` 的拍平：标题记号、表格线全丢，只剩文本
-        return re.sub(r'[#|\-]+', ' ', md)
     def fake(rev, content, fetch_md=None):
         io.open(fake_out, 'w', encoding='utf-8').write(
-            json.dumps({'revision_id': rev, 'content': _flatten(content)}))
-        io.open(fake_fetch, 'w', encoding='utf-8').write(
-            json.dumps({'token': 'T', 'markdown': content if fetch_md is None else fetch_md}))
+            json.dumps({'revision_id': rev, 'markdown': content if fetch_md is None else fetch_md}))
     pl = w('lease.md', BASE); run('record', pl, '--url', 'https://x/docx/AAAABBBBCCCCDDDDEEEE1111', '--kind', 'feishu')
     fake(5, BASE)
     case("lease：基线建立 → 0", rune(envF, 'lease', pl), 0)
@@ -535,11 +602,11 @@ def self_test():
         "| a | b | c | d |\n|---|---|---|---|\n| 1 | 2 | 3 | 4 |", _lark_tbl))
     case("readback：远端表是 lark-table 格式 → 转换后一致 → 0", rune(envF, 'readback', pl), 0)
     # fetch 无 markdown 字段 → UNABLE(2)，⛔ 不许退回拍平 content 冒充指纹
-    io.open(fake_fetch, 'w', encoding='utf-8').write('{}')
+    io.open(fake_out, 'w', encoding='utf-8').write('{}')
     case("UNABLE：fetch 无 markdown → 2（不拿拍平文本冒充）", rune(envF, 'readback', pl), 2)
     fake(8, BASE)
     case("lease：漂移后经 readback 刷新基线 → 再 lease 恢复 0", rune(envF, 'lease', pl), 0)
-    case("UNABLE：无 feishu CLI → 2（不冒充通过）", rune(envNone, 'lease', pl), 2)
+    case("UNABLE：无 lark-cli → 2（不冒充通过）", rune(envNone, 'lease', pl), 2)
     case("UNABLE：lease 无 sidecar → 2", rune(envF, 'lease', w('nolease.md', BASE)), 2)
 
     # 无 sidecar 必须报 2

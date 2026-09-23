@@ -106,7 +106,7 @@ def classify(paths, man):
     return owners, out
 
 
-def check_ownership(who, changed, man):
+def check_ownership(who, changed, man, root=None):
     owners = man['owners']
     if who not in owners:
         return None, ['未知 agent：%s（清单里有 %s）' % (who, '、'.join(k for k in owners if k != 'shared'))]
@@ -150,7 +150,7 @@ def check_ownership(who, changed, man):
             #   ⇒ 改为「点名」：成本极低、几乎不可能误伤，却真的逼人说清楚动了哪个承重件。
             _note_txt = ''
             for _n in notes:
-                _fp = os.path.join(REPO, _n)
+                _fp = os.path.join(root or REPO, _n)
                 if os.path.exists(_fp):
                     try:
                         _note_txt += io.open(_fp, encoding='utf-8', errors='replace').read()
@@ -483,9 +483,14 @@ def _self_test():
     chk('反例 C：改 shared 但没有说明条目 → 红',
         v is False and any(b.startswith('C shared') for b in bad), '实得 %s' % (bad[:1],))
 
-    v, bad = check_ownership(
-        'claude', ['skills/product-flow/SKILL.md',
-                   'skills/product-flow/.proposals/sync-to-codex-2026-09-12.md'], man)
+    # A distributable regression must not depend on private historical notes.
+    with tempfile.TemporaryDirectory(prefix='coord-note-') as note_root:
+        note = 'skills/product-flow/.proposals/synthetic-review.md'
+        note_path = os.path.join(note_root, note)
+        os.makedirs(os.path.dirname(note_path), exist_ok=True)
+        with io.open(note_path, 'w', encoding='utf-8') as stream:
+            stream.write('Reviewed change: skills/product-flow/SKILL.md. Synthetic test only.')
+        v, bad = check_ownership('claude', ['skills/product-flow/SKILL.md', note], man, root=note_root)
     chk('正例：改 shared **且**有说明条目 → 绿（⛔ 收紧不许误伤正确用法）',
         v is True, '实得 %s' % (bad[:1],))
 

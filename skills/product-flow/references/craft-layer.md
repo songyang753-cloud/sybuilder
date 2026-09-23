@@ -1,5 +1,11 @@
 # 工艺层：把「正确」抬到「高级」
 
+> **改编与许可**：本文件由 SYBuilder 选择、翻译和补充。第 1/2/4 节的设计方法参照
+> ZeroZ-lab/cc-design（README 声明 MIT）；第 7 节的配方参照 ConardLi/garden-skills（MIT）。
+> 第 3 节改编自 @meodai 的 skill.color-expert/SKILL.md（CC BY 4.0），不包含其外部文章库。
+> ui-craft、dig-ui-skill 与 dashmotion 的改编归属和完整许可见
+> [THIRD_PARTY.md](../../../THIRD_PARTY.md) 与 [来源清单](../../../licenses/sources.json)。
+
 > `visual-spec.md` 回答**做对没有**（对比度、间距倍数、圆角集合）。
 > 本文件回答**做好了没有**——构图、光学、色彩科学、情绪、delight。
 > **两者不可互替**：一个页面可以每条数值判据全绿，同时平庸得没人记得住。

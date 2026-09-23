@@ -1,8 +1,8 @@
 // 竞品遍历器 —— S2 的标准工具。广度按 AppCrawler 模型,深度按 GUI-explorer 的 transition 模型。
 //
 // ⛔ 落地细节一律走 _cdp.js(M11:以散文存在的教训等于不存在)。
-// 🚨 光标安全:只用 CDP 合成事件(Input.dispatchMouseEvent),⛔ 绝不物理鼠标——不劫用户光标。
-// 用法: node competitor-walk.mjs <port> <outdir> [--pick <s>] [--steps 40] [--sub 4]
+// 🚨 光标安全:只用 CDP 中的 DOM 合成点击，⛔ 绝不物理鼠标——不劫用户光标。
+// 用法: node competitor-walk.mjs <port> <outdir> [--pick <s>] [--steps 40] [--sub 4] [--actions policy.json]
 // 退出码: 0=遍历完成 2=UNABLE(连不上/没有能干活的 target)
 //
 // 2026-09-17 深化(治 v8「只到一级导航」浅层):
@@ -13,7 +13,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 const require = createRequire(import.meta.url);
-const { connect, DESTRUCTIVE, NOISE } = require('./_cdp.js');
+const { connect, clickExpression, actionBlockReason, loadActionPolicy } = require('./_cdp.js');
 
 const A = process.argv.slice(2);
 const PORT = A[0], OUT = A[1];
@@ -26,27 +26,37 @@ if (A.includes('--help') || A.includes('-h')) {
   console.log(fs.readFileSync(new URL(import.meta.url), 'utf8').split('\n').filter(l => l.startsWith('//')).slice(0, 40).join('\n'));
   process.exit(0);
 }
+const policy = loadActionPolicy(A.includes('--actions') ? A[A.indexOf('--actions') + 1] : '');
 
 const c = await connect(PORT, { pick }).catch(e => { console.error(e.message); process.exit(2); });
 fs.mkdirSync(path.join(OUT, 'shots'), { recursive: true });
 
 const base = await c.enumerate();
 fs.writeFileSync(path.join(OUT, 'dom-base.json'), JSON.stringify(base, null, 1));
-await c.shot(path.join(OUT, 'shots', '00-base.png'));
+async function capture(file) {
+  await c.shot(file);
+  if (!fs.existsSync(file) || !fs.statSync(file).size) {
+    c.close();
+    throw new Error('UNABLE: screenshot is empty; no evidence can be issued');
+  }
+}
+await capture(path.join(OUT, 'shots', '00-base.png'));
 process.stderr.write(`  基线: ${base.n} 控件 (导航 ${base.els.filter(e => e.nav).length}) @ ${base.url.slice(-34)}\n`);
 
-const clicked = new Set(), transitions = [], routes = new Set([base.url]);
+const clicked = new Set(), transitions = [], skipped = [], routes = new Set([base.url]);
 let step = 0;
-const sig3 = e => e.sig.split('|').slice(0, 3).join('|');
-const clickable = els => els.filter(e => e.txt && !DESTRUCTIVE.test(e.txt) && !NOISE.test(e.txt));
+const sig3 = e => e.sig;
+const clickable = els => els.filter(e => e.txt && !e.userContent);
 
-// 合成点击 + 前后差 = 这个控件真正做了什么(GUI-explorer 核心)。⛔ 只用 Input.dispatchMouseEvent。
+// 同一 DOM 调用中重新验证目标与权限后合成点击，不回退旧坐标。
 async function clickAndDiff(el, tag) {
   const before = await c.enumerate();
+  const fresh = before.els.filter(e => e.sig === el.sig);
+  const blocked = fresh.length !== 1 ? 'target-unavailable-or-ambiguous' : actionBlockReason(fresh[0], before.url, policy);
+  if (blocked) { skipped.push({sig: el.sig, reason: blocked}); return null; }
   try {
-    await c.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: el.x, y: el.y, button: 'left', clickCount: 1 });
-    await c.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: el.x, y: el.y, button: 'left', clickCount: 1 });
-  } catch (e) { return null; }
+    if (!await c.evalJS(clickExpression(el.sig, policy))) throw new Error('target changed');
+  } catch (e) { skipped.push({sig: el.sig, reason: 'click-failure'}); return null; }
   await c.sleep(1400);
   const after = await c.enumerate();
   const bs = new Set(before.els.map(e => e.sig)), as = new Set(after.els.map(e => e.sig));
@@ -55,7 +65,7 @@ async function clickAndDiff(el, tag) {
   const changed = appeared.length || gone.length || after.url !== before.url || after.title !== before.title;
   step++;
   const f = `${String(step).padStart(2, '0')}-${tag}-${el.txt.replace(/[^\w一-龥]/g, '_').slice(0, 16)}.png`;
-  await c.shot(path.join(OUT, 'shots', f));
+  await capture(path.join(OUT, 'shots', f));
   transitions.push({ step, depth: tag, clicked: el.txt, nav: !!el.nav, shot: f,
     urlBefore: before.url, urlAfter: after.url, titleAfter: after.title,
     appeared: appeared.slice(0, 20), gone: gone.slice(0, 8),
@@ -73,7 +83,8 @@ for (const navEl of navQueue) {
   clicked.add(key);
   // ② 点 nav 前重新枚举拿当前坐标 + 定位同一控件(旧版用基线旧坐标是浅层主因)
   const cur = await c.enumerate();
-  const fresh = clickable(cur.els).find(e => sig3(e) === key) || navEl;
+  const fresh = clickable(cur.els).find(e => sig3(e) === key);
+  if (!fresh) { skipped.push({sig: navEl.sig, reason: 'target-unavailable'}); continue; }
   const r = await clickAndDiff(fresh, navEl.nav ? 'nav' : 'top');
   if (!r || !r.changed) continue;                 // 这一屏没变化,不深挖
   // ③ depth-2:进了新屏 → 点该屏里若干**新出现**的子元素,走进多步旅程
@@ -94,6 +105,7 @@ const cov = { navTotal, clickTotal: base.n, visited: step, routes: routes.size,
   subVisited: transitions.filter(t => t.depth === 'sub').length,
   navCoverage: +(transitions.filter(t => t.nav).length / Math.max(navTotal, 1)).toFixed(2),
   productive: transitions.filter(t => t.counts.appeared || t.counts.gone || t.urlAfter !== t.urlBefore).length };
-fs.writeFileSync(path.join(OUT, 'transitions.json'), JSON.stringify({ coverage: cov, transitions }, null, 1));
+cov.complete = false; // bounded exploration is evidence, never proof of whole-product coverage
+fs.writeFileSync(path.join(OUT, 'transitions.json'), JSON.stringify({ coverage: cov, transitions, skipped }, null, 1));
 console.log(JSON.stringify(cov));
 c.close();

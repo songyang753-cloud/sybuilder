@@ -1,5 +1,10 @@
 # 逐组件键盘契约（可执行）
 
+> 本文与 keyboard-flows.json 选择、翻译并改编 W3C ARIA Authoring Practices Guide 的键盘指导，
+> 作者归属 W3C 及其贡献者；本地契约和测试步骤由 SYBuilder 补充，并非 W3C 认可的译本。
+> 再分发须保留 [W3C 许可与修改声明](../../../licenses/w3c--aria-practices.txt)；
+> sonder-ui 的 MIT 归属见 [第三方清单](../../../THIRD_PARTY.md)。
+
 > **来源**：W3C ARIA Authoring Practices Guide（`w3c/aria-practices`，29 个模式）·
 > `microsoft/sonder-ui`（**做过可用性研究的**无障碍组件，7 个模式带实测发现）。
 > 2026-09-03 引入。

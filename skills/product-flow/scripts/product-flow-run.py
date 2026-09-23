@@ -64,10 +64,11 @@ def _plan(args):
     modules = [x.strip() for x in (args.modules or '').split(',') if x.strip()]
     plan = resolve_plan(args.mode, modules, args.start, args.product_type,
                         args.delivery_intent, args.execution_mode, args.html_profile,
-                        args.evidence_capability, research_mode=args.research_mode)
+                        args.evidence_capability, research_mode=args.research_mode,
+                        document_platform=args.document_platform)
     manifest = dict(plan)
-    if args.run_id and not re.match(r'^[A-Za-z0-9_.-]+$', args.run_id):
-        raise WorkflowError('runId 只允许字母数字与 . _ -（防路径越界）：%r' % args.run_id)
+    if args.run_id and not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', args.run_id):
+        raise WorkflowError('runId 只允许字母数字开头及 . _ -；禁止路径越界')
     manifest['runId'] = args.run_id or _new_run_id()
     manifest['createdAt'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
     intake = _read_json(args.intake, 'intake') if args.intake else {}
@@ -188,6 +189,10 @@ def _self_test():
     chk('full-research 保留研究总门与 S1→S2 对账',
         'research-gate.py' in full_research['requiredGates']
         and 'chain-gate.py.G0' in full_research['requiredGates'])
+    dingtalk = resolve_plan('only', ['S2'], document_platform='dingtalk')
+    chk('文档平台只启用所选平台的回读门',
+        'dingtalk-delivery-gate.py' in dingtalk['requiredGates']
+        and 'feishu-delivery-gate.py' not in dingtalk['requiredGates'])
     web = resolve_plan('only', ['interaction'], product_type='web')
     _dual_rule = next(x for x in web['gatePlan'] if x['ruleId'] == 'R-S6-DUAL')
     chk('条件未命中时写入机器计算的 n-a 与 ruleId',
@@ -240,6 +245,10 @@ def _self_test():
         return manifest
 
     source = activate(resolve_plan('only', ['S1']), 'PF-source')
+    from _workflow import gate_evidence
+    output = os.path.join(t, 'definition.md')
+    with io.open(output, 'w', encoding='utf-8') as f:
+        f.write('需求定义')
     gdir = gate_result_dir(t, source)
     os.makedirs(gdir, exist_ok=True)
     for gate in source['requiredGates']:
@@ -249,6 +258,7 @@ def _self_test():
             'verdict': 'PASS', 'runId': source['runId'],
             'planHash': source['planHash'], 'ruleIds': ids,
             'claimEligible': True,
+            'evidence': gate_evidence(os.path.join(os.path.dirname(__file__), gate), [output]),
         })
     output = os.path.join(t, 'definition.md')
     with io.open(output, 'w', encoding='utf-8') as f:
@@ -312,6 +322,7 @@ def parser():
     plan.add_argument('--evidence-capability', default='native')
     plan.add_argument('--research-mode', default='full-research',
                       choices=['teardown', 'competitive-pack', 'full-research'])
+    plan.add_argument('--document-platform', default='feishu', choices=['feishu', 'dingtalk'])
     plan.add_argument('--intake', help='JSON：inputs/assumptions/openDecisions/stopLines/requiredBackfills')
     plan.add_argument('--run-id')
     plan.add_argument('--write', action='store_true')

@@ -164,7 +164,7 @@ to edit for what) and the "how to safely add a gate / reference / stage" checkli
 ## Tooling & degradation
 
 This skill is distributable and must not hard-depend on any one machine. See
-`DEPENDENCIES.md` for the required runtime (Python 3 + POSIX shell only), optional Node for
-`.mjs` gates, optional sibling skills, and pluggable delivery adapters — each with a
+`DEPENDENCIES.md` and the suite-root pinned runtime requirements (Python 3.10+ with parsers
+and image decoding; Node 22.4+ for browser/HTML stages), bundled modules and platform adapters — each with a
 documented degrade path. Any degradation must be declared in the final report, never
 silently downgraded while reported at full configuration.

@@ -6,9 +6,18 @@
       "sourcePath": "evidence/SHOT-001.png",
       "anchor": "AF-001 <功能名>",
       "eventId": "EVENT-001",
+      "eventsRef": "traversal-events.json",
       "productVersion": "<产品/版本/端/套餐>",
       "capturedAt": "<YYYY-MM-DDTHH:mm:ss+08:00>",
-      "privacyReviewed": true,
+      "kind": "gui-screenshot",
+      "privacyReviewed": false,
+      "privacyReview": {
+        "actorType": "<human | agent>",
+        "reviewer": "<reviewer>",
+        "reviewedAt": "<timestamp>",
+        "scope": "<image and metadata>",
+        "result": "UNREVIEWED"
+      },
       "proves": "<这张图能证明的具体功能事实>",
       "doesNotProve": "<这张图不能证明什么>"
     }

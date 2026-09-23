@@ -19,10 +19,20 @@ if [ "${COUNT}" != "3" ]; then
   exit 1
 fi
 
-if find -L "${TARGET}/product-flow/modules" -name SKILL.md -print -quit | grep -q .; then
+test -d "${TARGET}/product-flow/modules"
+test -d "${TARGET}/product-flow/adapters"
+for entry in research diagramming design-quality prototyping; do
+  test -f "${TARGET}/product-flow/modules/${entry}/MODULE.md"
+done
+for entry in lark dingtalk figma browser; do
+  test -f "${TARGET}/product-flow/adapters/${entry}/MODULE.md"
+done
+MODULE_SKILLS=$(find -L "${TARGET}/product-flow/modules" -name SKILL.md -print)
+if [ -n "${MODULE_SKILLS}" ]; then
   echo "Internal modules must not expose nested SKILL.md files" >&2
   exit 1
 fi
+python3 "${ROOT}/scripts/verify-modules.py"
 
 COLLISION="${TMP_ROOT}/collision"
 mkdir -p "${COLLISION}/four-node-review"
