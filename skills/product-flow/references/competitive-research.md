@@ -38,7 +38,7 @@
 | **8** | **每个可读竞品**的全员档四件：①核心体验路径 ③产品模块图 ④功能清单 ⑥页面关系图 | 各竞品档案 `c<NN>.md` | 判据 `per-comp-artifacts` 绿 |
 | **9** | **设计与交互事实库**：令牌反查表 · 组件清单 · 10 态覆盖矩阵 · 交互模式清单 | `design-tokens.md` `state-coverage.md` | 判据 `design-interaction-evidence` 绿 |
 | **10** | **截图/录屏**：三类必带图 + 功能对比表的截图证明；关键/创新动效才录屏 | `raw/<slug>/<date>/*.png` | 判据 `visual-evidence` 绿（⛔ 引用的文件必须真存在） |
-| **11** | **出图**：族×竞品对齐表 **＋** 跨竞品对照图（两种都要，见 2.5），用 `fireworks-tech-graph` | `.d2` 源 + PNG@2x | 判据 `cross-compare-both-forms` 绿 |
+| **11** | **出图**：族×竞品对齐表 **＋** 跨竞品对照图（两种都要，见 2.5），用内置 `modules/diagramming` | 受控图源 + SVG + PNG + 渲染记录 | 判据 `cross-compare-both-forms` 绿 |
 | **12** | **B 通道**：`/deep-research` 四轮（R-A 每竞品 / R-B 行业 / R-C 技术 / R-D 体验） | `deep-research/` | 判据 `deep-research-rounds` 绿 |
 | **13** | 结论层：`INNOV` 创新点 · `TREND` 趋势 · `DIFF` 差异化四要素 · `WATCH` | `innovation-trends.md` `differentiation.md` | 判据 `innovation-trend-diff` 绿 |
 | **14** | **载体映射对账**：PRD 的 14 个载体逐行核「调研这边拿什么喂它」 | `downstream-coverage.md` | 判据 `prd-carrier-coverage` 绿 |
@@ -331,18 +331,15 @@ Feishu 宽表容不下 8–12 个竞品时，按竞品列拆成多个“横向�
    ⛔ 直接用 `F-xx` 标竞品功能 = 把别人的功能编号混进我们的追溯链，后面永远分不开。
 2. **颗粒度同族**：竞品功能树的叶子，颗粒度要和我们 6.2 的 `F-xx` 同量级 ——
    否则"我们 12 个功能 vs 它 3 个功能"这种对比是量纲错误，不是结论。
-3. **图源文本可解析**（`.d2` / `.mmd` / `.puml`）：这四件套要参与后续对账，
+3. **图源文本可解析**（受控 `.json` 或 `.d2` / `.mmd` / `.puml`）：这四件套要参与后续对账，
    ⛔ 截图不能替代图源（ADR-0012）。
    ⭐ **出图沿用 `diagram-standards.md` 的八类图规范与工具链，⛔ 不另起一套**（2026-09-15 用户指令）：
-   模块/架构类用 **D2 + TALA**（实测：出现节点级跨层连线时，Mermaid 的 `direction` 失效、
-   D2-grid 塌成横带，只有 TALA 扛得住）；流程类用 Mermaid/D2。
-   **交付两件**：`.d2`/`.mmd` 源进 git 作正本 → **PNG@2x** 进报告与飞书图片块；
+   默认用内置结构化 JSON→SVG；已有模块/架构 D2 图可沿用已安装的 D2/TALA，流程图可沿用已安装的 Mermaid/D2。历史跨层布局失败案例是选型提醒，不是“只有某编译器能画”的通用结论；按本图真实渲染效果验收，缺编译器报 UNABLE。
+   **交付完整图产物**：源文件作正本 → SVG/PNG 与渲染记录 → 报告中该图位的真实图片块；
    ⛔ PNG 是产物不是正本，改图改源。
-   三个实测坑照搬那边的结论：**飞书 `docx` 退出码 3 = 文档建成但图渲染失败**（警告只打 stderr，必须显式判）·
-   D2 出 PNG 要么一个字体参数都不传、要么 `--font-regular` 与 `--font-bold` 成对传 ·
-   **断言 PNG 字节数下限**（空图/丢图时产物异常小）。
-   ⭐ **出图走 `fireworks-tech-graph` skill**（与 S4 画 PRD 图是同一条链，见 SKILL.md 交付链表）：
-   它产 SVG，再用 `rsvg-convert` 转 PNG（⛔ 别用 cairosvg，中文出豆腐块）。
+   历史通道的“建成但图片失败”提醒必须保留：不把某个旧 CLI 的退出码含义套到当前官方通道，当前以平台适配器的正文/图片/版本回读为准。D2 字体参数须匹配实际版本并成套配置；PNG 必须完整解码、核对尺寸/哈希并目检，不能只看字节数下限。
+   ⭐ **出图走内置 `modules/diagramming`**（与 S4 画 PRD 图是同一条链，见 SKILL.md 交付链表）：
+   `render-svg.py` 统一选择 CairoSVG、librsvg 或 Chrome 后备；中文必须检查字体并实际目检，不把某次缺字泛化成后端永久不可用。无需额外安装 `fireworks-tech-graph` Skill。
    ⛔ 不要为竞品图另找一个出图工具——两套风格会让「同构对照」失去意义。
    ⭐ 用同一套工具链的理由正是**同构**：竞品图要能与 PRD 图逐格对照，两套风格就没法比了。
 4. **每个节点带证据标记**：叶子功能标 `[实测·通道·日期]` / `[宣称]` / `[未获取+原因]`，

@@ -1,13 +1,13 @@
 # 竞品调研报告模板（正文对标 PRD 正文核心 · 附件对标 PRD 附件核心）
 
-> 正本方案:`.proposals/research-report-template-proposal-2026-09-17.md`(综合 /deep-research + GitHub 高分框架 + 下游 PRD 覆盖对账)。
+> 公开执行正本：`references/delivery-quality-contract.md`、`references/competitive-research.md` 与 `spec/s2-research.json`；历史私有提案不是安装或执行依赖。
 > 本模板用于 `competitive-pack/full-research` 的综合报告；单品最细拆解用 `competitor-teardown-report.md`。
-> 交付走 `python3 scripts/_feishu.py` 的 `push_deliverable`（内部固定调用官方 `lark-cli --as user`；推前必过 `audience-gate`），判据见 `references/competitive-research.md`。
+> 交付走 `scripts/_documents.py`，按任务合同选择飞书或钉钉；飞书内部固定使用官方 `lark-cli --as user`。推前必过内容审核，写后必须完成同版本正文/媒体回读和原生页面审核。
 
 ## 三条铁律（贯穿全模板）
 1. **正文给人看**(做产品决策的 PM/老板):结论先行、图文内联、逐项表态、收尾落到需求启发。**附件给人 + AI coding**:结构化事实账,供 S3/S4/S5/S6 直接取用。⛔ 过程日志(抓取管线/门禁账/收敛轨迹/需求N/内部锚点/自我复盘)**两层都不进**——进 `.proposals`/git/语料方法档。
-2. **交付件 = 飞书文档**(过 `push_deliverable`)。
-3. **架构图/流程图用专业工具做(d2/mermaid/fireworks-tech-graph),渲染后放正文内联**——⛔ 不甩「图附录·见文末」、⛔ 不是 `cNN.md#` 锚点占位、⛔ 不手绘 ASCII。个人飞书本地图片写 `![SHOT-xxx｜说明](<@./evidence/xxx.png>)`，写后必须在 XML 回读中形成非空图片实体。
+2. **交付件 = 用户选定的飞书或钉钉文档**；本地 Markdown 只是受控编辑源，不能代替已验收的原生页面。
+3. **架构图/流程图用内置 `modules/diagramming` 生成，渲染后放正文内联**——受控 JSON/SVG 或已安装的 D2/Mermaid/PlantUML 编译器共用图产物契约，不要求另装同名 Skill。⛔ 不甩「图附录·见文末」、⛔ 不是 `cNN.md#` 锚点占位、⛔ 不手绘 ASCII。个人飞书本地图片可写 `![SHOT-xxx｜说明](<@./evidence/xxx.png>)`；无论平台，写后必须核对真实图片实体、逐图上传映射与所在功能段。
 
 ## 报告二分即对标 PRD 结构
 | 报告层 | 读者 | 对标 | 覆盖 |
@@ -58,7 +58,7 @@
 - **全部功能·交互·设计**(通道 A 遍历,⛔ 走通路径不是只看首屏):
   - **内联图(全员档四件)**:核心体验路径(`core-path`)· 产品模块图(`module`,对标 6.1)· 功能架构图(`feature-tree`,对标 6.2.1)· 页面关系图(`page-graph`,对标 6.3)。
   - **深挖档再加**:关键流程图(`key-flow`,含异常/降级边,对标 5.1)· 设计交互详解(对标七章)。
-  - 功能清单:每功能 `CAF-xx` 一句可观察结果(=AC 雏形,喂附件 A)。
+  - 功能清单:每功能 `CAF-xx` 一句可观察结果只作总览(=AC 候选输入，喂附件 A)，不能替代详细正文。范围内每个最细功能均按单品模板写入口、输入、规则、状态、结果、异常恢复、限制与邻接证据；可分册，但分册须作为同版正式交付件验收。
 
 ## 四 设计与交互（对标 PRD 七章 + 附件 K/L · 通道 A）
 - **工艺信号 Craft Signals**:5 个**可复制的具体模式** + 「谁做不到」(⛔ 禁「高级/简洁」空泛形容词)。
@@ -131,9 +131,10 @@ WATCH(写**事件**不写日期)+ battle card + 更新节奏(季度;AI 快市场
 
 # 第三部分 · 共用纪律
 
-## 覆盖契约（research-gate 的分母 = `.proposals` 方案 §5 的对账表）
+## 覆盖契约（research-gate 的分母见 `references/competitive-research.md` 载体映射表）
 - **全员档**(每个可读竞品):核心路径 + 模块图 + 功能清单 + 页面关系图 + 每 CAF 可观察结果。
 - **深挖档**(3-5 家):再加 关键流程图 + 功能架构图 + 设计交互全表 + 权限矩阵 + 安全 + 字段规格 + 10 态 + 技术路线 + NFR + 目标用户/场景/价值 + 文案 + 动效。
+- 上述分档只决定额外专项实验与覆盖范围，不豁免已纳入正式深拆范围的任何叶子正文、规则/状态/恢复和证据；未知与阻断如实写，不为凑全编造事实。
 - **颗粒度 ≥ PRD**:竞品叶子与我方 `F-xx` 同量级(放进 6.2 表若太粗写不了 FR=没拆完)。
 - 够不着标 `[阻断]` 走降级阶梯;不适用写 `N/A+理由`;⛔ 都不留空、不用 `[宣称]` 拼完整;**非调研来源的 PRD 载体在报告里不出现,但对账表标明**。
 
@@ -144,14 +145,12 @@ WATCH(写**事件**不写日期)+ battle card + 更新节奏(季度;AI 快市场
 Feature Parity Matrix(加权分级)· Positioning Map · JTBD 对比 · Kano(找 delighter,12-18月复评)· Value Curve/蓝海(增减除创)· Porter 五力 · UX 拆解(Nielsen 10 启发式+task-flow)· 核心产品循环 · 工艺信号。
 
 ## 隐私清场（凡已登录态取证必填;判据 `no-private-content`）
-只取产品骨架不记用户内容;截图前退登/切测试账号/遮挡;正文与 `raw/` 逐份过一遍无会话标题/人名/路径用户名/电话。⛔ 发现已写入=当事故办:删→重推→记一笔。
+必须优先使用获准测试账号与测试数据，使原始截图本身不含私人内容；正文和原始素材逐份检查。用户要求未打码截图时，不擅自遮挡后冒称原图，也不公开敏感内容；无法避开时说明冲突并取得处理方向。发现已写入敏感内容时，先停止传播，核定受影响范围与清理权限，再纠正、重新验收并记录；不擅自删除整份远端文档。
 
 ## 交付
 ```bash
-python3 - <<'PY'
-import sys; sys.path.insert(0,'scripts'); import _feishu
-tok, ok, issues = _feishu.push_deliverable(
-    "<竞品调研报告标题>", "<报告.md>", evidence_manifest="<evidence-manifest.json>")
-print(tok, ok, issues)   # ok=False 时按 issues 清理正文再推
-PY
+python3 scripts/_documents.py --platform feishu --title '<竞品调研报告标题>' \
+  --source '<报告.md>' --evidence-manifest '<evidence-manifest.json>'
 ```
+
+选钉钉时仅把平台值改为 `dingtalk`，使用对应授权目标。创建/更新须在授权范围内；失败不签发完成回执。内容、图片和平台版本对齐后，仍须通过 `research-quality-gate.py --phase final` 的原生页面审核。

@@ -11,6 +11,12 @@ Generate production-quality SVG technical diagrams exported as PNG via `cairosvg
 
 ## Runtime Compatibility
 
+### SYBuilder 正式交付约束（优先于下文通用绘图示例）
+
+正式 S2/S4/S8 图必须遵守 `../../references/delivery-quality-contract.md` 与 `../../references/diagram-standards.md`：先从 `../../templates/diagram-source.json` 建立受控图源，使用 `scripts/generate-from-template.py` 生成 SVG，再由唯一导出入口 `scripts/render-svg.py` 导出真实 PNG 和渲染记录；逐图登记 `../../templates/diagram-manifest.json`，由 `../../scripts/diagram-id-gate.py --formal` 对账。
+
+旧 D2/Mermaid/PlantUML 图通过 `scripts/render-diagram.py` 调用已安装编译器，不把手工 SVG 当成它们的编译结果。下文空节点与自由 SVG 示例仅供草图/样式探索，不构成正式交付；正式图不得省略节点/连线、业务 ID、图位或源/SVG/PNG 绑定。所有导出统一走渲染入口的校验和逐级后备，不能单独调用某个后端绕开安全检查。缺渲染器或不能目检时保留 UNABLE/未审核，不能以两次修改次数用尽为由宣布合格。
+
 SYBuilder 直接随仓分发本模块。所有脚本和参考资料都必须用相对于本文件的路径解析，
 不得假定用户另外安装了 `fireworks-tech-graph`。
 

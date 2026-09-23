@@ -387,7 +387,9 @@ def _self_test():
     chk('反例 A：改对方的路径 → 红且点名归谁',
         v is False and any('属于 **codex**' in b for b in bad), '实得 %s' % (bad[:1],))
 
-    v, bad = check_ownership('codex', ['skills/product-flow/scripts/diagram-id-gate.py'], man)
+    # diagram-id-gate is now explicitly shared for the approved restoration.
+    # Exercise the same reverse-owner rule on a path that remains exclusive.
+    v, bad = check_ownership('codex', ['skills/product-flow/scripts/prd_completeness_check.py'], man)
     chk('反例 A2：反方向同样拦（codex 改 claude 独占路径）',
         v is False and any('属于 **claude**' in b for b in bad))
 

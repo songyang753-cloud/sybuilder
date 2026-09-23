@@ -188,4 +188,6 @@ The maintainer approved the R1–R10 remediation plan and explicitly assigned it
 
 ## Verification boundary
 
+Final review also corrected the public report template's hard-coded Feishu entry and private-proposal dependency, and routed research diagrams to the bundled renderer. Original coverage, real-image and privacy duties remain enforced with explicit no-loss migrations. The reverse-owner negative test now uses the still-exclusive PRD checker: its former diagram-checker fixture became shared under this authorized assignment. The ownership rule and original exclusive owners were not relaxed to manufacture a passing test.
+
 Source-branch ownership must be checked against `40c5d2f`, not against an empty post-merge diff. Behavioral tests, no-loss and consistency checks run on the resulting combined suite. A source-preview update does not authorize native cloud writes or certify unperformed project/performance tests. See the remediation review and stable-release blockers.

@@ -35,6 +35,18 @@ class Contracts(unittest.TestCase):
             shutil.copy(GOLD / name, self.root / name)
         return self.root
 
+    def test_public_report_routes_use_bundled_modules_and_selected_platform(self):
+        template = (S.parent / 'templates/research-report.md').read_text()
+        self.assertIn('scripts/_documents.py --platform feishu', template)
+        self.assertIn('`dingtalk`', template)
+        self.assertIn('modules/diagramming', template)
+        self.assertIn('不能替代详细正文', template)
+        self.assertNotIn('import _feishu', template)
+        self.assertNotIn('交付件 = 飞书文档', template)
+        module = (S.parent / 'modules/diagramming/MODULE.md').read_text()
+        self.assertIn('diagram-id-gate.py --formal', module)
+        self.assertIn('不能单独调用某个后端绕开安全检查', module)
+
     def test_image_valid_decode(self):
         from _image import validate_image
         w, h = validate_image(GOLD / 'shot.png')
