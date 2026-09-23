@@ -32,7 +32,7 @@ policy is not evidence of this single-maintainer assignment's approval.
 - Full gate self-tests: `python3 skills/product-flow/scripts/selftest-all.py --fresh`.
 - Cross-rule consistency, original no-loss baseline and generated-document alignment.
 - `python3 scripts/test-remediation-contracts.py`: 23 focused contract tests.
-- `python3 scripts/test-release-regressions.py`: 30 release regressions.
+- `python3 scripts/test-release-regressions.py`: 32 release regressions.
 - 14 diagram unit tests, 7 crawler probes, 2 evaluation-harness tests and the S2
   teaching sample (three cooperating gates plus seven destructive controls).
 - `python3 scripts/verify-modules.py --render`, isolated installation and public

@@ -99,6 +99,7 @@
       "skills/product-flow/tests/fixtures/filled/s9-quality-report.md"
     ],
     "shared": [
+      "skills/coding-standards/scripts/reverse-test.sh",
       "DEPENDENCIES.md",
       "PUBLICATION_CHECKLIST.md",
       "RELEASE_BLOCKERS.md",

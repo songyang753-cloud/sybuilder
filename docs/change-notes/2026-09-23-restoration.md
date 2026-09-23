@@ -11,6 +11,7 @@ The maintainer approved the R1–R10 remediation plan and explicitly assigned it
 - Script catalogue and measured counts: follow frozen-tree results; never weaken a criterion or reset the no-loss baseline to hide a regression.
 - Ownership ledger: retain original owners and all historical incident notes. Register bounded suite-publication and restored-library paths; reduce the old unregistered inventory only for the three newly registered existing entries.
 - Source publication: disclose current-tree versus historical privacy scope and native-platform verification limits. Public change notes are an additional safe documentation location, not a replacement for private historical proposals.
+- Coding-standard mutation harness: preserve the suite-root attribution layout in temporary copies and require a green pristine copy before injecting each mutation. This corrects unrelated missing-link failures, without changing expected exit codes or weakening the link checker.
 
 ## Affected paths
 
@@ -26,6 +27,7 @@ The maintainer approved the R1–R10 remediation plan and explicitly assigned it
 - `scripts/test-remediation-contracts.py`
 - `scripts/verify-modules.py`
 - `scripts/verify-suite.sh`
+- `skills/coding-standards/scripts/reverse-test.sh`
 - `skills/product-flow/CONTRIBUTING.md`
 - `skills/product-flow/DEPENDENCIES.md`
 - `skills/product-flow/README.md`

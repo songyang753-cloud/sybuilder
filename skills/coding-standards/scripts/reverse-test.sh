@@ -42,7 +42,7 @@ if ! mkdir "${LOCK}" 2>/dev/null; then
 fi
 
 # ---- 副本模式：整份 skill 复制到临时目录，兄弟 skill 软链只读（2026-09-09 codex P0-3）----
-WORKROOT="$(mktemp -d -t cs-revtest)" || { rmdir "${LOCK}" 2>/dev/null; exit 4; }
+WORKROOT="$(mktemp -d "${TMPDIR:-/tmp}/cs-revtest.XXXXXX")" || { rmdir "${LOCK}" 2>/dev/null; exit 4; }
 GOUT=""; PRE=""
 # trap 只清理临时副本 + 锁 + 临时文件 —— 真实工作区没被写，没有「还原真实文件」这一步。
 # 顺序：先删副本（体积最大、最要紧），再删锁与临时文件。SIGKILL 仍跑不到 trap，
@@ -53,13 +53,29 @@ GOUT=""; PRE=""
 trap 'rm -rf "${WORKROOT}" 2>/dev/null; rmdir "${LOCK}" 2>/dev/null; rm -f "${GOUT:-}" "${PRE:-}" 2>/dev/null' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
-COPY="${WORKROOT}/coding-standards"
+mkdir -p "${WORKROOT}/skills" || exit 4
+COPY="${WORKROOT}/skills/coding-standards"
 cp -R "${DIR}" "${COPY}" || { echo "内部错误：复制 skill 到副本失败"; exit 4; }
+# 保留发布套件的相对路径；references 中的 ../../../ 必须仍指向套件根。
+SUITE_ROOT="$(cd "${DIR}/../.." && pwd -P)"
+for _asset in THIRD_PARTY.md licenses; do
+  [ -e "${SUITE_ROOT}/${_asset}" ] && cp -R "${SUITE_ROOT}/${_asset}" "${WORKROOT}/" ||
+    { echo "内部错误：无法复制套件来源文件 ${_asset}"; exit 4; }
+done
 for _sib in four-node-review product-flow; do
   _real="${DIR}/../${_sib}"
-  [ -d "${_real}" ] && ln -s "$(cd "${_real}" && pwd -P)" "${WORKROOT}/${_sib}" 2>/dev/null
+  [ -d "${_real}" ] && ln -s "$(cd "${_real}" && pwd -P)" "${WORKROOT}/skills/${_sib}" 2>/dev/null
 done
 GATE="${COPY}/scripts/selfcheck.sh"
+GOUT="$(mktemp "${WORKROOT}/gate.XXXXXX")" || exit 4
+# 此时副本尚未变异。用副本私有 TMPDIR 检查干净基线，不让本进程的变异锁
+# 把锚点检查提前标成 UNABLE；正式变异检查仍使用原 TMPDIR 和原互斥锁。
+TMPDIR="${WORKROOT}" bash "${GATE}" > "${GOUT}" 2>&1
+if [ "$?" -ne 0 ]; then
+  echo "内部错误：副本的干净基线未通过，不能把既有失败当成变异被拦截"
+  cat "${GOUT}"
+  exit 4
+fi
 
 # ---- 定位副本里的被测文件 ----
 if [ "${IN}" = "@SRC" ]; then
@@ -117,8 +133,7 @@ PYRESOLVE
 esac
 
 # 副本的**变异前快照**，仅供「变异是否落地」的断言用（不是用来还原真实文件 —— 真实文件根本没被写）。
-PRE="$(mktemp -t revtest-pre)" || exit 4
-GOUT="$(mktemp -t revtest-gate)" || exit 4
+PRE="$(mktemp "${WORKROOT}/pre.XXXXXX")" || exit 4
 cp "$F" "$PRE"
 
 n=$(OLD="$OLD" python3 -c 'import io,os,sys;print(io.open(sys.argv[1],encoding="utf-8").read().count(os.environ["OLD"]))' "$F")

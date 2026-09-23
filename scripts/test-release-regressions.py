@@ -24,6 +24,40 @@ def load(name, path):
 
 
 class ReleaseRegressionTests(unittest.TestCase):
+    def test_reverse_probe_preserves_suite_layout_and_unable_diagnostic(self):
+        import csv
+        skill = ROOT / 'skills/coding-standards'
+        rows = csv.reader((skill / 'tests/gate-mutations.tsv').read_text().splitlines(), delimiter='\t')
+        probe = next(row for row in rows if len(row) == 6 and row[0].endswith('violating.sh') and row[3] == '3')
+        source = skill / probe[0]
+        before = source.read_bytes()
+        with tempfile.TemporaryDirectory() as temp:
+            env = dict(os.environ, TMPDIR=temp, FOUR_NODE_SKILL=str(ROOT / 'skills/four-node-review/SKILL.md'))
+            result = subprocess.run(['bash', str(skill / 'scripts/reverse-test.sh'), str(source), *probe[1:]],
+                                    env=env, capture_output=True, text=True, timeout=90)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('rc=3', result.stdout)
+        self.assertEqual(source.read_bytes(), before)
+
+    def test_reverse_probe_rejects_red_pristine_copy(self):
+        import shutil
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            skill = root / 'skills/coding-standards'
+            (skill / 'scripts').mkdir(parents=True)
+            (root / 'licenses').mkdir()
+            (root / 'THIRD_PARTY.md').write_text('Synthetic attribution')
+            helper = skill / 'scripts/reverse-test.sh'
+            shutil.copyfile(ROOT / 'skills/coding-standards/scripts/reverse-test.sh', helper)
+            (skill / 'scripts/selfcheck.sh').write_text('echo "unrelated baseline failure"\nexit 1\n')
+            source = skill / 'target.md'
+            source.write_text('original')
+            result = subprocess.run(['bash', str(helper), str(source), 'original', 'changed', '1'],
+                                    env=dict(os.environ, TMPDIR=temp), capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 4, result.stdout + result.stderr)
+            self.assertIn('unrelated baseline failure', result.stdout)
+            self.assertEqual(source.read_text(), 'original')
+
     def test_privacy_scan_detects_phone_data_without_printing_it(self):
         scanner = load('privacy_phone', ROOT / 'scripts/verify-portability.py')
         with tempfile.TemporaryDirectory() as temp:
