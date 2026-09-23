@@ -59,12 +59,16 @@ def check_package(report, path, check_teardown):
         ledger = Path(comp['ledgerPath']).read_text(encoding='utf-8')
         comp['eventRecords'] = {e.get('id'): e for e in json.loads(Path(comp['eventsPath']).read_text()).get('events', [])}
         comp['shotIds'] = {e.get('id') for e in json.loads(Path(comp['evidencePath']).read_text()).get('evidence', [])}
+        comp['featureShots'] = {}
         for af, native in mapping.items():
             all_af.add(af)
             if not re.fullmatch(r'AF-\d+', af) or not isinstance(native, list):
                 bad.append(('package-feature-map', comp['id'] + ' 功能映射非法')); continue
             if any(not re.search(r'(?<!\w)' + re.escape(n) + r'(?!\d)', ledger) for n in native):
                 bad.append(('package-feature-map', comp['id'] + ' 原生功能不在账本'))
+            for n in native:
+                body = section_at(src, r'(?<!\w)' + re.escape(n) + r'(?!\d)', regex=True) or ''
+                comp['featureShots'][n] = set(re.findall(r'\bSHOT-\d+\b', body))
     nodes = data.get('comparisonNodes', [])
     byid = {n.get('id'): n for n in nodes}
     if not nodes or len(byid) != len(nodes):
@@ -124,6 +128,12 @@ def check_package(report, path, check_teardown):
                 bad.append(('comparison-evidence', '支持性结论必须引用本竞品真实验证且成对的 EVENT/SHOT；观察或未知不能冒充支持'))
             if status == 'FULL' and any(not item['featureMap'].get(af) for af in byid[node].get('features', [])):
                 bad.append(('comparison-evidence', 'FULL 节点下每个 AF 都必须有原生功能映射'))
+            native_features = {n for af in byid[node].get('features', []) for n in item['featureMap'].get(af, [])}
+            node_shots = set().union(*(item['featureShots'].get(n, set()) for n in native_features))
+            if not shots or not shots <= node_shots:
+                bad.append(('comparison-node-evidence', '证据必须属于当前节点的原生功能正文，不能借同竞品的其他功能或附图'))
+            if status == 'FULL' and any(not shots.intersection(item['featureShots'].get(n, set())) for n in native_features):
+                bad.append(('comparison-node-evidence', 'FULL 必须覆盖当前节点下每个原生功能的证据'))
     expected = {(n, c) for n in byid for c in competitors}
     if pairs != expected: bad.append(('comparison-set', '逐级节点×全部竞品行集不完整或多出'))
     return bad

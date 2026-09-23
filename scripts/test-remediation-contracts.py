@@ -264,6 +264,18 @@ class Contracts(unittest.TestCase):
         bad=report.replace('EVENT-001 SHOT-001','EVENT-999 SHOT-999')
         self.assertIn('comparison-evidence',{k for k,_ in check_package(bad,path,gate.check_teardown)})
         self.assertIn('comparison-row',{k for k,_ in check_package(report+'\n| broken | row |',path,gate.check_teardown)})
+        # A genuine event/image elsewhere in the same product is not proof of this node.
+        data=json.loads(path.read_text());comp=data['competitors'][0]
+        src=self.root/'report.md';src.write_text(src.read_text()+'\n## 补充截图\n<!-- evidence:SHOT-002 -->\n![SHOT-002 补充](<@./shot.png>)\n')
+        ep=self.root/'evidence-manifest.json';ev=json.loads(ep.read_text())
+        item=copy.deepcopy(ev['evidence'][0]);item.update(id='SHOT-002',anchor='补充截图');ev['evidence'].append(item);ep.write_text(json.dumps(ev))
+        tp=self.root/'traversal-events.json';events=json.loads(tp.read_text())
+        event=copy.deepcopy(events['events'][0]);event.update(id='EVENT-002',evidenceId='SHOT-002');events['events'].append(event);tp.write_text(json.dumps(events))
+        for key in ('report','evidence','events'):comp[key]['sha256']=source_hash(self.root/comp[key]['path'])
+        path.write_text(json.dumps(data))
+        self.assertEqual(check_package(report,path,gate.check_teardown),[])
+        bad=report.replace('EVENT-001 SHOT-001','EVENT-002 SHOT-002')
+        self.assertIn('comparison-node-evidence',{k for k,_ in check_package(bad,path,gate.check_teardown)})
 
     def approval(self):
         source=self.root/'solution.md'
