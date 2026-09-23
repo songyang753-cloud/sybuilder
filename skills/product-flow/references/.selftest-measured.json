@@ -1,5 +1,5 @@
 {
-  "measuredAt": "2026-09-23T21:14:46",
+  "measuredAt": "2026-09-23T21:25:33",
   "scripts": 82,
   "cases": 1363,
   "failures": 0,
@@ -16,7 +16,6 @@
     "_image.py",
     "_module_contract.py",
     "_prd_parse.py",
-    "_research_package.py",
     "_roster.py",
     "_scene_parse.py",
     "_section.py",
@@ -32,6 +31,7 @@
     "chain-gate.py",
     "consistency-gate.py",
     "converge.py",
+    "coordination-gate.py",
     "coverage_check.py",
     "dead-click-gate.mjs",
     "definition-gate.py",
@@ -100,7 +100,7 @@
     "_image.py": "65f7a6939c902d5cd79f3aad8137a56d7b12270a",
     "_module_contract.py": "b55154b482ced98624a315ce6d1d1175d3a36663",
     "_prd_parse.py": "5b4f12038c7ad7fa6c7a2877ffdc8a7148ddbf4a",
-    "_research_package.py": "0c9a36a57f4edf3ca388b55c1f865e901e2fa728",
+    "_research_package.py": "bbe53570ee133c1cae31bf266e55b59258cf3786",
     "_roster.py": "68f1ad036dd9c174bf208e73d2b7554835eaa60d",
     "_scene_parse.py": "071cd96ffd679394700f4b99b48628b6b57c5a20",
     "_section.py": "75ef295476775f5c9c59d030ee53956ccc511a32",
@@ -588,8 +588,6 @@
   "negativesByExpectation": 542,
   "negativesByLabel": 692,
   "command": "python3 scripts/selftest-all.py",
-  "treeDiff": [
-    "skills/product-flow/references/.selftest-measured.json"
-  ],
-  "headAt": "3418733"
+  "treeDiff": [],
+  "headAt": "fbb4b4a"
 }
