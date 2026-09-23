@@ -43,6 +43,54 @@ The teaching sample is a real screenshot of the bundled local demo, not a commer
 competitor screenshot or a live cloud-document readback. The supplied XML is a
 synthetic contract fixture and is labelled as such.
 
+## Frozen-tree acceptance (2026-09-23)
+
+Two independent clean local clones of `be8458dc49be6536e03f8ee2105c80b6f037ef6f`
+ran `bash scripts/verify-suite.sh --full` sequentially on macOS, Python 3.10.20
+and Node 22.4.0. Both complete commands exited 0. Both recorded a clean input tree;
+only the generated measurement snapshot changed during each run.
+
+| Check | Clean run 1 | Clean run 2 |
+|---|---|---|
+| Gate self-tests | 82 scripts, 1363 cases, 0 failures | Same |
+| Actual execution / cached reuse | 82 / 0 | 82 / 0 |
+| Unable scripts / count disagreements | 0 / 0 | 0 / 0 |
+| Cross-rule consistency / original no-loss baseline | PASS / PASS | PASS / PASS |
+| Coding-standard baseline / deliberate mutations | 41 PASS; 45/45 caught, 0 unable | Same |
+| Release / remediation regression tests | 32 / 23 PASS | Same |
+| Real diagram rendering, prototype bundling, installation and packaging | PASS | PASS |
+
+The self-test snapshots match in every field except the timestamp, including all
+per-script hashes and counts. The committed snapshot is the second fresh run;
+the earlier cached diagnostic measurement is not used as final evidence.
+Any subsequent evidence-only commit preserves this measured source revision in
+`headAt`; it must not be presented as a third fresh run.
+
+The original deliberately shallow comparison/full-research sample passes the old
+retained baseline but is rejected here for missing versioned single-product inputs.
+The body-deleted readback, previously accepted with one remaining image, now fails
+with `body-mismatch`. The four supplied-template heading mismatches are eliminated.
+These are specific regression demonstrations, not a claim to have repaired a user's
+live document or completed a whole-product research study.
+
+The final review also found that the coding-standard mutation helper copied its
+Skill without the suite-root license/attribution files. This contaminated four
+expected-UNABLE controls with unrelated link failures. Its temporary layout now
+preserves the complete relative paths and a pristine-copy check runs before each
+mutation. The expected exit codes and link criteria were not relaxed.
+
+### Narrow performance check
+
+The unchanged optimized requirements checker was compared with locally retained
+baseline `08793449b1c535c1dff699f12594c8bd9aa6130a`, using the same 60 synthetic
+requirements and interpreter. Six launches per version alternated order; all exit
+codes and parsed JSON outputs matched. The first launch took 218 ms / 91 ms
+(baseline / candidate). The next five launches had medians 214 ms / 89 ms and
+ranges 209–220 ms / 88–91 ms. Median peak RSS was 14,794,752 / 14,778,368 bytes.
+No filesystem-cache eviction was performed: the first launch is not a proven
+cold-cache measurement. This validates only that checker and input, not total
+Skill latency, token cost, model quality or native-platform performance.
+
 ## What this does not certify
 
 The source remains a development preview. Stable approval still requires authorized
