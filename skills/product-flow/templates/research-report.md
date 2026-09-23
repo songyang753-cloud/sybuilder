@@ -2,7 +2,8 @@
 
 > 公开执行正本：`references/delivery-quality-contract.md`、`references/competitive-research.md` 与 `spec/s2-research.json`；历史私有提案不是安装或执行依赖。
 > 本模板用于 `competitive-pack/full-research` 的综合报告；单品最细拆解用 `competitor-teardown-report.md`。
-> 交付走 `scripts/_documents.py`，按任务合同选择飞书或钉钉；飞书内部固定使用官方 `lark-cli --as user`。推前必过内容审核，写后必须完成同版本正文/媒体回读和原生页面审核。
+> 交付走 `scripts/_documents.py`，按任务合同选择飞书或钉钉。
+> 飞书内部固定使用官方 `lark-cli --as user`。推前必过内容审核，写后必须完成同版本正文/媒体回读和原生页面审核。
 
 ## 三条铁律（贯穿全模板）
 1. **正文给人看**(做产品决策的 PM/老板):结论先行、图文内联、逐项表态、收尾落到需求启发。**附件给人 + AI coding**:结构化事实账,供 S3/S4/S5/S6 直接取用。⛔ 过程日志(抓取管线/门禁账/收敛轨迹/需求N/内部锚点/自我复盘)**两层都不进**——进 `.proposals`/git/语料方法档。
