@@ -1,0 +1,110 @@
+{
+  "_": "文案单一真源。js/60-copy.js 由 scripts/spec-to-js.py 生成，不许手改。",
+  "limits": {
+    "toastMax": 18
+  },
+  "strings": {
+    "listTitle": {
+      "text": "任务列表"
+    },
+    "detailTitle": {
+      "text": "任务详情"
+    },
+    "createTitle": {
+      "text": "新建任务"
+    },
+    "searchLabel": {
+      "text": "搜索任务"
+    },
+    "searchPh": {
+      "text": "输入标题关键字…"
+    },
+    "search": {
+      "text": "搜索"
+    },
+    "createCta": {
+      "text": "新建任务"
+    },
+    "del": {
+      "text": "删除"
+    },
+    "back": {
+      "text": "返回列表",
+      "_note": "⛔ 不许把装饰字符（← ‹ 等）写进文案：本串同时被用作**移动端 app bar 返回键的 aria-label**，读屏会把箭头念出来。2026-09-04 实测：可访问名曾是「← 返回列表」。箭头是视觉装饰，由视图层用 aria-hidden 的 span 渲染。"
+    },
+    "owner": {
+      "text": "负责人"
+    },
+    "statusLabel": {
+      "text": "状态"
+    },
+    "advance": {
+      "text": "推进到下一状态"
+    },
+    "titleLabel": {
+      "text": "标题"
+    },
+    "ownerLabel": {
+      "text": "负责人"
+    },
+    "submit": {
+      "text": "提交"
+    },
+    "submitting": {
+      "text": "提交中…"
+    },
+    "loading": {
+      "text": "加载中…"
+    },
+    "emptyTitle": {
+      "text": "还没有任务"
+    },
+    "emptyHint": {
+      "text": "新建第一条任务后，这里会显示它的进度。"
+    },
+    "errTitle": {
+      "text": "没能加载任务列表"
+    },
+    "retry": {
+      "text": "重试"
+    },
+    "noPermTitle": {
+      "text": "当前账号是只读的"
+    },
+    "noPermHint": {
+      "text": "需要编辑权限请联系空间管理员开通。"
+    },
+    "undo": {
+      "text": "撤销",
+      "limit": "toastMax"
+    },
+    "deleted": {
+      "text": "已删除",
+      "limit": "toastMax"
+    },
+    "status.todo": {
+      "text": "待办"
+    },
+    "status.doing": {
+      "text": "进行中"
+    },
+    "status.done": {
+      "text": "已完成"
+    },
+    "mobileReadOnly": {
+      "text": "移动端只读，请在桌面端操作"
+    },
+    "pcOnly": {
+      "text": "新建任务仅在桌面端提供"
+    },
+    "appName": {
+      "text": "任务工作台"
+    },
+    "pcOnlyHint": {
+      "text": "在电脑上打开同一个账号即可新建。"
+    },
+    "backToList": {
+      "text": "返回任务列表"
+    }
+  }
+}

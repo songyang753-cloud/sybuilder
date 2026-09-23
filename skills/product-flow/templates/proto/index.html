@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>可运行原型骨架</title>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body data-end="pc">
+
+<!-- 场景导航（评审用脚手架，不是产品 UI）。由路由 × 场景矩阵生成，不是手写清单。
+     ⛔ 不许放在页面底部 —— 对方浏览器不够高就直接看不见（demo-html 实战翻车记录）。 -->
+<aside id="scenenav" data-demo-chrome aria-label="演示：场景导航"></aside>
+
+<div id="stage">
+  <!-- ⛔ 端切换器也是给评审的人用的，放在设备外框**外面**、页面顶部。 -->
+  <div id="endbar" data-demo-chrome role="group" aria-label="演示：切换端">
+    <span class="hint">演示切换</span>
+    <a href="#" data-end-to="pc" id="to-pc">桌面端</a>
+    <a href="#" data-end-to="mobile" id="to-mobile">移动端</a>
+    <span class="sep" aria-hidden="true"></span>
+    <a href="#" data-theme-to="light">浅色</a>
+    <a href="#" data-theme-to="dark">深色</a>
+  </div>
+
+  <!-- 设备外框 > 端外壳 > 产品 UI -->
+  <div id="frame">
+    <div id="chrome" aria-hidden="true"></div>
+    <div id="shell">
+      <nav id="sidenav" aria-label="主导航"></nav>
+      <div id="pane">
+        <header id="appbar"></header>
+        <main id="app" data-el="app-shell"></main>
+        <nav id="tabbar" aria-label="底部导航"></nav>
+      </div>
+    </div>
+    <div id="homebar" aria-hidden="true"></div>
+  </div>
+</div><!-- /#stage -->
+
+<div id="toast" data-el="action-toast" hidden role="status" aria-live="polite"></div>
+
+<!-- ⛔ 顺序即依赖：数据 → 契约 → 状态 → 视图 → 启动。不许倒挂（视图直接读 fixtures）。
+     全部是普通脚本（无 import/export），bundle.mjs 才能按序拼成零外链单文件。 -->
+<script src="js/00-fixtures.js"></script>
+<script src="js/10-scenarios.js"></script>
+<script src="js/20-api.js"></script>
+<script src="js/30-store.js"></script>
+<script src="js/40-router.js"></script>
+<script src="js/60-copy.js"></script>
+<script src="js/70-validators.js"></script>
+<script src="js/50-views.js"></script>
+<script src="js/80-shell.js"></script>
+<script src="js/90-boot.js"></script>
+<script>
+// 需求映射由项目填，锚点据此自动生成 → G2/G3 的输入不用手贴
+// 需求锚点。键有三层，写哪层由**验收标准本身的粒度**决定：
+//   'f01'              界面级 —— 这个界面的每个状态都算演示了它
+//   'f01-error'        状态级 —— 只有 error 那一屏算（「失败要给原因与重试」是状态级主张）
+//   'f01-mobile-empty' 端+状态级 —— 只在某一端成立的 AC
+// ⛔ 别为了让 G2 变绿把状态级 AC 提到界面级：那会让空态也宣称「我演示了失败重试」。
+//    锚点说谎时对账门不会报错，它会报绿。
+PROTO.boot({
+  frMap: {
+    f01: 'FR-011,AC-1',
+    'f01-error': 'FR-011,AC-4',
+    f02: 'FR-021,AC-1',
+    f03: 'FR-031,AC-2',
+    'f03-default': 'FR-031,AC-5'
+  }
+});
+</script>
+</body>
+</html>

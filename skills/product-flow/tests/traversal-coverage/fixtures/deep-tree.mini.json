@@ -1,0 +1,4 @@
+{ "nodes": [
+  {"depth":1,"url":"x#/a","title":"A屏","shot":"001.png","els":[{"txt":"按钮X"},{"txt":"按钮Y"}]},
+  {"depth":2,"url":"x#/b","title":"B屏","shot":"002.png","els":[{"txt":"设置Z"}]}
+] }

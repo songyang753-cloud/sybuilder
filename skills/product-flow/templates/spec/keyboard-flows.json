@@ -1,0 +1,232 @@
+{
+  "_": "逐组件键盘 flow 模板。判据见 references/keyboard-contracts.md（源：W3C APG + microsoft/sonder-ui）。",
+  "_howto": "按项目改 name / start / role+name / fr，然后并进 flows.json。⛔ 别原样保留占位符——`spec-sync-gate` 会把它当没写。",
+  "_scope": "只收「按错了会出事」的键。完整规范以 W3C APG 为准。",
+  "flows": [
+    {
+      "id": "KB-dialog-esc",
+      "widget": "dialog",
+      "name": "对话框按 Esc 能关掉",
+      "fr": [
+        "FR-???"
+      ],
+      "start": "#/<页面>",
+      "steps": [
+        {
+          "do": "click",
+          "role": "button",
+          "name": "<打开对话框的按钮>"
+        },
+        {
+          "do": "expect",
+          "roleExists": "button",
+          "name": "<对话框里的某个按钮>"
+        },
+        {
+          "do": "key",
+          "key": "Escape"
+        },
+        {
+          "do": "expect",
+          "textAbsent": "<对话框标题>"
+        }
+      ]
+    },
+    {
+      "id": "KB-dialog-focus-return",
+      "widget": "dialog",
+      "name": "对话框关掉后焦点回到触发它的元素",
+      "fr": [
+        "FR-???"
+      ],
+      "start": "#/<页面>",
+      "steps": [
+        {
+          "do": "click",
+          "role": "button",
+          "name": "<打开对话框的按钮>"
+        },
+        {
+          "do": "key",
+          "key": "Escape"
+        },
+        {
+          "do": "expect",
+          "focusedName": "<打开对话框的按钮>"
+        }
+      ]
+    },
+    {
+      "id": "KB-consent-enter-safe",
+      "widget": "dialog",
+      "name": "同意类弹窗：按 Enter 不会误同意",
+      "fr": [
+        "FR-???"
+      ],
+      "start": "#/<页面>",
+      "steps": [
+        {
+          "do": "click",
+          "role": "button",
+          "name": "<触发授权弹窗的操作>"
+        },
+        {
+          "do": "key",
+          "key": "Enter"
+        },
+        {
+          "do": "expect",
+          "textContains": "<弹窗仍在，或已按「拒绝」处理>"
+        },
+        {
+          "do": "expect",
+          "textAbsent": "<不该出现的「已同意」结果>"
+        }
+      ]
+    },
+    {
+      "id": "KB-combobox-esc-revert",
+      "widget": "combobox",
+      "name": "下拉框按 Esc 回滚到打开前的值",
+      "fr": [
+        "FR-???"
+      ],
+      "start": "#/<页面>",
+      "steps": [
+        {
+          "do": "click",
+          "role": "combobox",
+          "name": "<下拉框名>"
+        },
+        {
+          "do": "key",
+          "key": "ArrowDown"
+        },
+        {
+          "do": "key",
+          "key": "Escape"
+        },
+        {
+          "do": "expect",
+          "textContains": "<打开前的值>"
+        }
+      ]
+    },
+    {
+      "id": "KB-tabs-arrow",
+      "widget": "tabs",
+      "name": "标签页用左右箭头切换（不是 Tab）",
+      "fr": [
+        "FR-???"
+      ],
+      "start": "#/<页面>",
+      "steps": [
+        {
+          "do": "click",
+          "role": "button",
+          "name": "<第一个标签>"
+        },
+        {
+          "do": "key",
+          "key": "ArrowRight"
+        },
+        {
+          "do": "expect",
+          "textContains": "<第二个面板的内容>"
+        }
+      ]
+    },
+    {
+      "id": "KB-disclosure-space",
+      "widget": "disclosure",
+      "name": "折叠区按 Space 能展开且 aria-expanded 同步",
+      "fr": [
+        "FR-???"
+      ],
+      "start": "#/<页面>",
+      "steps": [
+        {
+          "do": "key",
+          "key": " ",
+          "role": "button",
+          "name": "<折叠区标题>"
+        },
+        {
+          "do": "expect",
+          "textContains": "<展开后才出现的内容>"
+        }
+      ]
+    },
+    {
+      "id": "KB-menu-esc-return",
+      "widget": "menu",
+      "name": "菜单按 Esc 关闭并把焦点还给触发按钮",
+      "fr": [
+        "FR-???"
+      ],
+      "start": "#/<页面>",
+      "steps": [
+        {
+          "do": "click",
+          "role": "button",
+          "name": "<菜单触发按钮>"
+        },
+        {
+          "do": "key",
+          "key": "Escape"
+        },
+        {
+          "do": "expect",
+          "focusedName": "<菜单触发按钮>"
+        }
+      ]
+    },
+    {
+      "id": "KB-form-enter-submit",
+      "widget": "form",
+      "name": "在单行输入框里按 Enter 能提交",
+      "fr": [
+        "FR-???"
+      ],
+      "start": "#/<页面>",
+      "steps": [
+        {
+          "do": "fill",
+          "role": "textbox",
+          "name": "<字段名>",
+          "value": "<合法值>"
+        },
+        {
+          "do": "key",
+          "key": "Enter",
+          "role": "textbox",
+          "name": "<字段名>"
+        },
+        {
+          "do": "expect",
+          "urlContains": "<提交后应到的地址>"
+        }
+      ]
+    },
+    {
+      "id": "KB-form-focus-first-error",
+      "widget": "form",
+      "name": "校验不通过时焦点移到第一个错误字段",
+      "fr": [
+        "FR-???"
+      ],
+      "start": "#/<页面>",
+      "steps": [
+        {
+          "do": "click",
+          "role": "button",
+          "name": "<提交按钮>"
+        },
+        {
+          "do": "expect",
+          "focusedName": "<第一个必填字段名>"
+        }
+      ]
+    }
+  ]
+}

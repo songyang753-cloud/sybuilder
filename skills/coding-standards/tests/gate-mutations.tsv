@@ -1,0 +1,51 @@
+# 每行：文件<TAB>原串<TAB>新串<TAB>期望rc<TAB>期望诊断关键字<TAB>期望红的组标号
+# 第 6 列由 reverse-test.sh 实跑产出（不是手填）：关键字可以被别的组说出同样的话，
+# 组标号把「红的是它自己」钉死在位置上。实测有一条变异同时红了 3 个组。
+# 这张表是「哪几道判据被真正变异验证过」的**唯一真相源**；没进表的判据 = 没被机器验过。
+SKILL.md	全部 %d 条完整条款	全部 %d 条完整条款	1	总数声称	10
+SKILL.md	硬上限（%d 行	硬上限（%d 行	1	声称上限	10
+SKILL.md	实然与应然的差距	一点说明	1	把愿望写成了现状	10
+SKILL.md	**%d 个锚点在源文件中的存在性**	**%d 个锚点在源文件中的存在性**	1	锚点数 声称	10
+SKILL.md	含【必须】%d 条	含【必须】%d 条	1	【必须】 声称	10
+SKILL.md	承重层 %d 条由终审	承重层 %d 条由终审	1	承重层 声称	10
+SKILL.md	另有 %d 条 ⭐⭐⭐ 按【应当】	另有 %d 条 ⭐⭐⭐ 按【应当】	1	按【应当】的 ⭐⭐⭐	10
+references/derivation.md	当前 %d/%d 命中	当前 %d/%d 命中	1	对照表自述	10
+references/derivation.md	**待回流点名（0 条）**：无	**待回流点名（2 条）**：无	1	声明待回流	7
+references/rules-load-bearing.md	](derivation.md)	](references/derivation.md)	1	文件链接指向不存在	10
+references/rules-load-bearing.md	**D34** 探针拿到的不是被测对象的输出时，症状与「没问题」一模一样	（已删）	1	组索引漏了	3a2
+@ENG	上游正本是 `coding-standards`	上游正本是某份规范	1	链接缺失	10
+tests/fixtures/A14/violating.sh	fails=$((fails+1))	echo noop	3	正向基线不足	10
+tests/fixtures/A16/compliant.sh	exit 1	exit 0	1	门的结论也落到退出码上	8b
+SKILL.md	检查项（**%d 组 %d 条**）	检查项（**%d 组 %d 条**）	1	门禁自述对不上	9
+SKILL.md	**M2** 幂等	（已删）	1	从场景索引到不了	10
+SKILL.md	**A1** 三态不返回布尔 · 	（已删）	1	实际列出	3b
+references/rules-load-bearing.md	# 承重层 L · 完整条款（A–J，%d 条）	# 承重层 L · 完整条款（A–J，%d 条）	1	改了条款没改计数	3
+references/foundation.md	## P1 · 真共识条款	## PX · 真共识条款	1	基础层 P 缺小节	10
+references/sources.md	# 表二 · %d 个	# 表二 · %d 个	1	表头声称	5
+references/derivation.md	A1|门禁三态契约	A1|这个锚点在源文件里不存在xyz	1	锚点	2
+references/rules-ai-collab.md	### K1 · 引用任何 API 前先确认它存在	### K1 引用任何 API 前先确认它存在	1	K	3
+scripts/rule-fixtures.sh	T=$(mktemp -d)	T=/tmp/fixed-dir-probe	1	脚本卫生	10
+scripts/selfcheck.sh	#   3 = 有 UNABLE 无 FAIL（没能测 —— 不是合格，也不是不合格）	#   （此档未声明）	1	退出码	8
+references/authority.md	Z3 只负责定义	<!-- MUST:BEGIN 伪造的第二份 -->Z3 只负责定义	1	拷贝	10
+SKILL.md	**I4** 接缝面	**I4** 接缝面、**I9** 不存在	1	引用了不存在	10
+SKILL.md	| **J** 数据即代码 |	| 数据即代码 |	1	读者翻不到	4
+scripts/selfcheck.sh	for _sf in "${SKILL_DIR}"/scripts/*.sh; do	for _sf in "${SKILL_DIR}"/nosuchdir/*.sh; do	3	只扫到 0 个脚本	10
+scripts/rule-fixtures.sh	np=0; nf=0; nu=0	np=0; nf=0; nu=0 # $np（个）	1	全角标点	10
+references/rules-load-bearing.md	### D36 · 反向测试	### D36 反向测试	1	格式不合规	3a
+scripts/selfcheck.sh	MAX_UNVER=38	MAX_UNVER=1	1	棘轮上限	2
+tests/fixtures/A3/compliant.sh	# 出处：coding-standards skill · 条款 A3	# （出处被删）	1	没有出处	10
+references/foundation.md	## P1 · 真共识条款	## P1 · 真共识条款  <!-- RATIONALE:BEGIN 伪造 --> | 条款 | 争议 | 处置 |	1	不是单源	10
+scripts/selfcheck.sh	"${_rscan:-0}" -lt 5	"${_rscan:-0}" -lt 999	3	扫描没跑成	10
+@SRC	四节点终审流水线	XX节点终审流水线	3	锚点校验机制自检失败	1
+references/derivation.md	| 源文件铁律总数 | %d |	| 源文件铁律总数 | %d |	1	声称大于事实	6
+# ⚠️ 第 6 列必须由**带关键字**的实跑产出（套件语义）：不带关键字手跑 reverse-test 时,
+#    空关键字会 grep 匹配所有行,把 [11] 因反向测试锁报的 UNABLE 也混进命中组(2026-09-06 实录:手跑得 10,11 套件得 10)
+SKILL.md	| **承重层 L**（A–J） | %d |	| **承重层 L**（A–J） | %d |	1	五层表·承重层	10
+SKILL.md	未接通清单（门禁 [10l] 与实际比对）：（无）	未接通清单（门禁 [10l] 与实际比对）：four-node-review	1	回链清单漂移	10
+references/sources.md	# 表一 ·	# 表一 · # 表一 ·	1	锚点不唯一	5
+references/rules-delivery.md	IDE 插件的「已连接」、脚手架的 `preflight`。	```	1	代码围栏配对	10
+tests/fixtures/A3/compliant.sh	  exit 1	  exit 0	1	A14	8b
+SKILL.md	覆盖 %d/%d 个判据组	覆盖 %d/%d 个判据组	1	自述判据组总数	11
+references/foundation.md	密钥不进源码、不进日志	A97 密钥不进源码、不进日志	1	引用了不存在的条款	10
+references/authority.md	| **LCP** 最大内容绘制 | **2500 ms** | 4000 ms |	| **LCP** 最大内容绘制 | **2500 ms** | 9999 ms |	1	Z1 LCP 阈值对不上	10
+references/authority.md	> ```bash	> x```bash	1	代码围栏配对	10

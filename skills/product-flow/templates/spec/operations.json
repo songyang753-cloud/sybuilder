@@ -1,0 +1,18 @@
+{
+  "_": "语义操作契约（2026-09-07 由 api.json 改造）。只描述产品语义：操作意图、业务输入输出、用户可感知失败、权限、时延体验、可重试性。⛔ 不含 HTTP 动词/路径/状态码/存储/框架 —— 那些是工程设计的决定（techspec-readiness 铁律）。demo 的 20-api.js 与研发实现共用这一份语义。",
+  "failures": {
+    "no-permission": "当前账号只读，无法{动作}",
+    "not-found": "这条任务不存在或已被删除",
+    "unavailable": "服务暂时不可用"
+  },
+  "operations": [
+    { "op": "listTasks",  "intent": "查看当前用户可访问的任务", "in": { "keyword": "string?", "status": "string?" }, "out": { "items": "Task[]", "total": "int" }, "permission": "只返回当前用户可查看范围", "failures": ["unavailable"], "retry": "unavailable 可由用户重试", "latency": "等待期间保留页面结构并显示 loading 呈现", "idempotency": "read-only" },
+    { "op": "getTask",    "intent": "查看单条任务详情", "in": { "id": "string" }, "out": "Task", "permission": "同 listTasks", "failures": ["not-found"], "retry": "可重试", "latency": "同上", "idempotency": "read-only" },
+    { "op": "createTask", "intent": "新建任务", "in": { "title": "string", "owner": "string" }, "out": "Task", "permission": "只读账号不可用", "failures": ["no-permission", "unavailable"], "retry": "unavailable 可重试；重复提交不得产生两条", "latency": "提交中禁用提交控件并显示进行反馈", "idempotency": "用户单次意图恰好生效一次" },
+    { "op": "updateTask", "intent": "修改任务", "in": { "id": "string", "patch": "Partial<Task>" }, "out": "Task", "permission": "只读账号不可用", "failures": ["no-permission", "not-found", "unavailable"], "retry": "可重试", "latency": "同上", "idempotency": "same-patch 幂等" },
+    { "op": "deleteTask", "intent": "删除任务", "in": { "id": "string" }, "out": { "ok": "bool" }, "permission": "只读账号不可用", "failures": ["no-permission", "not-found"], "retry": "可重试", "latency": "同上", "idempotency": "幂等（重复删除不报错为已删除）" }
+  ],
+  "types": {
+    "Task": { "id": "string", "title": "string", "owner": "string", "status": "todo|doing|done", "updatedAt": "date", "note": "string" }
+  }
+}

@@ -1,0 +1,215 @@
+{
+  "_": "元素身份**有两层，缺一不可**：\n  · `id` 是**跨产物标识符**（slug）：原样出现在 规格 / DOM `data-el` / Figma 图层名 / 测试选择器 四处。\n    它对文案改动免疫 —— 把「提交」改成「保存」，slug 不变，四处仍然对得上。\n  · `role` + `name` 是**用户可感知的契约**：无障碍名称，也是测试该怎么查它\n    （testing-library / Storybook：用真人使用界面的方式找元素，testid 是最后手段）。\n⭐ 二者不是二选一。只有 slug 时，改掉可访问名称不会有人发现（无障碍静默退化）；\n   只有 role+name 时，改一句文案就让 Figma 图层名与测试选择器同时失效。\n📌 这个双层结构是拿真实项目（云端办公 Agent 的 98 个标识符）对出来的 ——\n   我原本只设计了 role+name，真实规格用的是 slug，两边各对一半。",
+  "_naming": "按功能命名，不按外观命名（`blue-button` 把令牌钉死进名字）。",
+  "elements": [
+    {
+      "id": "app-shell",
+      "surface": "*",
+      "kind": "容器",
+      "parent": null,
+      "role": null,
+      "name": null,
+      "fr": null,
+      "success": "应用外壳"
+    },
+    {
+      "id": "task-list",
+      "surface": "f01",
+      "kind": "容器",
+      "parent": "app-shell",
+      "role": null,
+      "name": null,
+      "fr": "FR-011",
+      "success": "列出全部任务及状态"
+    },
+    {
+      "id": "task-row",
+      "surface": "f01",
+      "kind": "交互",
+      "parent": "task-list",
+      "role": "link",
+      "dynamic": true,
+      "nameFrom": "Task.title",
+      "fr": "FR-011",
+      "success": "打开该任务详情",
+      "states": [
+        "default",
+        "selected"
+      ]
+    },
+    {
+      "id": "task-search",
+      "surface": "f01",
+      "kind": "输入",
+      "parent": "task-list",
+      "role": "searchbox",
+      "name": "搜索任务",
+      "fr": "FR-011",
+      "success": "按标题过滤"
+    },
+    {
+      "id": "btn-search",
+      "surface": "f01",
+      "kind": "交互",
+      "parent": "task-list",
+      "role": "button",
+      "name": "搜索",
+      "fr": "FR-011",
+      "success": "提交过滤条件并进 URL"
+    },
+    {
+      "id": "btn-create",
+      "surface": "f01",
+      "kind": "交互",
+      "parent": "task-list",
+      "role": "link",
+      "name": "新建任务",
+      "fr": "FR-031",
+      "success": "进入新建页"
+    },
+    {
+      "id": "btn-delete-row",
+      "surface": "f01",
+      "kind": "交互",
+      "parent": "task-row",
+      "role": "button",
+      "name": "删除",
+      "fr": "FR-011",
+      "success": "删除并给撤销窗口"
+    },
+    {
+      "id": "task-detail",
+      "surface": "f02",
+      "kind": "容器",
+      "parent": "app-shell",
+      "role": null,
+      "name": null,
+      "fr": "FR-021",
+      "success": "显示任务字段"
+    },
+    {
+      "id": "btn-advance",
+      "surface": "f02",
+      "kind": "交互",
+      "parent": "task-detail",
+      "role": "button",
+      "name": "推进到下一状态",
+      "fr": "FR-021",
+      "success": "状态前进一档",
+      "states": [
+        "default",
+        "disabled"
+      ]
+    },
+    {
+      "id": "btn-back",
+      "surface": "f02",
+      "kind": "交互",
+      "parent": "task-detail",
+      "role": "link",
+      "name": "返回列表",
+      "fr": "FR-021",
+      "success": "回到列表",
+      "_note": "⛔ 可访问名不含装饰箭头：本串同时是移动端 app bar 返回键的 aria-label，读屏会把「←」念出来。箭头由视图层用 aria-hidden 的 span 渲染。2026-09-04 实测修复。"
+    },
+    {
+      "id": "form-create",
+      "surface": "f03",
+      "kind": "容器",
+      "parent": "app-shell",
+      "role": null,
+      "name": null,
+      "fr": "FR-031",
+      "success": "新建表单"
+    },
+    {
+      "id": "input-title",
+      "surface": "f03",
+      "kind": "输入",
+      "parent": "form-create",
+      "role": "textbox",
+      "name": "标题",
+      "fr": "FR-031",
+      "success": "校验见 validators.json#title"
+    },
+    {
+      "id": "input-owner",
+      "surface": "f03",
+      "kind": "输入",
+      "parent": "form-create",
+      "role": "textbox",
+      "name": "负责人",
+      "fr": "FR-031",
+      "success": "校验见 validators.json#owner"
+    },
+    {
+      "id": "btn-submit",
+      "surface": "f03",
+      "kind": "交互",
+      "parent": "form-create",
+      "role": "button",
+      "name": "提交",
+      "fr": "FR-031",
+      "success": "提交中保留原标签",
+      "states": [
+        "default",
+        "submitting"
+      ]
+    },
+    {
+      "id": "btn-retry",
+      "surface": "*",
+      "kind": "交互",
+      "parent": null,
+      "role": "button",
+      "name": "重试",
+      "fr": "FR-011",
+      "success": "重新发起失败的请求"
+    },
+    {
+      "id": "btn-undo",
+      "surface": "*",
+      "kind": "交互",
+      "parent": "action-toast",
+      "role": "button",
+      "name": "撤销",
+      "fr": "FR-011",
+      "success": "把删掉的放回去",
+      "note": "在 aria-live 瞬态区内：死按钮门不探它，由 flow-walk 覆盖"
+    },
+    {
+      "id": "action-toast",
+      "surface": "*",
+      "kind": "容器",
+      "parent": "app-shell",
+      "role": "status",
+      "name": null,
+      "fr": "FR-011",
+      "success": "aria-live=polite"
+    },
+    {
+      "id": "btn-back-to-list",
+      "surface": "f03",
+      "kind": "交互",
+      "parent": "create-pc-only",
+      "role": "link",
+      "name": "返回任务列表",
+      "fr": "FR-031",
+      "success": "从「仅桌面端」提示回到列表",
+      "_note": "⭐ 仅移动端存在：桌面端不需要它（表单就在眼前）。端差异已登记在 end-differences.json。"
+    },
+    {
+      "id": "tab-create",
+      "surface": "f01",
+      "kind": "交互",
+      "parent": "tabbar",
+      "role": "link",
+      "name": "新建任务",
+      "fr": "FR-031",
+      "success": "切到新建界面",
+      "_note": "⭐ 仅移动端存在：桌面端由常驻侧栏承担（组件词汇两端不共用，见 platform-parity.md）。",
+      "runtimeSlug": true,
+      "slugFrom": "80-shell.js renderTabBar：data-el='tab-' + n.path（NAV 表驱动，路径变了它自动跟）"
+    }
+  ]
+}

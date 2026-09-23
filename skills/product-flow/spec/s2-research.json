@@ -1,0 +1,723 @@
+{
+ "_": "S2 竞品线结构口径规格 —— 单一真源，三处消费：门禁判结构 / 脚手架生骨架 / 文档生成器写作业清单。",
+ "_why": "2026-09-16 实测：按作业清单从零建语料，门禁开局 40 条红，靠猜从 40 磨到 24 后不再收敛。根因不是语料缺内容，是结构口径从未被写下来。参考 spec-kit『spec 驱动实现』与 gstack『文档由源码生成、不可手改』两条。",
+ "_discipline": "⛔ 本文件人工编写，禁止用静态分析从判据源码自动生成 —— 实测 6 对 2 错，且错得带『高』置信，比没有更糟（本仓母题：量具本身会错）。",
+ "schemaVersion": 1,
+ "stage": "S2",
+ "kind": "corpus",
+ "gate": "scripts/research-gate.py",
+ "researchModes": {
+  "teardown": {
+   "purpose": "单竞品真实遍历、最细功能正文、反向规格与个人飞书交付",
+   "template": "templates/competitor-teardown-report.md",
+   "requiredGates": [
+    "traversal-coverage-gate.py",
+    "report-structure-gate.py",
+    "audience-gate.py",
+    "feishu-delivery-gate.py"
+   ]
+  },
+  "competitive-pack": {
+   "purpose": "消费已验收单品包，按业务域、能力族、叶子功能逐级横向比较",
+   "template": "templates/research-report.md",
+   "requiredGates": [
+    "research-gate.py",
+    "report-structure-gate.py",
+    "audience-gate.py",
+    "feishu-delivery-gate.py"
+   ]
+  },
+  "full-research": {
+   "purpose": "S2 五条线完整研究与三份定向飞书报告",
+   "template": "templates/research-report.md",
+   "requiredGates": [
+    "research-gate.py",
+    "chain-gate.py.G0",
+    "traversal-coverage-gate.py",
+    "report-structure-gate.py",
+    "audience-gate.py",
+    "feishu-delivery-gate.py"
+   ]
+  }
+ },
+ "adaptiveLeafContract": {
+  "hierarchyRule": "层级按产品实际结构自适应；固定的是叶子行为合同，不固定三级或四级",
+  "pathColumns": ["功能路径", "层级深度", "父节点"],
+  "requiredFields": [
+   "角色", "触发入口", "对象/输入", "字段/默认值/校验", "前置规则", "单一动作",
+   "操作前状态", "状态变化", "可观察结果", "失败/取消/恢复", "权限/端/档位/限额",
+   "证据等级", "事件/截图证据", "下游输入", "拆分说明"
+  ],
+  "evidenceStates": ["verified", "observed", "reported", "blocked"]
+ },
+ "files": {
+  "competitor-landscape.md": {
+   "role": "元文件·竞品全景与研究合同",
+   "note": "⚠️ 研究合同十项必须在**本文件**里，不是 scope.md —— 判据 decision-frame/candidate-funnel/comparison-dimensions/ai-competitive-scope/market-deliverable 全读本文件",
+   "isMeta": true
+  },
+  "atomic-feature-ledger.md": {
+   "role": "元文件·原子功能账本",
+   "isMeta": true
+  },
+  "matrix.md": {
+   "role": "元文件·同分母矩阵与频次分层",
+   "isMeta": true
+  },
+  "key-flows.md": {
+   "role": "元文件·关键流程与实测采集回执",
+   "isMeta": true
+  },
+  "insights.md": {
+   "role": "元文件·洞察与机会",
+   "isMeta": true
+  },
+  "sources.md": {
+   "role": "元文件·来源与 CLM 主张账",
+   "isMeta": true
+  },
+  "downstream-coverage.md": {
+   "role": "元文件·下游覆盖与载体对账",
+   "isMeta": true
+  },
+  "design-tokens.md": {
+   "role": "元文件·设计令牌反查表",
+   "isMeta": true
+  },
+  "state-coverage.md": {
+   "role": "元文件·状态覆盖矩阵",
+   "isMeta": true
+  },
+  "innovation-trends.md": {
+   "role": "元文件·创新点与趋势",
+   "isMeta": true
+  },
+  "differentiation.md": {
+   "role": "元文件·差异化",
+   "isMeta": true
+  },
+  "conflicts.md": {
+   "role": "元文件·双通道冲突",
+   "isMeta": true
+  },
+  "lines.md": {
+   "role": "元文件·五条研究线声明",
+   "isMeta": true
+  },
+  "market-landscape.md": {
+   "role": "元文件·市场线独立交付",
+   "isMeta": true
+  },
+  "research-decision-ledger.md": {
+   "role": "元文件·洞察账本",
+   "isMeta": true
+  },
+  "scope.md": {
+   "role": "元文件·裁剪与下限声明",
+   "isMeta": true
+  },
+  "c<NN>.md": {
+   "role": "竞品档案（每家一份）",
+   "note": "🚨 **非元文件的 .md 一律被当成竞品档案**并进分母，且必须有 URL + 访问日期。跨切面声明（五条线/需求侧/三路来源/反面样本）判据读的是**竞品档案拼接文本**，不是元文件 —— 所以它们必须写在档案里。",
+   "isMeta": false,
+   "requires": [
+    "URL",
+    "访问日期"
+   ]
+  }
+ },
+ "tables": [
+  {
+   "id": "功能分解词典",
+   "file": "atomic-feature-ledger.md",
+   "section": "## 功能分解词典",
+   "criterion": "atomic-dictionary",
+   "columns": [
+    "af",
+    "功能路径",
+    "层级深度",
+    "父节点",
+    "l0",
+    "l1",
+    "l2",
+    "角色",
+    "触发入口",
+    "对象/输入",
+    "前置规则",
+    "单一动作",
+    "状态变化",
+    "可观察结果",
+    "拆分说明"
+   ],
+   "columnPatterns": [
+    "^af$",
+        "功能路径",
+        "层级深度",
+        "父节点",
+    "^l0",
+    "^l1",
+    "^l2",
+    "角色",
+    "场景|入口|触发",
+    "对象|输入",
+    "前置|规则",
+    "单一动作",
+    "状态变化",
+    "可观察结果|完成定义",
+    "独立验收|拆分说明"
+   ],
+   "rowKey": "af",
+   "note": "每个 AF 一行；拆分说明必须写『与 AF-xxx 分开：…，可独立验收』，⛔ 写『同上』会被判缺"
+  },
+  {
+   "id": "逐级横向对比",
+   "file": "atomic-feature-ledger.md",
+   "section": "## 逐级横向对比",
+   "criterion": "atomic-level-comparison",
+   "columns": [
+    "节点路径",
+    "层级深度",
+    "父节点",
+    "子 AF 全集",
+    "各竞品覆盖边界",
+    "共同模式",
+    "关键差异与原因",
+    "用户/业务代价",
+    "对我方下游输入"
+   ],
+   "columnPatterns": [
+    "节点路径",
+    "层级深度",
+    "父节点",
+    "子\\s*af",
+    "竞品.*覆盖",
+    "共同模式",
+    "关键差异",
+    "用户|业务代价",
+    "下游输入"
+   ],
+   "rowKey": "节点路径",
+   "cardinality": "功能分解词典中所有功能路径的根节点到叶子直接父节点全集，每个节点恰好一行",
+   "note": "不同分支可有不同深度；逐层横比不能固定三级/四级，也不能用最细功能表替代中间层产品模型比较"
+  },
+  {
+   "id": "原子功能事实账",
+   "file": "atomic-feature-ledger.md",
+   "section": "## 原子功能事实账",
+   "criterion": "atomic-facts",
+   "columns": [
+    "af",
+    "comp",
+    "状态",
+    "触发入口",
+    "字段/参数/默认值",
+    "前置规则",
+    "状态变化",
+    "结果/反馈文案",
+    "失败恢复",
+    "权限/端/档位/限额",
+    "质量/效率/用户代价",
+    "证据标签+日期",
+    "RUN/CLM",
+    "差异判读 Can't/Won't"
+   ],
+   "columnPatterns": [
+    "^af$",
+    "^comp$",
+    "状态",
+    "入口|触发",
+    "字段|参数|默认值",
+    "规则|前置",
+    "状态变化",
+    "结果|反馈|文案",
+    "失败|恢复",
+    "权限|端|档位|限额",
+    "质量|效率|用户代价",
+    "证据标签|日期",
+    "run|clm",
+    "差异判读|can.t|won.t"
+   ],
+   "cardinality": "AF × 正式COMP 全笛卡尔，每对**恰好一行**",
+   "valueVocab": {
+    "状态": [
+     "FULL",
+     "PARTIAL",
+     "ABSENT",
+     "UNKNOWN",
+     "N/A"
+    ]
+   },
+   "note": "PARTIAL 必须点明缺失边界；ABSENT 必须写检索入口与范围；UNKNOWN 必须写阻断者与 TBD+owner；⛔ 任何单元格不许留空或只写『—』"
+  },
+  {
+   "id": "横向对比面板清单",
+   "file": "atomic-feature-ledger.md",
+   "section": "## 横向对比面板清单",
+   "criterion": "atomic-horizontal",
+   "columns": [
+    "panel",
+    "覆盖竞品",
+    "af首尾",
+    "af数量",
+    "行集一致",
+    "重复/遗漏"
+   ],
+   "columnPatterns": [
+    "^panel$",
+    "覆盖竞品",
+    "af首尾",
+    "af数量",
+    "行集一致",
+    "重复|遗漏"
+   ],
+   "note": "🚨 **它要的是面板的清单（元数据表），不是面板本身**。每行描述一个面板：覆盖哪些 COMP、AF 从哪到哪、共几个、行集是否与词典一致、有无重复遗漏。⚠️ 实跑时我误以为是面板本身，白做一轮。 ｜ 🚨 **`panel` 列必须是 `PANEL-数字`**（判据用 `re.search(r'PANEL-\\d+')` 认行），且清单 ID 集合必须与 **matrix.md 里实际面板**一一对应；所有面板覆盖的 COMP 并集 = 正式竞品全集，且**不许有竞品出现在两个面板里**。 ｜ 🚨🚨 **实际面板也在 `atomic-feature-ledger.md` 里**（不是 matrix.md！），以 `### PANEL-NN` 开头，每个面板一张 `| AF | COMP-.. |` 横向表；清单表放在 `## 横向对比面板清单` 小节，判据用它与实际面板互相对账。",
+   "valueVocab": {
+    "panel": [
+     "PANEL-01",
+     "PANEL-02",
+     "…（PANEL-数字）"
+    ]
+   }
+  },
+  {
+   "id": "原子功能下游映射",
+   "file": "atomic-feature-ledger.md",
+   "section": "## 原子功能下游映射",
+   "criterion": "atomic-downstream",
+   "columns": [
+    "af",
+    "研究结论",
+    "prd",
+    "figma",
+    "html",
+    "处置",
+    "指标/证伪"
+   ],
+   "columnPatterns": [
+    "^af$",
+    "研究结论",
+    "prd",
+    "figma",
+    "html",
+    "adopt|adapt|reject|defer|watch",
+    "指标|证伪"
+   ],
+   "valueVocab": {
+    "处置": [
+     "adopt",
+     "adapt",
+     "reject",
+     "defer",
+     "watch"
+    ]
+   },
+   "note": "⚠️ 处置列的词表是**英文小写**（adopt/adapt/reject/defer/watch），⛔ 写『采纳/规避』不匹配"
+  },
+  {
+   "id": "功能遍历覆盖账",
+   "file": "c<NN>.md",
+   "section": "## 功能遍历覆盖账",
+   "criterion": "atomic-surface-reconcile",
+   "columns": [
+    "surf",
+    "run",
+    "一级模块",
+    "页面/区域/入口",
+    "用户可见动作/结果",
+    "AF归并/处置",
+    "已打开",
+    "已实际操作",
+    "状态/失败/恢复",
+    "结果标签",
+    "证据",
+    "未覆盖/排除理由"
+   ],
+   "columnPatterns": [
+    "^surf$",
+    "^run$",
+    "一级模块",
+    "页面|区域|入口",
+    "用户可见动作|结果",
+    "af归并|处置",
+    "已打开",
+    "已实际操作",
+    "状态|失败|恢复",
+    "结果标签",
+    "证据",
+    "未覆盖|排除理由"
+   ],
+   "note": "🚨 **在竞品档案里，不在账本里**（源变量是 profile 不是 atomic）。每个竞品自己一张。FULL/PARTIAL 的 AF 必须能在**同竞品同 RUN** 的本表里反查到 SURF→AF。"
+  },
+  {
+   "id": "实测采集回执",
+   "file": "key-flows.md",
+   "section": "## 实测采集回执",
+   "criterion": "interactive-access",
+   "columns": [
+    "RUN",
+    "COMP",
+    "产品形态",
+    "采集通道",
+    "通道可达性",
+    "执行日期",
+    "版本/账号/价格档",
+    "官方来源/入口",
+    "授权状态与日期",
+    "测试数据",
+    "外部副作用边界",
+    "功能覆盖账",
+    "结果标签",
+    "证据目录",
+    "阻断/降级理由"
+   ],
+   "valueVocab": {
+    "采集通道": [
+     "web-browser",
+     "mac-computer-use",
+     "cdp-direct",
+     "retrieval-only",
+     "inaccessible"
+    ],
+    "通道可达性": [
+     "敞开",
+     "AX完整",
+     "剥target",
+     "反调试",
+     "不适用",
+     "未量"
+    ],
+    "结果标签": [
+     "[实测·通道·日期]",
+     "[仅观察]",
+     "[宣称]",
+     "[公开演示]",
+     "[阻断]",
+     "未获取+原因",
+     "N/A+理由"
+    ]
+   },
+   "note": "每行都要有用户授权+日期（⛔ 写『同上』不算）；证据目录必须真实存在；⛔『未量』≠『反调试』 ｜ ⚠️ 本表由 `section_at(flows,'实测采集回执')` + 手写解析定位，不是 `_table_in_section`，列名按语义匹配（版本/官方来源/测试数据/功能覆盖账 等）",
+   "sectionMechanism": "section_at"
+  }
+ ],
+ "sections": [
+  {
+   "file": "downstream-coverage.md",
+   "section": "## PRD 载体对账",
+   "criterion": "prd-carrier-coverage",
+   "valueVocab": {
+    "状态": [
+     "已覆盖",
+     "未获取+原因",
+     "N/A+理由"
+    ]
+   },
+   "note": "状态列只许这三种；⛔ 写『⚠️ 仅 6/14』这类自由文本会被判非法"
+  },
+  {
+   "file": "downstream-coverage.md",
+   "section": "（正文含）下游→研究 与 研究→下游",
+   "criterion": "downstream-coverage",
+   "note": "判据用正则 `下游\\s*(?:→|->)\\s*研究` 与 `研究\\s*(?:→|->)\\s*下游` 匹配**正文任意处**，⛔ 不要求是小节标题；两个方向都要出现"
+  },
+  {
+   "file": "competitor-landscape.md",
+   "section": "## 版本对账",
+   "criterion": "version-ledger",
+   "note": "纠错必须写三段：旧结论 / 新结论 / **旧结论错在哪（真因）**"
+  },
+  {
+   "file": "insights.md",
+   "section": "## 机会…（`^#{2,4}\\s*机会` 开头即可）",
+   "criterion": "opportunity-solutions",
+   "note": "读 insights.md；判据扫标题正则 `^#{2,4}\\s*机会[^\\n]*$` 找小节，然后数解法候选；另需 `机会.{0,12}优先级` 或 `优先级.{0,40}P[012]` 形态的优先级+理由"
+  },
+  {
+   "file": "*.md",
+   "section": "## 诚实缺口",
+   "criterion": "gap-not-excuse",
+   "note": "只装『不可能取得』且必须点名外部阻断者；⛔ 禁止整份产物打折话术（9.1）"
+  },
+  {
+   "file": "key-flows.md",
+   "section": "（key-flows.md 正文含）同口径 或 完成定义",
+   "criterion": "key-flows",
+   "note": "判据是关键词匹配 `同口径|完成定义`，⛔ 不要求小节标题；另需 FLOW-数字 编号、可编辑图源、量化差异、失败恢复、三类下游目标"
+  },
+  {
+   "file": "competitor-landscape.md",
+   "section": "## 下游决策域清单",
+   "criterion": "decision-domains",
+   "note": "12 域三态 standing：有输入 / 明确未知 / N/A+理由；空格才是缺陷"
+  },
+  {
+   "file": "insights.md",
+   "section": "## 跨竞品对照图",
+   "criterion": "cross-compare-both-forms",
+   "note": "必须有 `.d2`/`.mmd` 可解析源且文件真实存在；另需族×竞品同栏对齐表"
+  },
+  {
+   "file": "insights.md",
+   "section": "## 对照图",
+   "criterion": "cross-compare-both-forms",
+   "note": "⚠️ 门禁另有一处用 `section_at(_cmp_txt,'对照图')` 作**回退定位**（找不到「跨竞品对照图」时退到它）"
+  },
+  {
+   "file": "*.md",
+   "section": "## 降级声明",
+   "criterion": "gap-not-excuse",
+   "note": "⚠️ 与「诚实缺口」二选一：判据 `section_at(_all_md,'诚实缺口') or section_at(_all_md,'降级声明')`"
+  }
+ ],
+ "crossCutting": {
+  "_note": "🚨 这些判据读的是**竞品档案拼接文本**（非元文件的 .md），不是元文件。写在 competitor-landscape.md 里不算数。",
+  "location": "任一竞品档案（建议单列一份 c00-研究方法与跨切面声明.md，带 URL + 访问日期）",
+  "items": [
+   {
+    "criterion": "five-lines",
+    "need": "五条研究线各有结论或显式『本轮不做』",
+    "tokens": [
+     "① 用户线",
+     "② 竞品线",
+     "③ 市场",
+     "④ 数据线",
+     "⑤ 技术"
+    ]
+   },
+   {
+    "criterion": "three-routes",
+    "need": "三路来源声明",
+    "tokens": [
+     "a 检索/爬取",
+     "b GitHub",
+     "c Codex"
+    ]
+   },
+   {
+    "criterion": "demand-side",
+    "need": "需求侧竞品 ≥3"
+   },
+   {
+    "criterion": "negative",
+    "need": "反面样本；找不到也要写『已检索 X 关键词未找到公开失败案例』"
+   },
+   {
+    "criterion": "gap-list",
+    "need": "『竞品有而我们没有』一节"
+   },
+   {
+    "criterion": "competitive-actions",
+    "need": "学习/借鉴/规避/差异化四类结论 + 机会优先级与理由"
+   }
+  ]
+ },
+ "placeholders": {
+  "_why": "脚手架生成的骨架必须可被识别为『未填』—— ⛔ 否则会造出一份结构全绿而内容全空的假语料，比 40 条红危险得多。",
+  "marker": "⟨TODO⟩",
+  "rule": "门禁把含 ⟨TODO⟩ 的行视为未填；脚手架生成的每一行都带它；作者填完必须删掉标记。"
+ },
+ "harvested": {
+  "_": "⭐ 在**脚手架骨架**上跑门禁收割到的精确要求 —— 这些字面此前只活在判据代码里。每学到一条就写进来，脚手架据此生成，下次不用再撞。",
+  "_how": "`scaffold.py --out /tmp/x && research-gate /tmp/x` ⇒ 报错里的字面就是要求本身。",
+  "requiredRows": {
+   "PRD 载体对账": [
+    "4.4 用户流程图",
+    "5.1 业务流程图",
+    "6.1 产品模块图",
+    "6.2 功能清单",
+    "6.2.1 功能架构图",
+    "6.3.1 页面关系图",
+    "七章 设计交互",
+    "附件 D 字段规格",
+    "附件 E 状态机"
+   ]
+  },
+  "requiredTokens": {
+   "competitor-landscape.md": [
+    "DECISION",
+    "QUESTION",
+    "CHANGE-MIND",
+    "POSITIONING-LENS",
+    "STRATEGIC-TENSION",
+    "SOURCE-PLAN",
+    "AI-SCOPE：适用",
+    "候选池",
+    "排除理由",
+    "重看触发",
+    "不合成总分",
+    "COMP-1（实写数字，⛔ COMP-xx 模板不算）",
+    "取证计划表要含字面「**首选一手证据**」「独立复核」「交互实测」「降级」"
+   ],
+   "key-flows.md": [
+    "FLOW-01（FLOW-数字）",
+    "同口径",
+    "完成定义"
+   ],
+   "sources.md": [
+    "CLM 表要含字面「验证状态」「发布日期」「访问日」「失效日」，且每条都要有值"
+   ],
+   "insights.md": [
+    "模式（insights-chain 的环节之一）",
+    "学习",
+    "借鉴",
+    "规避",
+    "差异化",
+    "机会…优先级",
+    "跨竞品对照图 + `cross-compare/*.d2` 路径（⛔ 光有文件不够，正文要引用）"
+   ],
+   "lines.md": [
+    "五条线**逐条**都要有结论或『本轮不做』：① 用户线 / ② 竞品线 / ③ 市场 / ④ 数据线 / ⑤ 技术（⛔ 缺一条就红）",
+    "市场线声明 + 独立 market-landscape.md 或跳过理由 + 下游声明上限"
+   ],
+   "conflicts.md": [
+    "CONFLICT-01 或「本轮无冲突 + 理由」",
+    "双路 deep-research 合并记录（我方 × codex，标同向/不同向）",
+    "每条冲突显式写「采信：以 A 实测为准」"
+   ],
+   "design-tokens.md": [
+    "色族",
+    "距族",
+    "字族",
+    "取证通道",
+    "SHOT-xxx 真实内联截图证据"
+   ],
+   "innovation-trends.md": [
+    "INNOV-xx（每个正式竞品过一遍，没有也要写『未发现』）",
+    "TREND-xx",
+    "WATCH-xx"
+   ],
+   "cross-comp": [
+    "c00 档案需写：本轮无一手用户接触，结论强度下降（user-contact）"
+   ],
+   "matrix.md": [
+    "横向面板必须含全部 AF 行（AF-001…AF-0NN）",
+    "频次分层",
+    "八个公共比较维度：定位与价值主张/目标用户与购买者/场景/流程/能力/商业/体验/技术（⚠️ 在 matrix.md 里）"
+   ],
+   "deep-research/*.md": [
+    "每条结论带**发布日期**与**访问日**"
+   ]
+  },
+  "requiredFiles": {
+   "deep-research/": "至少 R-A / R-B 两轮产出文件，否则 deep-research-rounds 红",
+   "cross-compare/*.d2": "对照图必须有可解析源且文件真实存在",
+   "功能调研报告.md": "必须带 `![SHOT-xxx｜说明](<@./相对路径.png>)` 真实内联图片并经飞书 XML 回读验证；三份定向报告的确切名字：功能调研报告 / 设计调研报告（喂 S5.1 设计系统与 S7 Figma）/ 交互调研报告",
+   "prd-isomorphic.md": "四件套索引表：每个竞品**一行**，行内同时含 `core-path`/`module.d2`/`feature-list`/`page-graph`（或对应中文）+ 具体 ID 族编号。⛔ 写成 cNN.md 的小节判据看不见。"
+  },
+  "formats": {
+   "状态变化": "必须写成 `from→to`（⛔ 写『无状态迁移』会被判缺）",
+   "通道可达性": "六档之一：敞开/AX完整/剥target/反调试/不适用/未量",
+   "元发现": "必须含「同一把尺子」四字 + `[推断]` 标注",
+   "四件套命名": "竞品档案里必须**逐字**出现：核心体验路径 / 产品模块图 / 功能架构图 / 功能清单，且用 `CAF-xxx`、`CM-xx` 竞品 ID 族（⛔ 不许用我方 F-xx/M-xx）",
+   "载体对账状态": "每行状态只许：已覆盖 / 未获取+原因 / N-A+理由（⛔ ⟨TODO⟩ 与自由文本都非法）",
+   "面板清单": "`panel` 列写 `PANEL-01` 这类；清单与 matrix.md 的实际面板要能配上；COMP 并集＝正式竞品全集且无重复",
+   "AI 九域的确切写法": "判据按正则匹配，⛔ 光写域名不够：`AI 能力角色`(或「核心/辅助/增值」) · `AI 能力矩阵` · `效果质量`(或准确…召回/幻觉…误判) · `使用门槛`(或学习成本/信任…解释) · `响应…失败`(或降级…人工接管/超时…接管) · `数据…评测` · `技术路线…壁垒`(或自研…第三方) · `单位成本`(或成本…规模) · `安全…合规`",
+   "市场线声明": "🚨 判据用 `^.*③\\s*市场线[^\\n]*$` 在 **lines.md** 里找**那一行**；含「本轮不做/不做」算跳过（要写理由）；否则要求 `market-landscape.md` 非空且含 DECISION/QUESTION 等研究合同字段",
+   "CLM 验证状态": "🚨 词表是**英文**：`verified` / `disputed` / `unverified` / `overturned`（⛔ 写「已验证」判据认不出）",
+   "下游三目标": "判据正则 `PRD[\\s\\S]{0,300}Figma[\\s\\S]{0,300}HTML` —— 三词**按此顺序**、两两相隔 ≤300 字符，且在 `key-flows.md` 内。",
+   "五条线写法": "🚨 判据读 **`lines.md`**（不是竞品档案；文件不存在才退回全文）。每条线要么**有同名文件**（`*user*`/`*market*`/`*data*`/`*tech*`/`*competitor*`），要么在 `lines.md` 里写成 `<① 用户线> …80 字内出现 本轮不做|不做|已完成|结论|见`。标签逐字：`① 用户线 / ② 竞品线 / ③ 市场线 / ④ 数据线 / ⑤ 技术可能性线`。",
+   "解法候选计数": "🚨 判据在**每个** `## 机会…` 标题到**下一个任意级标题**之间数列表项（≥3）。⛔ 两个坑：① 表格列不算，要写成 `- 解法 A：…`；② **父标题下紧跟子标题会让父区间为空** ⇒ 每个机会各起一个 `## 机会 OPP-xx · …` 标题，别用「## 机会…／### 机会 OPP-xx」两层。含「优先级」三字的标题会被跳过（它是索引不是机会正文）。",
+   "visual-evidence 的 matrix": "判据要求 `matrix.md` **正文里**出现真实存在的图片路径；⛔ 放在文件末尾的裸列表若路径不存在同样红",
+   "动效证据": "`visual-evidence` 要求动效层有证据：要么有录屏，**要么显式声明「本轮无关键/创新动效 + 理由」**（2.4.1）。⛔ 静态图证明不了动效；⛔「未获取」不算声明。",
+   "全员档四件的位置": "🚨 `per-comp-artifacts` 与 `prd-isomorphic` 读的是 **`prd-isomorphic.md` + `competitor-landscape.md` + …** 拼接文本，并且只看**含该 COMP-ID 的那几行**：四件套关键词必须与竞品 ID **同行**。⇒ 正确做法是在 `prd-isomorphic.md` 建一张表，每个竞品一行，四列分别放 `core-path`/`module.d2`/`feature-list`/`page-graph` 路径。⛔ 把四件套写成 `cNN.md` 的小节，判据**看不见**。",
+   "竞品 ID 族": "`prd-isomorphic` 要看到**具体编号**：`CAF-001`…/`CM-01`… ⛔ 写 `CAF-xxx`/`CM-xx` 占位形不算",
+   "诚实缺口的阻断者词表": "🚨 判据认的**阻断者词表**是固定的：`登录墙 / 付费墙 / 会员墙 / 反调试 / 地区限制 / 厂商 / 未获授权 / 不可逆 / 官方未公开 / 拒绝`。⛔ 写「组织侧未开通」这类自造说法**不算点名阻断者**，要用词表里的词（如「未获授权」）。",
+   "候选池行编号": "🚨 `candidate-funnel` 只认带 **`CAND-数字`** 的行（⛔ 用 `COMP-01` 编号的行它不算候选）。每行要有纳入/排除 + 理由 + 重看触发 + 威胁/学习价值分列。",
+   "双轴表不许空格": "`competitive-landscape` 对双轴表逐行查：**除第一列外任一单元格为空就红**。⛔ 表下方的说明文字若以 `|` 开头也会被当成表行。",
+   "公共比较维度": "14 个维度**按正则**匹配，⛔ 光写维度名不够。确切字面：定位…价值主张 / 目标用户…购买者 / 核心场景|JTBD / 关键流程|关键路径 / 核心能力…覆盖|功能矩阵 / 版本…迭代节奏 / 价格…包装|定价…档 / 商业化…服务|商业模式 / 增长…留存|获客…留存 / 用户体验|可学性 / 视觉…品牌 / 技术底层|技术架构 / 数据…安全|合规 / 未登录…可见|未付费…档。读的是 **matrix.md**。",
+   "候选池行的四件套": "每个 `CAND-数字` 行必须同时含：**纳入|排除|观察** + **高|中|低|未知**（价值档）+ **`CLM-数字`**（主张锚）。另外 landscape 全文要出现「候选池」「排除理由」「重看触发」「不合成总分」四个字面。",
+   "双轴关系轴的完整字面": "关系轴必须写全称 `直接竞品`/`间接竞品`/`替代方案`/`潜在进入者`，⛔ 写「直接」「间接」不算——判据除逐行查外，还要求这 8 个字面（4 关系 + 4 角色）**在文件中各出现过至少一次**。",
+   "下游映射表头要带处置英文": "`原子功能下游映射` 表头第 6 列必须含 `adopt|adapt|reject|defer|watch` 字面（写成 `处置 adopt/adapt/reject/defer/watch`）。⛔ 只写「处置」⇒ 整张表取不到 ⇒ 报「AF 行集与词典不一致」，而两边集合其实相同。",
+   "ABSENT 行的检索字面": "必须用 `已检索` / `检索后未发现` / `范围内未发现` 三者之一 + 一个 `YYYY-MM-DD`。⛔「本轮可读面内未发现」这类同义改写**不算**。",
+   "UNKNOWN 行也要填满": "被阻断竞品的行同样要求 `触发入口/结果/失败恢复/质量` 非占位、证据标签带日期、有 `CLM-数字`。取不到就写 `不可观测（<该行的阻断原因>）`，⛔ 留 `—` 等于没做。",
+   "面板分母取自面板表表头": "`atomic-horizontal` 的竞品分母来自 **`### PANEL-xx` 下那张表的表头列**，⛔ 不是「横向对比面板清单」里「覆盖竞品」那格文字——改清单不会让它变绿。",
+   "截图目检记录": "语料里每张 `.png/.jpg/.gif` 都要在 `screenshot-masking-audit.md` 里有一行（文件名出现即可）。判据 `screenshot-masking-audited` ⚠️ 只验「看过没有」，验不了「看得对不对」。"
+  },
+  "corrections": {
+   "comparison-dimensions": "🚨 读的是 **matrix.md**，不是 competitor-landscape.md —— 我 spec 第一版记错了，是判据描述里自己写着『matrix.md 覆盖公共比较维度』",
+   "atomic-horizontal": "⚠️ spec 前两版都记错了：① 以为清单表就是面板本身；② 以为实际面板在 matrix.md。**实际面板与清单表都在 `atomic-feature-ledger.md`**，面板以 `### PANEL-NN` 开头。⇒ 靠在真语料上跑才纠正过来。",
+   "ai-competitive-scope": "⚠️ 域名要按**正则**写（如「AI 能力角色」不是「能力角色」），⛔ 只写中文域名判据认不出",
+   "凭理解写 vs 照字面写": "⚠️ 本轮连犯三次同一个错：我按**理解**写（「已验证」「三类下游目标」「技术可能性线」），而判据认的是**字面**（`verified`、`PRD…Figma…HTML`、`⑤ 技术线`）。⇒ spec 的价值就在于把字面固定下来。",
+   "写入顺序": "⚠️ 用脚本多次 `+=` 追加同一文件时，**后写的块可能把先写的挤出判据的查找范围**（实测：截图块被后加的 AI 九域顶掉，matrix 又变成零图）。⇒ 每次改完**立刻跑一次门禁确认那一条真的绿了**，⛔ 别攒着一起跑。",
+   "表头列数": "⚠️ 实测踩到：词典表头少写一列（12 名 13 分隔），导致 `af` 列解析错位，`atomic-downstream` 报「行集不一致」而两边集合其实相同。⇒ **改表先数列**，表头与分隔行列数必须相等。",
+   "判据一次只报一条": "⚠️ `atomic-facts` 每轮只输出第一个坏行 ⇒ **「红的条数」远小于「问题的条数」**。本轮看着剩 4 条红，照判据条款全量体检实为 **1028 项**。⇒ 收敛到个位数后，用体检脚本把该判据的每条子规则跑一遍，⛔ 别拿红的条数估进度。",
+   "一个红会藏住另一个红": "COMP-13 双轴不合规 ⇒ 它不进 `formal_comp_ids` ⇒ 面板缺它这件事**不可见**。修好双轴后面板才红。⇒ 分母被污染时，下游判据的绿是假的；红数上升不一定是回归。",
+   "同上/指代不许进表": "`同上` 命中占位符正则，且依赖物理行序——插一行就指错。口径：**表格单元格一律写字面**。",
+   "打码CSS会静默失效": "🚨 2026-09-17 外发前逐张目检：**6 张竞品截图里 3 张仍带真实身份信息**（头像/真名/账号名），而流程认为「都已打码」。打码靠注入 CSS 选择器，与各家 DOM 强耦合，**一家改版就失效**，且失效无信号——不报错、不留痕、截图照常生成。⇒ **「注入了打码 CSS」≠「打码生效」**；外发前必须人眼**逐张**看，⛔ 抽查不算（3 张漏网里 2 张抽查选不中）。",
+   "飞书不传本地图": "历史事实仅适用于已弃用的第三方 `@mi/feishu` CLI。当前个人飞书固定使用官方 `lark-cli --as user`，本地图片采用 `@./相对路径` 资源语法，写后查 XML 非空图片实体；历史失败不可再推导出『用附件文字占位』。",
+   "回读是HTML不是md": "飞书回读的表是 `<lark-table rows=N cols=M>`、图是 `<image token=…/>`，**都不是 markdown 语法**。只认管道表/`![]()` 的判据每次推飞书都假红，而假红的门会被绕过。⇒ `doc-sync-guard.tables()` 两种形态都认；图改查**远端有没有空 token 块**（那才是真失败信号）。",
+   "元讨论会被判据当成声称": "⚠️ 在语料里**讨论判据口径**时，写出判据的触发字面会被当成「声称有这个东西」。实例：交互报告里解释「录屏范围怎么定」，写了 `visual-evidence` 的触发词组，判据立刻要求挂录屏文件——它分不清「声称有」与「讨论口径」。⇒ 元讨论**避开触发字面**（本仓母题：判据被它要守的那段文本喂饱，本轮第 4 次）。",
+   "没能力观察≠判定不必": "🚨 自查抓到：交互报告原写「判定本轮无关键/创新动效 ⇒ 不必录屏」，而本轮取证通道是 `Page.captureScreenshot` **静态截图**，**通道本身看不到动效**。没看过就没有判定的依据。⇒ 这是把「没能力观察」伪装成「判定不必」，正是 §9.1 禁的形状，且 `gap-not-excuse` 抓不到（措辞像判定）。**口径：先问「这个结论的观察从哪来」，答不上就是真缺口。**"
+  }
+ },
+ "seeds": {
+  "_": "⭐ 两种空要分开：**结构性空格**有固定词表/固定形状，脚手架可以填出合法值；**内容性空格**是真研究，必须留 ⟨TODO⟩。",
+  "_why": "填合法结构值不是造假——它给的是骨架的形状，不是研究的结论。内容仍由 no-placeholder-left 守着。⛔ 但凡一个格子的值会被读者当成研究结论，就必须留 ⟨TODO⟩。",
+  "cells": {
+   "状态变化": "⟨TODO⟩→⟨TODO⟩",
+   "通道可达性": "未量",
+   "载体对账状态": "未获取+原因：⟨TODO⟩",
+   "采集通道": "inaccessible",
+   "结果标签": "未获取+原因：⟨TODO⟩",
+   "状态": "UNKNOWN"
+  },
+  "blocks": {
+   "competitor-landscape.md": [
+    "实写 COMP-01…COMP-NN 双轴行",
+    "DECISION/QUESTION/CHANGE-MIND/POSITIONING-LENS/STRATEGIC-TENSION/SOURCE-PLAN 六项",
+    "AI-SCOPE：适用 · 理由：⟨TODO⟩",
+    "八个公共比较维度行",
+    "候选池形成记录表（含重看触发、威胁/学习价值分列、不合成总分）",
+    "## 版本对账"
+   ],
+   "design-tokens.md": [
+    "字族/色族/距族三行 + 取证通道列 + SHOT-xxx 真实内联截图证据"
+   ],
+   "innovation-trends.md": [
+    "每个正式竞品一行 INNOV-xx（没有也要写『未发现』）",
+    "TREND-xx 含样本门槛与反例",
+    "WATCH-xx 写事件不写日期"
+   ],
+   "matrix.md": [
+    "横向面板含**全部** AF 行"
+   ],
+   "insights.md": [
+    "正文引用 cross-compare/*.d2",
+    "学习/借鉴/规避/差异化四类",
+    "机会优先级+理由",
+    "模式（insights-chain 环节）"
+   ],
+   "key-flows.md": [
+    "FLOW-01 同口径协议 + 可编辑图源路径 + 量化差异 + 失败恢复 + 三类下游目标"
+   ],
+   "sources.md": [
+    "CLM-001… 每条带 验证状态/发布日期/访问日/失效日"
+   ],
+   "lines.md": [
+    "五条线各一行 + 市场线声明"
+   ],
+   "conflicts.md": [
+    "CONFLICT-01 或『本轮无冲突+理由』；每条写『采信：以 A 实测为准』；双路合并记录"
+   ],
+   "downstream-coverage.md": [
+    "下游→研究 与 研究→下游 两个方向"
+   ],
+   "c<NN>.md": [
+    "CAF-001 功能清单行 / CM-01 模块行（竞品 ID 族）"
+   ],
+   "deep-research/": [
+    "每条结论带 发布日期 与 访问日"
+   ],
+   "reports": [
+    "三份报告各带 SHOT-xxx 真实内联图片并通过飞书回读"
+   ]
+  }
+ },
+ "audienceRef": "spec/_audience.json",
+ "audienceGate": {
+  "gate": "scripts/audience-gate.py",
+  "invocation": "audience-gate.py <交付文档.md>",
+  "rule": "正文给人看；附件给人 + AI 编程看；⛔ 过程日志两边都不进",
+  "note": "⚠️ 只拦机械可判的混入（内部路径/过程数字/自检编号/把读者支出去），拦不住「写得好不好读」"
+ }
+}

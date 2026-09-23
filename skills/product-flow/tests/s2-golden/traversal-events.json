@@ -1,0 +1,15 @@
+{
+  "events": [
+    {
+      "id": "EVENT-001",
+      "route": "/a",
+      "target": "创建",
+      "classification": "verified",
+      "beforeState": "空闲",
+      "action": "点击创建",
+      "afterState": "完成",
+      "result": "成功提示",
+      "evidenceId": "SHOT-001"
+    }
+  ]
+}

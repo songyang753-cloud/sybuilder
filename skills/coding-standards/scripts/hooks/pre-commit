@@ -1,0 +1,13 @@
+#!/bin/sh
+# coding-standards 提交前守卫的**接线**（铁律 107：新增门禁必须同时提交「它被谁执行」的证据——本文件就是）。
+# 安装（hook 不随 clone 走，新检出后要重做一次）：
+#   ln -sf ../../skills/coding-standards/scripts/hooks/pre-commit "$(git rev-parse --git-dir)/hooks/pre-commit"
+# 快速放行：暂存区不含本 skill 路径时零成本退出（本仓常年多会话并行，别的 skill 的提交不该付这十秒）。
+# ⚠️ 已知边界：`git commit -- <别的路径>` 时 git 不把路径规格告诉 hook——若暂存区里躺着红的
+#   coding-standards 文件，本 hook 会拦下这次提交。这恰好挡住「整索引把红文件卷走」（铁律 114）；
+#   确认这次提交真不含本 skill 时用 `git commit --no-verify` 放行（用它 = 对红灯自己负责）。
+# ⚠️ git 失败不许静默放行(2026-09-09 codex):先捕获退出码,失败=fail-closed 拒绝,而不是让空输出走进 `|| exit 0`
+staged=$(git diff --cached --name-only) || { echo "pre-commit: git diff --cached 失败,fail-closed 拒绝提交(排查 git 状态后重试或 --no-verify)" >&2; exit 1; }
+printf '%s\n' "$staged" | grep -q '^skills/coding-standards/' || exit 0
+root=$(git rev-parse --show-toplevel) || { echo "pre-commit: git rev-parse 失败" >&2; exit 1; }
+exec bash "$root/skills/coding-standards/scripts/precommit-guard.sh"

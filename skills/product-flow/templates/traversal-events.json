@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "runId": "RUN-001",
+  "product": "<产品名>",
+  "version": "<版本/端/套餐>",
+  "coverageComplete": false,
+  "events": [
+    {
+      "id": "EVENT-001",
+      "surfId": "SURF-001",
+      "route": "/<真实路由>",
+      "target": "<deep-tree 中的真实控件文字>",
+      "classification": "verified",
+      "beforeState": "<用户可观察前态>",
+      "action": "<一个实际执行动作>",
+      "input": "<输入或 N/A+理由>",
+      "afterState": "<用户可观察后态>",
+      "result": "<结果/反馈原文>",
+      "evidenceId": "SHOT-001",
+      "afIds": ["AF-001"]
+    },
+    {
+      "id": "EVENT-002",
+      "surfId": "SURF-002",
+      "route": "/<真实路由>",
+      "target": "<真实控件文字>",
+      "classification": "blocked",
+      "reason": "<登录墙/付费墙/权限/地区/安全边界与影响>",
+      "afIds": []
+    }
+  ]
+}

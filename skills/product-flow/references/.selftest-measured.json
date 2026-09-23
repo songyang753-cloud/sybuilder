@@ -1,0 +1,531 @@
+{
+  "measuredAt": "2026-09-23T15:58:08",
+  "scripts": 73,
+  "cases": 1324,
+  "failures": 0,
+  "failedScripts": [],
+  "unableScripts": [
+    "consistency-gate.py"
+  ],
+  "cachedScripts": [
+    "_argv.py",
+    "_feishu.py",
+    "_module_contract.py",
+    "_prd_parse.py",
+    "_scene_parse.py",
+    "_section.py",
+    "_section_oracle.py",
+    "_sweep_lib.py",
+    "_workflow.py",
+    "ai-slop-gate.py",
+    "audience-gate.py",
+    "bar-weakening-scan.py",
+    "browser-audit.mjs",
+    "business-map-gate.py",
+    "cdp-reuse-gate.py",
+    "chain-gate.py",
+    "converge.py",
+    "coordination-gate.py",
+    "coverage_check.py",
+    "dead-click-gate.mjs",
+    "definition-gate.py",
+    "demo-anchor-gate.py",
+    "design-intent-gate.py",
+    "design-to-tokens.py",
+    "diagram-id-gate.py",
+    "doc-sync-guard.py",
+    "element-identity-gate.py",
+    "feishu-delivery-gate.py",
+    "figma-editability-gate.py",
+    "flow-metrics.py",
+    "flow-walk-gate.mjs",
+    "flows-to-testcases.py",
+    "g75-freeze-gate.py",
+    "gen-docs.py",
+    "intent-gate.py",
+    "interaction-gate.py",
+    "mock-seam-gate.mjs",
+    "mutation-sweep.py",
+    "no-loss-gate.py",
+    "platform-parity-gate.mjs",
+    "prd_completeness_check.py",
+    "product-structure-gate.py",
+    "receipt-check.py",
+    "reconcile-gate.py",
+    "report-structure-gate.py",
+    "requirements-quality-gate.py",
+    "research-gate.py",
+    "retro-gate.py",
+    "s8-solution-gate.py",
+    "s9-dev-slice-gate.py",
+    "s9-launch-rollback-gate.py",
+    "s9-product-walkthrough-gate.py",
+    "s9-quality-report-gate.py",
+    "scaffold.py",
+    "scenario-matrix-gate.mjs",
+    "sec-scan.py",
+    "serial-orchestration-gate.py",
+    "spec-authoring-gate.py",
+    "spec-check.py",
+    "spec-sync-gate.py",
+    "spec-to-js.py",
+    "taste-memory.py",
+    "token-provenance-gate.py",
+    "tokens-to-css.py",
+    "traversal-coverage-gate.py",
+    "visual-spec-gate.py"
+  ],
+  "disagree": [],
+  "shas": {
+    "_argv.py": "352df1772a48fbcbdd2a485a8092710cbcb3186d",
+    "_feishu.py": "25c9ee60aeb71f25223f535b04656f98a51e8d89",
+    "_module_contract.py": "4b12aefc6ecb5e93565212e88708352090c9cf56",
+    "_prd_parse.py": "5b4f12038c7ad7fa6c7a2877ffdc8a7148ddbf4a",
+    "_roster.py": "68f1ad036dd9c174bf208e73d2b7554835eaa60d",
+    "_scene_parse.py": "071cd96ffd679394700f4b99b48628b6b57c5a20",
+    "_section.py": "4a4906a4daf443f242a3315117f6bb89a52d68c6",
+    "_section_oracle.py": "b0840538b080e55128da2770712a0ce785cdba21",
+    "_sweep_lib.py": "92530c3f9b3cf7d393b32605a9b685bb97f2a60b",
+    "_workflow.py": "d20461d4c2237ff3d4520a8c08984adbca7147c9",
+    "ai-slop-gate.py": "e087c411fd82eff00225e6d51d6d7269b08f76ed",
+    "audience-gate.py": "2719563c50652da86ecea651e505976ca2c3ed4b",
+    "bar-weakening-scan.py": "3e1f92bd338a07f4a65abfe70eeb1090e6805b84",
+    "browser-audit.mjs": "e6cba9dd5d38144211766d49e1ddf466b7ded8c9",
+    "business-map-gate.py": "f4d7fea51a72722c7216a0d16780e84f40694649",
+    "cdp-reuse-gate.py": "b212c3c0caf544e487c481ef01455ce6b3182242",
+    "chain-gate.py": "aa9f777fad2323d0daed9c18303f0e451f4d0534",
+    "consistency-gate.py": "5017b125f87f02d14e2aabdd78dcaaa69bafeaa9",
+    "converge.py": "c2853b2e34a71c8d3a1d59aa96ad9aece6bd4b3d",
+    "coordination-gate.py": "fef9b9c5f4b6aeb325d6484549ef4e5e3128275e",
+    "coverage_check.py": "ad5ca070308c88daa7634d6efc7e216429d24ddc",
+    "dead-click-gate.mjs": "0989d66d8d335dd696b1bffb69dcbeff775e7d14",
+    "definition-gate.py": "95534c467bb3187dd0071b05d86f55e4970c0cf4",
+    "demo-anchor-gate.py": "16bf080dba3b29257fa211bcc4de0e91ea46e26f",
+    "design-intent-gate.py": "2bfeb621e720ce4daf0cc13e5b47d697433ca601",
+    "design-to-tokens.py": "5e4e49677e09f6ccb36be96a84a7265318c80cfa",
+    "diagram-id-gate.py": "fe26ff4f5496d8c581ec14fa5596b2c526fc30cf",
+    "doc-sync-guard.py": "59ffb54a0804d0e9a0e73e5da36fb56827dacdeb",
+    "element-identity-gate.py": "b9dd6425453023767214d546cd54c9dfe0ab8219",
+    "feishu-delivery-gate.py": "7a034c968e66a8e28dc6a539d848ddc2c2215105",
+    "figma-editability-gate.py": "7f75c850525e06e9a4a6feafb9fca2597731627d",
+    "flow-metrics.py": "15bf967bd6a3e368eb41861bbd895a41fae76973",
+    "flow-walk-gate.mjs": "83bf2c00a913152ab58d95d3f2ef70910b51cd43",
+    "flows-to-testcases.py": "bbd19de814209e1a43ec8460d42f535d8651b1c7",
+    "g75-freeze-gate.py": "4302575607e571e8921328e33ad1db11fb2a8f8c",
+    "gate-run.py": "2ebf1b2bbec88a19dd5b1e804e26839541efb342",
+    "gen-docs.py": "2ab6bb93ddcbfdc469d6a7b33fd19b7f57bbc9c9",
+    "intent-gate.py": "bcf3a28879c688a1c71f2fe831d9da821835afb9",
+    "interaction-gate.py": "bad54885612a873b0a2104a61c0e57835fbb9654",
+    "mock-seam-gate.mjs": "8e8bb7c263c2348ba8a10d6a1309a323efa2a54c",
+    "mutation-sweep.py": "32c43c9bca85321af21dee73e1ff10f85db3ba1e",
+    "no-loss-gate.py": "f5ceae630dc6f07d2bee08e513b256fee6edbf40",
+    "platform-parity-gate.mjs": "6c8ba4bade1b2c9d5a06bc299a8b15e23c49fed1",
+    "prd_completeness_check.py": "9186cdd8a830c27589b42cf0ae80a745661492b4",
+    "product-flow-run.py": "e0fa286763f86192c53ffa26dcdc3bbd4f2d12b1",
+    "product-structure-gate.py": "450bb2cbba2ad398465322c9cb81530d934edde2",
+    "receipt-check.py": "981fe13c8702e71524a56655621c19cd0c1cb65e",
+    "reconcile-gate.py": "a7f36853ce41b670e925831f3e6380400321fd34",
+    "report-structure-gate.py": "cce9e69f4e79de26d62d20600f5f62d4970e0807",
+    "requirements-quality-gate.py": "1979425da6137ec4223fd3ad2c61de281ffd5026",
+    "research-gate.py": "ef0eb1a061825b66658e83f8d1d69a4d8f66dd2c",
+    "retro-gate.py": "1a1f84b553ff8407cdc5fe4e1786faa1449b8a12",
+    "reverse-test.py": "b76541e988aafc1cbcc7d09e981d4b2ff61f3b0d",
+    "s8-solution-gate.py": "cb6e04dedaff5dc1c503ff1c125d4761c271240e",
+    "s9-dev-slice-gate.py": "43660aeb7cc73af7c1026ca3b1242fd19e315d35",
+    "s9-launch-rollback-gate.py": "19a57a106bc1ad4518e911512b7df1faea9690f0",
+    "s9-product-walkthrough-gate.py": "5ed1e91d6f0eaa9ed759d01d866ad7eb47e032c9",
+    "s9-quality-report-gate.py": "6d3bc5737a874574b500ba04bc438a93169ef7cd",
+    "scaffold.py": "359f94e8a0db13949ba6fc4dead26769d0dc619b",
+    "scenario-matrix-gate.mjs": "2819f77e4bec8a94168485546afc2fba271b18bb",
+    "sec-scan.py": "a2d187ad7089ad6e77db1bc4767c609ccca16542",
+    "selftest-all.py": "8f0138e2bb20de56a7fd7e20818b9b34451f4bd7",
+    "serial-orchestration-gate.py": "c75fb16e5e21744c759fc0be4a2f59251dd9b8ca",
+    "spec-authoring-gate.py": "cd556762012b08c4173c83c8b0e2b9de9ec2aaad",
+    "spec-check.py": "a2ea2c4345641af2e57679589fccfc1bfd2df0c3",
+    "spec-sync-gate.py": "6902c99e7d1b2be5980fa8340d28421e067ce29b",
+    "spec-to-js.py": "44a1b3e0ec3b4b8b13e438fd6e99a3b8169fc67a",
+    "taste-memory.py": "97546e72be94851c18b3286ab5f123ba8c400691",
+    "token-provenance-gate.py": "8609720680f0e8415d269f49b30a3e87815cf9a2",
+    "tokens-to-css.py": "05446d31382e16ad9502bf4d9cd1cc67f946664a",
+    "traversal-coverage-gate.py": "a08ca6a3651224ca0cbeb4086ae2938b60781d53",
+    "unexecuted-check.py": "2e56a211f0cec80cdc52b4649f93dfcfca925ff5",
+    "visual-spec-gate.py": "e4ecb4d094b72ecca133ffd576e3935d5bc06a49"
+  },
+  "perGate": {
+    "_argv.py": {
+      "cases": 6,
+      "negNumeric": 0,
+      "negLabel": 2
+    },
+    "_feishu.py": {
+      "cases": 8,
+      "negNumeric": 0,
+      "negLabel": 5
+    },
+    "_module_contract.py": {
+      "cases": 4,
+      "negNumeric": 0,
+      "negLabel": 3
+    },
+    "_prd_parse.py": {
+      "cases": 18,
+      "negNumeric": 0,
+      "negLabel": 0
+    },
+    "_roster.py": {
+      "cases": 9,
+      "negNumeric": 0,
+      "negLabel": 0
+    },
+    "_scene_parse.py": {
+      "cases": 11,
+      "negNumeric": 0,
+      "negLabel": 0
+    },
+    "_section.py": {
+      "cases": 7,
+      "negNumeric": 0,
+      "negLabel": 0
+    },
+    "_section_oracle.py": {
+      "cases": 3,
+      "negNumeric": 0,
+      "negLabel": 0
+    },
+    "_sweep_lib.py": {
+      "cases": 2,
+      "negNumeric": 0,
+      "negLabel": 1
+    },
+    "_workflow.py": {
+      "cases": 6,
+      "negNumeric": 0,
+      "negLabel": 1
+    },
+    "ai-slop-gate.py": {
+      "cases": 25,
+      "negNumeric": 2,
+      "negLabel": 16
+    },
+    "audience-gate.py": {
+      "cases": 10,
+      "negNumeric": 5,
+      "negLabel": 5
+    },
+    "bar-weakening-scan.py": {
+      "cases": 9,
+      "negNumeric": 0,
+      "negLabel": 6
+    },
+    "browser-audit.mjs": {
+      "cases": 13,
+      "negNumeric": 3,
+      "negLabel": 6
+    },
+    "business-map-gate.py": {
+      "cases": 11,
+      "negNumeric": 0,
+      "negLabel": 6
+    },
+    "cdp-reuse-gate.py": {
+      "cases": 11,
+      "negNumeric": 6,
+      "negLabel": 6
+    },
+    "chain-gate.py": {
+      "cases": 33,
+      "negNumeric": 21,
+      "negLabel": 10
+    },
+    "consistency-gate.py": {
+      "cases": 109,
+      "negNumeric": 1,
+      "negLabel": 21
+    },
+    "converge.py": {
+      "cases": 18,
+      "negNumeric": 1,
+      "negLabel": 0
+    },
+    "coordination-gate.py": {
+      "cases": 22,
+      "negNumeric": 0,
+      "negLabel": 12
+    },
+    "coverage_check.py": {
+      "cases": 17,
+      "negNumeric": 12,
+      "negLabel": 8
+    },
+    "dead-click-gate.mjs": {
+      "cases": 10,
+      "negNumeric": 7,
+      "negLabel": 5
+    },
+    "definition-gate.py": {
+      "cases": 51,
+      "negNumeric": 37,
+      "negLabel": 36
+    },
+    "demo-anchor-gate.py": {
+      "cases": 22,
+      "negNumeric": 0,
+      "negLabel": 12
+    },
+    "design-intent-gate.py": {
+      "cases": 27,
+      "negNumeric": 18,
+      "negLabel": 15
+    },
+    "design-to-tokens.py": {
+      "cases": 9,
+      "negNumeric": 7,
+      "negLabel": 7
+    },
+    "diagram-id-gate.py": {
+      "cases": 12,
+      "negNumeric": 0,
+      "negLabel": 8
+    },
+    "doc-sync-guard.py": {
+      "cases": 34,
+      "negNumeric": 18,
+      "negLabel": 12
+    },
+    "element-identity-gate.py": {
+      "cases": 26,
+      "negNumeric": 20,
+      "negLabel": 13
+    },
+    "feishu-delivery-gate.py": {
+      "cases": 2,
+      "negNumeric": 0,
+      "negLabel": 1
+    },
+    "figma-editability-gate.py": {
+      "cases": 8,
+      "negNumeric": 7,
+      "negLabel": 6
+    },
+    "flow-metrics.py": {
+      "cases": 5,
+      "negNumeric": 0,
+      "negLabel": 0
+    },
+    "flow-walk-gate.mjs": {
+      "cases": 7,
+      "negNumeric": 6,
+      "negLabel": 6
+    },
+    "flows-to-testcases.py": {
+      "cases": 7,
+      "negNumeric": 4,
+      "negLabel": 5
+    },
+    "g75-freeze-gate.py": {
+      "cases": 23,
+      "negNumeric": 0,
+      "negLabel": 18
+    },
+    "gate-run.py": {
+      "cases": 33,
+      "negNumeric": 0,
+      "negLabel": 1
+    },
+    "gen-docs.py": {
+      "cases": 13,
+      "negNumeric": 9,
+      "negLabel": 3
+    },
+    "intent-gate.py": {
+      "cases": 7,
+      "negNumeric": 0,
+      "negLabel": 5
+    },
+    "interaction-gate.py": {
+      "cases": 22,
+      "negNumeric": 21,
+      "negLabel": 19
+    },
+    "mock-seam-gate.mjs": {
+      "cases": 8,
+      "negNumeric": 7,
+      "negLabel": 5
+    },
+    "mutation-sweep.py": {
+      "cases": 5,
+      "negNumeric": 0,
+      "negLabel": 0
+    },
+    "no-loss-gate.py": {
+      "cases": 16,
+      "negNumeric": 0,
+      "negLabel": 6
+    },
+    "platform-parity-gate.mjs": {
+      "cases": 23,
+      "negNumeric": 19,
+      "negLabel": 16
+    },
+    "prd_completeness_check.py": {
+      "cases": 44,
+      "negNumeric": 36,
+      "negLabel": 29
+    },
+    "product-flow-run.py": {
+      "cases": 18,
+      "negNumeric": 0,
+      "negLabel": 0
+    },
+    "product-structure-gate.py": {
+      "cases": 51,
+      "negNumeric": 0,
+      "negLabel": 31
+    },
+    "receipt-check.py": {
+      "cases": 15,
+      "negNumeric": 0,
+      "negLabel": 11
+    },
+    "reconcile-gate.py": {
+      "cases": 25,
+      "negNumeric": 16,
+      "negLabel": 0
+    },
+    "report-structure-gate.py": {
+      "cases": 11,
+      "negNumeric": 7,
+      "negLabel": 4
+    },
+    "requirements-quality-gate.py": {
+      "cases": 18,
+      "negNumeric": 9,
+      "negLabel": 8
+    },
+    "research-gate.py": {
+      "cases": 144,
+      "negNumeric": 124,
+      "negLabel": 123
+    },
+    "retro-gate.py": {
+      "cases": 28,
+      "negNumeric": 22,
+      "negLabel": 20
+    },
+    "reverse-test.py": {
+      "cases": 7,
+      "negNumeric": 4,
+      "negLabel": 0
+    },
+    "s8-solution-gate.py": {
+      "cases": 13,
+      "negNumeric": 0,
+      "negLabel": 11
+    },
+    "s9-dev-slice-gate.py": {
+      "cases": 11,
+      "negNumeric": 0,
+      "negLabel": 9
+    },
+    "s9-launch-rollback-gate.py": {
+      "cases": 11,
+      "negNumeric": 0,
+      "negLabel": 9
+    },
+    "s9-product-walkthrough-gate.py": {
+      "cases": 10,
+      "negNumeric": 0,
+      "negLabel": 8
+    },
+    "s9-quality-report-gate.py": {
+      "cases": 12,
+      "negNumeric": 0,
+      "negLabel": 10
+    },
+    "scaffold.py": {
+      "cases": 8,
+      "negNumeric": 6,
+      "negLabel": 1
+    },
+    "scenario-matrix-gate.mjs": {
+      "cases": 12,
+      "negNumeric": 10,
+      "negLabel": 10
+    },
+    "sec-scan.py": {
+      "cases": 7,
+      "negNumeric": 1,
+      "negLabel": 4
+    },
+    "selftest-all.py": {
+      "cases": 18,
+      "negNumeric": 0,
+      "negLabel": 1
+    },
+    "serial-orchestration-gate.py": {
+      "cases": 7,
+      "negNumeric": 3,
+      "negLabel": 3
+    },
+    "spec-authoring-gate.py": {
+      "cases": 8,
+      "negNumeric": 6,
+      "negLabel": 5
+    },
+    "spec-check.py": {
+      "cases": 13,
+      "negNumeric": 10,
+      "negLabel": 10
+    },
+    "spec-sync-gate.py": {
+      "cases": 26,
+      "negNumeric": 19,
+      "negLabel": 19
+    },
+    "spec-to-js.py": {
+      "cases": 5,
+      "negNumeric": 3,
+      "negLabel": 3
+    },
+    "taste-memory.py": {
+      "cases": 14,
+      "negNumeric": 8,
+      "negLabel": 0
+    },
+    "token-provenance-gate.py": {
+      "cases": 10,
+      "negNumeric": 7,
+      "negLabel": 6
+    },
+    "tokens-to-css.py": {
+      "cases": 7,
+      "negNumeric": 0,
+      "negLabel": 0
+    },
+    "traversal-coverage-gate.py": {
+      "cases": 7,
+      "negNumeric": 3,
+      "negLabel": 4
+    },
+    "unexecuted-check.py": {
+      "cases": 4,
+      "negNumeric": 4,
+      "negLabel": 0
+    },
+    "visual-spec-gate.py": {
+      "cases": 38,
+      "negNumeric": 12,
+      "negLabel": 13
+    }
+  },
+  "negativesByExpectation": 541,
+  "negativesByLabel": 659,
+  "command": "python3 scripts/selftest-all.py",
+  "treeDiff": [
+    "skills/product-flow/scripts/gate-run.py",
+    "skills/product-flow/scripts/product-flow-run.py",
+    "skills/product-flow/scripts/reverse-test.py",
+    "skills/product-flow/scripts/selftest-all.py"
+  ],
+  "headAt": "7ca8fb0"
+}

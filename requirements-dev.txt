@@ -1,0 +1,2 @@
+-r requirements.txt
+# Core includes the CommonMark parser used by verification as well as delivery.

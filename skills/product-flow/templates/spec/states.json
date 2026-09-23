@@ -1,0 +1,266 @@
+{
+  "_": "每个界面适用哪些状态，以及**每个状态由什么触发**。没有触发入口的状态 = 只写在文档里，等于没定义。\n⚠️ 状态分两个层级，**都要登记**：\n  · 页面级（class: data / availability）—— 由 `body[data-scene]` 表达，靠 `?scn=` 或几步操作触发\n  · 组件级（class: component）—— 由元素自己的 `data-state` 表达，绑在 elements.json 的 slug 上\n📌 这个分层是拿真实项目对出来的：云端办公 Agent 的 22 个界面**全部**有组件级业务状态\n   （pending/running/succeeded/failed/skipped），而只有 8 个有页面级数据状态 ——\n   原先只登记页面级，等于**漏掉了真实产品里占绝大多数的那一类**。",
+  "_classes": "四类（数据/流程 · 组件交互 · 可用性/权限 · 组件特有）的唯一权威源是 references/interaction-patterns.md。",
+  "surfaces": [
+    {
+      "id": "f01",
+      "name": "任务列表",
+      "ends": [
+        "pc",
+        "mobile"
+      ],
+      "states": [
+        {
+          "state": "loading",
+          "applicable": true,
+          "trigger": "slow",
+          "visible": "骨架块 + 加载中…",
+          "class": "data"
+        },
+        {
+          "state": "success",
+          "applicable": true,
+          "trigger": "default",
+          "visible": "列表 + 条数",
+          "class": "data"
+        },
+        {
+          "state": "empty",
+          "applicable": true,
+          "trigger": "empty",
+          "visible": "引导文案 + 主 CTA 新建任务",
+          "class": "data"
+        },
+        {
+          "state": "error",
+          "applicable": true,
+          "trigger": "api-500",
+          "visible": "错误原因 + 重试按钮",
+          "class": "data"
+        },
+        {
+          "state": "no-permission",
+          "applicable": false,
+          "why": "列表是只读的，只读账号照样能看",
+          "class": "availability"
+        }
+      ],
+      "endMode": "same",
+      "endModeWhy": "两端同一套交互"
+    },
+    {
+      "id": "f02",
+      "name": "任务详情",
+      "ends": [
+        "pc",
+        "mobile"
+      ],
+      "states": [
+        {
+          "state": "loading",
+          "applicable": true,
+          "trigger": "slow",
+          "visible": "骨架块",
+          "class": "data"
+        },
+        {
+          "state": "success",
+          "applicable": true,
+          "trigger": "default",
+          "visible": "字段表 + 推进按钮",
+          "class": "data"
+        },
+        {
+          "state": "error",
+          "applicable": true,
+          "trigger": "empty",
+          "visible": "404 文案（空库里这条 id 不存在）",
+          "class": "data"
+        },
+        {
+          "state": "no-permission",
+          "applicable": false,
+          "why": "详情本身只读账号也看得到，403 只落在「推进」按钮上 —— 那是**元素的可用性状态**（第③类），登记在 elements.json#E-07，不是这一屏的数据状态",
+          "class": "availability"
+        },
+        {
+          "state": "empty",
+          "applicable": false,
+          "why": "详情要么有这条要么 404，没有「零条」这种中间态",
+          "class": "data"
+        }
+      ],
+      "endMode": "degraded",
+      "endModeWhy": "移动端降级版：推进按钮只读"
+    },
+    {
+      "id": "f03",
+      "name": "新建任务",
+      "ends": [
+        "pc",
+        "mobile"
+      ],
+      "states": [
+        {
+          "state": "default",
+          "applicable": true,
+          "trigger": "default",
+          "visible": "空表单",
+          "class": "data",
+          "end": "pc"
+        },
+        {
+          "state": "error",
+          "applicable": true,
+          "trigger": "save-failed",
+          "visible": "表单级错误条 role=alert",
+          "steps": [
+            {
+              "do": "fill",
+              "role": "textbox",
+              "name": "标题",
+              "value": "甲"
+            },
+            {
+              "do": "fill",
+              "role": "textbox",
+              "name": "负责人",
+              "value": "乙"
+            },
+            {
+              "do": "click",
+              "role": "button",
+              "name": "提交"
+            }
+          ],
+          "note": "导航到不了：必须真的提交一次才会失败（仅桌面：移动端此屏不提供表单）",
+          "class": "data",
+          "end": "pc"
+        },
+        {
+          "state": "no-permission",
+          "applicable": true,
+          "trigger": "no-permission",
+          "visible": "提交返回 403 文案",
+          "steps": [
+            {
+              "do": "fill",
+              "role": "textbox",
+              "name": "标题",
+              "value": "甲"
+            },
+            {
+              "do": "fill",
+              "role": "textbox",
+              "name": "负责人",
+              "value": "乙"
+            },
+            {
+              "do": "click",
+              "role": "button",
+              "name": "提交"
+            }
+          ],
+          "note": "同上：403 由提交动作触发（仅桌面：移动端此屏不提供表单）",
+          "class": "availability",
+          "end": "pc"
+        },
+        {
+          "state": "loading",
+          "applicable": false,
+          "why": "提交中由按钮自身的 submitting 标签表达，不是页面级状态",
+          "class": "data"
+        },
+        {
+          "state": "empty",
+          "applicable": false,
+          "why": "新建表单没有「无数据」这回事",
+          "class": "data"
+        },
+        {
+          "state": "pc-only",
+          "applicable": true,
+          "trigger": "default",
+          "end": "mobile",
+          "class": "availability",
+          "visible": "明写「仅在桌面端提供」，⛔ 不假装能用"
+        }
+      ],
+      "endMode": "pc-only",
+      "endModeWhy": "仅桌面：移动端不提供新建"
+    }
+  ],
+  "components": [
+    {
+      "el": "btn-advance",
+      "states": [
+        {
+          "class": "component",
+          "state": "disabled",
+          "applicable": true,
+          "trigger": "no-permission",
+          "surface": "f02",
+          "visible": "置灰 + title 说明原因",
+          "note": "⛔ 不隐藏——隐藏会让用户以为没这个功能"
+        },
+        {
+          "class": "component",
+          "state": "default",
+          "applicable": true,
+          "trigger": "default",
+          "surface": "f02",
+          "visible": "可点"
+        },
+        {
+          "class": "component",
+          "state": "disabled",
+          "applicable": true,
+          "trigger": "default",
+          "surface": "f02",
+          "end": "mobile",
+          "visible": "置灰 + 一行「移动端只读」说明",
+          "note": "endMode=degraded 的实现落点"
+        }
+      ]
+    },
+    {
+      "el": "btn-submit",
+      "states": [
+        {
+          "class": "component",
+          "state": "submitting",
+          "applicable": false,
+          "why": "本骨架的保存是本地即时的，没有足以观测的提交中窗口；真实项目接了后端就适用"
+        },
+        {
+          "class": "component",
+          "state": "default",
+          "applicable": true,
+          "trigger": "default",
+          "surface": "f03",
+          "visible": "可点"
+        }
+      ]
+    },
+    {
+      "el": "task-row",
+      "states": [
+        {
+          "class": "component",
+          "state": "default",
+          "applicable": true,
+          "trigger": "default",
+          "surface": "f01",
+          "visible": "常态行"
+        },
+        {
+          "class": "component",
+          "state": "selected",
+          "applicable": false,
+          "why": "本轮不做多选；真实产品有批量操作时适用（对应真实规格里的 batch-toolbar）"
+        }
+      ]
+    }
+  ],
+  "_ends": "每个界面必须回答**三选一**：`same`（两端同一套）/ `degraded`（移动端降级版）/ `pc-only`（只在一端存在）。⛔ 不回答＝到 S7 必然返工。\n⭐ 端会进场景 ID（`fNN-端-状态`），`scenario-matrix-gate` 按 `ends` 逐端真触发一遍 ——\n  **双端产品最容易丢的就是移动端那一半**，因为没人导航到那儿去看。"
+}

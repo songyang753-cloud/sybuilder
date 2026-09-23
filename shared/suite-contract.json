@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "name": "sybuilder",
+  "displayName": "SYBuilder",
+  "version": "0.1.0-rc.1",
+  "status": "public-development-preview",
+  "skills": [
+    {
+      "id": "product-flow",
+      "path": "skills/product-flow",
+      "role": "orchestrator",
+      "required": true
+    },
+    {
+      "id": "coding-standards",
+      "path": "skills/coding-standards",
+      "role": "implementation-policy-and-repository-enforcement",
+      "requiredFor": ["S8", "S9-development"]
+    },
+    {
+      "id": "four-node-review",
+      "path": "skills/four-node-review",
+      "role": "release-review",
+      "requiredFor": ["S9-final-review"]
+    }
+  ],
+  "stageBindings": [
+    {
+      "stage": "S8",
+      "skills": ["product-flow", "coding-standards"],
+      "outputs": ["technical-solution", "algorithm-solution", "test-solution"]
+    },
+    {
+      "stage": "S9-development",
+      "skills": ["product-flow", "coding-standards"],
+      "outputs": ["implementation-slice", "test-evidence", "gate-receipts"]
+    },
+    {
+      "stage": "S9-final-review",
+      "skills": ["product-flow", "coding-standards", "four-node-review"],
+      "outputs": ["gui-qa-report", "pm-walkthrough-report", "final-review-verdict"]
+    }
+  ],
+  "failureSemantics": {
+    "missingRequiredSkill": "UNABLE",
+    "missingRequiredEvidence": "UNABLE",
+    "failedCriterion": "FAIL",
+    "passedAllApplicableCriteria": "PASS"
+  },
+  "documentDelivery": {
+    "sourceOfTruth": "one-markdown-semantic-source",
+    "chooseExactlyOneRemoteCanonical": true,
+    "platforms": ["feishu", "dingtalk"],
+    "requiredVerification": ["text-readback", "table-structure", "real-image-entities"],
+    "missingPlatform": "UNABLE"
+  },
+  "extensionRequiredFields": [
+    "stage",
+    "consumes",
+    "produces",
+    "required",
+    "fallback",
+    "license",
+    "verification"
+  ]
+}

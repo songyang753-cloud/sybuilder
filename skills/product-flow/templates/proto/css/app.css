@@ -1,0 +1,194 @@
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:15px/1.6 system-ui,-apple-system,"Noto Sans SC",sans-serif;
+  color:var(--text);background:var(--stage);                 /* 中性灰衬底，产品 UI 放外框里 */
+  display:flex;align-items:flex-start;gap:16px;padding:16px 16px 40px}
+#stage{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:center;gap:12px}
+
+/* ── 场景导航（评审脚手架）───────────────────────────────────── */
+#scenenav{flex:0 0 232px;position:sticky;top:16px;max-height:calc(100vh - 56px);overflow-y:auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;
+  color:var(--text)}
+#scenenav .navtitle{margin:0 0 8px;font-weight:600;display:flex;flex-direction:column;
+  cursor:pointer;min-height:44px;justify-content:center}
+#scenenav details[open] .navtitle{margin-bottom:4px}
+#scenenav .navtitle span{font-weight:400;color:var(--muted);font-size:12px}
+#scenenav .grp{margin:10px 0 4px;color:var(--muted);font-size:12px}
+#scenenav a{display:block;padding:8px 10px;border-radius:8px;color:inherit;
+  text-decoration:none;min-height:44px;display:flex;align-items:center}
+#scenenav a[aria-current="true"]{background:var(--text);color:var(--bg)}
+@media (max-width: 900px){
+  body{flex-direction:column;align-items:center}
+  #scenenav{position:static;flex:0 0 auto;width:100%;max-width:390px;max-height:none}
+}
+
+/* ── 演示脚手架（不是产品 UI）──────────────────────────────────── */
+#endbar{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+#endbar .hint{opacity:.7}
+#endbar .sep{width:1px;height:24px;background:var(--line);margin:0 4px}
+/* 切换器虽是脚手架不是产品 UI，命中区照样做够 44 ——
+   ⛔ 与其给门禁开一个「这是脚手架，别查」的豁免口子（那种口子一定会被滥用），
+   不如把它做对：交互稿本身也会被人在手机上打开。 */
+#endbar a{padding:6px 14px;border:1px solid var(--line);border-radius:999px;
+  background:var(--surface);color:var(--text);text-decoration:none;min-height:44px;
+  display:inline-flex;align-items:center}
+/* ⛔ 选中态不许写死 color:#fff —— 深色主题里 --text 接近纯白，白底白字实测 1.10:1。
+   用 bg 做前景色：两个主题都自动反相。（这条是 --all-themes 门禁抓出来的） */
+#endbar a[aria-current="true"]{background:var(--text);color:var(--bg);border-color:transparent}
+
+/* ── 设备外框 ─────────────────────────────────────────────────── */
+#frame{flex:0 0 auto;background:var(--bg);overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.14)}
+body[data-end="pc"] #frame{width:min(1200px,100%);border-radius:12px}
+body[data-end="pc"] #chrome{height:46px;background:var(--surface);border-bottom:1px solid var(--line)}
+body[data-end="mobile"] #frame{width:390px;height:844px;border-radius:44px;
+  border:10px solid #16161A;display:flex;flex-direction:column}
+body[data-end="mobile"] #chrome{height:24px;flex:0 0 auto;background:var(--bg)}   /* 状态栏 */
+/* 底部 Home 条（在外框**里面**，不是页面底部那个东西） */
+body[data-end="mobile"] #homebar{flex:0 0 auto;height:22px;display:flex;align-items:center;justify-content:center}
+body[data-end="mobile"] #homebar::before{content:'';width:120px;height:5px;border-radius:3px;background:var(--muted);opacity:.5}
+
+/* ── 端外壳：桌面＝侧栏+主区；移动＝全屏单列 ──────────────────────── */
+#shell{display:flex;min-height:0}
+body[data-end="pc"] #shell{height:640px}
+body[data-end="mobile"] #shell{flex:1 1 auto;flex-direction:column}
+#sidenav{flex:0 0 220px;padding:var(--sp-4);border-right:1px solid var(--line);
+  background:var(--surface);overflow-y:auto}
+#sidenav[hidden]{display:none}
+#sidenav .brand{font-weight:600;margin:0 0 var(--sp-3)}
+#sidenav a{display:block;padding:8px 10px;margin:2px 0;border-radius:var(--r-1);
+  color:inherit;text-decoration:none}
+#sidenav a[aria-current="page"]{background:var(--bg);font-weight:600}
+#pane{flex:1 1 auto;display:flex;flex-direction:column;min-width:0;min-height:0}
+#appbar{flex:0 0 auto;display:flex;align-items:center;gap:var(--sp-2);
+  padding:0 var(--sp-3);height:48px;border-bottom:1px solid var(--line);background:var(--surface)}
+#appbar[hidden]{display:none}
+#appbar h2{font-size:16px;margin:0}
+.bar-back{font-size:26px;line-height:1;text-decoration:none;color:var(--text);
+  min-width:44px;min-height:44px;display:inline-flex;align-items:center}
+main{flex:1 1 auto;overflow-y:auto;padding:var(--sp-6)}
+body[data-end="mobile"] main{padding:var(--sp-4) var(--sp-4) 34px}   /* 底部留 Home 条 */
+
+h1{font-size:22px;line-height:1.35;margin:0 0 var(--sp-4)}
+body[data-end="mobile"] h1{display:none}                 /* 标题已在 app bar 上，不重复 */
+.muted{color:var(--muted)}
+.bar{display:flex;gap:var(--sp-2);align-items:center;flex-wrap:wrap;margin-bottom:var(--sp-4)}
+.bar label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* 工具条里的输入框不吃 form input 的 100% —— 否则搜索框独占一行、按钮被挤到下一行 */
+.bar input{width:auto;flex:1 1 220px;min-width:0}
+input{font:inherit;padding:var(--sp-2) var(--sp-3);border:1px solid var(--line);
+  border-radius:var(--r-1);background:var(--surface);color:inherit;min-height:44px}
+input[aria-invalid="true"]{border-color:var(--danger)}
+.btn{font:inherit;min-height:44px;min-width:44px;padding:var(--sp-2) var(--sp-3);
+  border:1px solid var(--line);border-radius:var(--r-1);background:var(--surface);
+  color:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+  text-decoration:none;transition:background-color .16s cubic-bezier(.2,0,0,1)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:transparent}
+.btn.tiny{min-height:32px;min-width:32px;padding:var(--sp-1) var(--sp-2);font-size:13px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.rows{list-style:none;margin:0;padding:0}
+.rows li{display:flex;gap:var(--sp-3);align-items:center;justify-content:space-between;
+  padding:var(--sp-3) 0;border-bottom:1px solid var(--line)}
+.rows a{color:var(--accent)}
+a.back{color:var(--accent)}
+body[data-end="mobile"] a.back{display:none}             /* 返回已在 app bar 上 */
+/* 定义列表默认的 dd 缩进在真机上读起来像没排版过 —— 改成 标签/值 两栏 */
+dl{margin:0 0 var(--sp-4);display:grid;grid-template-columns:auto 1fr;gap:var(--sp-2) var(--sp-4)}
+dt{color:var(--muted);font-size:13px;align-self:center}
+dd{margin:0}
+/* 空/终止类界面竖直居中，并且**必须给出路** —— 死胡同屏是缺陷不是风格 */
+.state{padding:var(--sp-8) var(--sp-4);text-align:center;
+  min-height:60%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--sp-3)}
+.state.err{color:var(--danger)}
+.skel{height:96px;border-radius:var(--r-2);background:var(--line)}
+form label{display:block;margin-top:var(--sp-3);font-size:13px;color:var(--muted)}
+form input{width:100%;margin-top:var(--sp-1)}
+p.err{color:var(--danger);font-size:13px;margin:var(--sp-1) 0 0}
+/* ⛔ `display:flex` 会**盖掉 hidden 属性** —— 于是 toast 一直以一个空药丸的形式
+   挂在页面底部。几何断言全绿、死按钮 0%、状态矩阵全通，**只有截图看得出来**。
+   📌 这正是「断言查不出丑和半成品」那条：必须真的打开看一眼。 */
+#toast[hidden]{display:none}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:var(--sp-6);
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-2);
+  padding:var(--sp-2) var(--sp-4);box-shadow:0 6px 20px rgba(0,0,0,.12);
+  display:flex;gap:var(--sp-3);align-items:center}
+.back{display:inline-block;margin-bottom:var(--sp-4);color:var(--muted)}
+
+/* 移动端形式一律按触屏对待：命中区 ≥44、列表堆叠、不依赖 hover */
+body[data-end="mobile"] .btn.tiny{min-height:44px;min-width:44px}
+body[data-end="mobile"] .rows li{flex-direction:column;align-items:flex-start;gap:var(--sp-1)}
+body[data-end="mobile"] .rows a{display:inline-block;padding:10px 0}
+
+@media (prefers-reduced-motion: reduce){ *{transition:none !important;animation:none !important} }
+@media (hover:hover){ .btn:hover{background:var(--line)} .btn.primary:hover{filter:brightness(1.08)} }
+/* 真触屏设备上（不只是窄窗口）同样放大命中区 */
+@media (pointer: coarse){ .btn.tiny{min-height:44px;min-width:44px} .rows a,a.back{display:inline-block;padding:10px 0} }
+@media (max-width: 560px){ body{padding:8px}
+  body[data-end="pc"] #shell{height:auto} .rows li{flex-direction:column;align-items:flex-start} }
+
+
+/* ══ 端形态（判据见 references/platform-parity.md）══════════════════════════
+   ⛔ 这一段不是「响应式补丁」。实证：桌面组件工具箱与移动端框架的组件词汇
+      只重合 6 个（badge/button/checkbox/radio/radiogroup/textarea，全是最原子的控件），
+      导航、覆盖层、列表、手势**没有一个共用** —— 一套 DOM 两个断点，
+      不可能同时像最终 PC app 和最终移动 app。                                */
+
+/* ── 移动形态 ───────────────────────────────────────────────────────────── */
+body[data-end="mobile"] #tabbar{
+  display:flex; gap:0; flex:0 0 auto; border-top:1px solid var(--line);
+  /* ⭐ 安全区：刘海屏 Home 条。写死 34px 是本骨架此前的做法 ——
+     它在没有 Home 条的机型上白留一条，在有的机型上又不够。 */
+  padding-bottom:max(env(safe-area-inset-bottom), 6px);
+  padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
+}
+body[data-end="mobile"] #tabbar a{
+  flex:1 1 0; min-height:44px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:2px;
+  font-size:11px; text-decoration:none; color:var(--muted); padding:4px 0;
+}
+body[data-end="mobile"] #tabbar a[aria-current="page"]{color:var(--accent);font-weight:600}
+body[data-end="mobile"] #appbar{
+  padding-top:max(env(safe-area-inset-top), 0px);
+}
+body[data-end="mobile"] main{padding-bottom:var(--sp-4)}   /* Home 条由 tabbar 承担 */
+/* 覆盖层：移动端是**底部 sheet**，不是居中 modal（P3） */
+body[data-end="mobile"] .overlay{align-items:flex-end}
+body[data-end="mobile"] .overlay .panel{
+  width:100%; max-width:none; border-radius:16px 16px 0 0;
+  padding-bottom:max(env(safe-area-inset-bottom), var(--sp-4));
+  animation:sheet-up .22s cubic-bezier(.32,.72,0,1);
+}
+body[data-end="mobile"] .overlay .panel::before{
+  content:''; display:block; width:36px; height:4px; border-radius:2px;
+  background:var(--line); margin:0 auto var(--sp-3);   /* 拖拽条 */
+}
+@keyframes sheet-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+body[data-end="mobile"] .tip{display:none}             /* 移动端没有 tooltip（P4） */
+
+/* ── 桌面形态 ───────────────────────────────────────────────────────────── */
+body[data-end="pc"] #tabbar{display:none}
+/* 双栏并置：列表与详情同屏，是桌面应用最显著的形态特征（P1）。
+   移动端做不到，它只能 push/pop。 */
+body[data-end="pc"] #pane[data-split="1"] main{
+  display:grid; grid-template-columns:minmax(260px,1fr) 1.4fr; gap:var(--sp-4); align-items:start;
+}
+body[data-end="pc"] .overlay .panel{
+  max-width:420px; border-radius:10px; animation:pop-in .14s ease-out;
+}
+@keyframes pop-in{from{transform:scale(.97);opacity:0}to{transform:scale(1);opacity:1}}
+/* tooltip 只在有 hover 的端出现（P4/P6） */
+.tip{position:relative}
+@media (hover: hover){
+  .tip:hover::after{
+    content:attr(data-tip); position:absolute; left:50%; transform:translateX(-50%);
+    bottom:calc(100% + 6px); white-space:nowrap; font-size:12px;
+    background:var(--fg); color:var(--bg); padding:4px 8px; border-radius:4px; z-index:5;
+  }
+}
+/* 覆盖层壳（两端共用结构，形态由上面两段分叉） */
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.32);z-index:4}
+.overlay .panel{background:var(--bg);padding:var(--sp-4);box-shadow:0 8px 32px rgba(0,0,0,.18)}
+@media (prefers-reduced-motion: reduce){
+  .overlay .panel{animation:none !important}
+}

@@ -1,0 +1,62 @@
+# 业务流程图（示例）— 对象：product-flow 自己跑一次 PRD 的业务流程
+# 判据见 references/diagram-standards.md 第 1 节。
+# ⛔ 泳道 = 角色（BPMN pool/lane）；每个**系统动作**标七章功能卡的 F-xx。
+# ⚠️ BPMN 2.0 对 AI 节点没有任何规定 —— 下面的 ◆判定 / ⇄人机切换 是**团队约定**。
+
+direction: right
+title: |md # 业务流程图（示例）：一次 PRD 的产出与冻结 | {near: top-center}
+
+# ⭐ 图例（2026-09-15 补）：规范第 1 节的六色约定。
+#   ⚠️ 本示例是**非 AI 流程**，故只用到蓝(正常)/红(异常)/虚线(可配置)三种；
+#   ⛔ 没用到的颜色**不硬凑**——为了凑齐图例而编造 AI 节点，比不画更糟。
+#   含 AI 的流程另见规范第 1 节「三类流程 + 图例约定」，以及 user-flow.example.d2 的 AI 分支。
+图例: {
+  near: top-right
+  style: { fill: "#FFFFFF"; stroke-dash: 2 }
+  蓝: "蓝：正常流程节点" { style.fill: "#EEF2FF" }
+  黄: "黄+菱形：AI 模型判定节点（注明模型能力类型）" { style.fill: "#FEF9C3" }
+  红: "红：异常处理节点" { style.fill: "#FEE2E2" }
+  绿: "绿：降级策略节点" { style.fill: "#DCFCE7" }
+  紫: "紫：数据收集节点" { style.fill: "#F3E8FF" }
+  虚: "虚线：参数可配置（运营可调，改它不改流程）" { style.stroke-dash: 3 }
+}
+
+产品经理: {
+  style.fill: "#EEF2FF"
+  起: "起：提出需求" {shape: circle}
+  填: "F-01 填模板\n(九章 + 附件)"
+  改: "F-05 按门禁结论返工"
+  终: "终：PRD 冻结" {shape: circle}
+}
+
+product-flow: {
+  style.fill: "#F0FDF4"
+  裁: "F-02 流程裁剪\n(workflow-registry)"
+  门: "F-03 执行 43 道确定性门禁\n三态 PASS/FAIL/UNABLE"
+  判: "◆ 全绿 / 有红 / UNABLE" {shape: diamond}
+  证: "F-04 收集冻结证据\n(飞书回读 · Figma · HTML)"
+}
+
+评审方: {
+  style.fill: "#FEF9C3"
+  审: "F-06 三方会签\n(G7.5)"
+}
+
+产品经理.起 -> 产品经理.填
+# ⚠️ 这里曾经画成一个 ◆「走全档还是轻档？」，两条分支都指向「裁剪」——
+#   渲染出来才看出是**网关误用**：两条路走到同一个活动，等于没有分叉。
+#   ⭐ 轻档/全档是**输入参数**，不是决策分叉；BPMN 的网关必须导向**不同的活动**。
+产品经理.填 -> product-flow.裁: "档位（轻/全）作为输入"
+product-flow.裁 -> product-flow.门: "本次该跑哪几道（轻档少跑几道 / 全档 43 道门禁）"
+product-flow.门 -> product-flow.判
+product-flow.判 -> 产品经理.改: 有红
+产品经理.改 -> product-flow.门: 重跑
+product-flow.判 -> product-flow.证: 全绿
+# ⛔ UNABLE 不是通过 —— 必须显式画出它的去向，否则读图的人会默认它走绿线
+product-flow.判 -> 产品经理.改: "UNABLE（⛔ 不等于通过）" {style.stroke-dash: 3}
+product-flow.证 -> 评审方.审
+评审方.审 -> 产品经理.终: 会签通过
+评审方.审 -> 产品经理.改: 驳回
+
+# ⚠️ 这张图答不了：每个 F-xx 内部怎么实现（那是 6.2 功能架构图的事）、
+#    数据落在哪、留多久（那是附件 C.5 数据生命周期图的事）。

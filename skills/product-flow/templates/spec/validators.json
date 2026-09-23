@@ -1,0 +1,17 @@
+{
+  "_": "字段校验规则（声明式）。js/70-validators.js 由 spec-to-js.py 生成，不许手改。研发直接实现这一份。",
+  "fields": {
+    "title": [
+      { "type": "required", "msg": "标题不能为空" },
+      { "type": "maxlen", "n": 30, "msg": "标题不超过 30 个字" }
+    ],
+    "owner": [
+      { "type": "required", "msg": "请填写负责人" }
+    ]
+  },
+  "policy": {
+    "when": "输入后再校验，不要边打字边拦；提交时全量校验",
+    "onSubmitInvalid": "错误内联在字段旁，焦点移到第一个错误",
+    "source": "references/interaction-criteria.md 表单 15 条"
+  }
+}

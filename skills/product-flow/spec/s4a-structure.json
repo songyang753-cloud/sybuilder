@@ -1,0 +1,75 @@
+{
+ "_": "S4A 产品结构设计的结构口径。与 S3 同形态（single-file + 模板），是第四份接入的流程。",
+ "_why": "S4A 防的是「结构未清就填 PRD 模板」。它的模板自己曾过不了自己的门（2026-09-09 实测），⇒ 把口径写下来才不会再各说各话。",
+ "_discipline": "⛔ 人工编写，禁止静态反推。",
+ "schemaVersion": 1,
+ "stage": "S4A",
+ "kind": "single-file",
+ "gate": "scripts/product-structure-gate.py",
+ "template": "templates/product-structure.md",
+ "artifact": "product-structure.md",
+ "gateInvocation": "product-structure-gate.py <product-structure.md>",
+ "sections": [
+  {
+   "title": "1. 功能架构（功能怎么分组，不是怎么实现）",
+   "required": true,
+   "note": "⛔ 是**怎么分组**，不是怎么实现——写成模块拆分就跑偏了"
+  },
+  {
+   "title": "2. 信息架构与导航",
+   "required": true
+  },
+  {
+   "title": "3. 关键任务流（每个核心任务一条）",
+   "required": true,
+   "note": "🚨 门禁用 `section_at(s,'关键任务流')` 定位；每个核心任务**一条**，⛔ 合并成一条不算"
+  },
+  {
+   "title": "4. 数据对象与关系",
+   "required": true,
+   "note": "⚠️ 模板明写「关键字段（业务含义，**非表结构**）」——⛔ 写表名/字段类型是越界到工程层"
+  },
+  {
+   "title": "5. 权限矩阵（附件 C.2 的上游）",
+   "required": true,
+   "note": "🚨 `section_at(s,'权限矩阵')`；它是 PRD 附件 C.2 的**上游**，这里没想清楚下游只能编"
+  },
+  {
+   "title": "6. 状态与异常结构",
+   "required": true,
+   "note": "🚨 `section_at(s,'状态与异常结构')`"
+  },
+  {
+   "title": "7. 结构性风险",
+   "required": true
+  }
+ ],
+ "seeds": {
+  "_": "结构性空格填合法值；内容留 ⟨TODO⟩。",
+  "cells": {},
+  "blocks": {
+   "功能架构": "每个分组下挂 `F-xx` 编号，如「采集 · F-01 发起 / F-02 排程」",
+   "关键任务流": "每条以 `任务：` 开头，一个核心任务一条",
+   "权限矩阵": "| 角色 | 能看 | 能改 | 能删 | 至少一行真实数据"
+  }
+ },
+ "harvested": {
+  "_": "在骨架上跑门禁收割（每轮追加）。",
+  "formats": {
+   "数据对象": "只写**业务含义**的关键字段，⛔ 不写表结构——模板自己踩过这个坑",
+   "功能架构要落到 F 编号": "「功能架构」小节里必须出现 `F-xx` 形态的功能编号——判据 ① 直接搜它。⛔ 只写分组名而不挂编号 ⇒「结构没落到功能编号，PRD 3.2 接不上」。",
+   "任务流条目的字面": "「关键任务流」小节里每条任务必须以 **`任务：`** 开头（判据 ② 搜这个字面）。⛔ 写成「流程 1」「用例 A」都不算。",
+   "权限矩阵要有真实行": "「权限矩阵」必须有 ≥1 行真实数据行（表头与分隔行不算）。"
+  },
+  "corrections": {
+   "三条要求 spec 里原先没有": "⚠️ 2026-09-17 首次跑 `product-structure-gate` 才发现这三条——**读 spec 与读判据代码都看不出来**，只有拿脚手架骨架去撞门禁才会显形。⇒ 这正是「spec 三处消费」里最容易漏的一环：**scaffold 生成的骨架必须真去跑一次门禁**，否则 spec 永远停在「结构对、内容不知道要什么」。"
+  }
+ },
+ "audienceRef": "spec/_audience.json",
+ "audienceGate": {
+  "gate": "scripts/audience-gate.py",
+  "invocation": "audience-gate.py <交付文档.md>",
+  "rule": "正文给人看；附件给人 + AI 编程看；⛔ 过程日志两边都不进",
+  "note": "⚠️ 只拦机械可判的混入（内部路径/过程数字/自检编号/把读者支出去），拦不住「写得好不好读」"
+ }
+}

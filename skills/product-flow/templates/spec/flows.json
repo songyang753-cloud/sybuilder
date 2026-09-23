@@ -1,0 +1,275 @@
+{
+ "_": "关键路径。每步用 role + 可访问名称定位（不用 CSS 类）。flow-walk-gate 走它，S8 用例由它生成。",
+ "flows": [
+  {
+   "id": "FLOW-01",
+   "name": "新建任务成功",
+   "end": "pc",
+   "fr": [
+    "FR-031",
+    "AC-2"
+   ],
+   "start": "#/create",
+   "steps": [
+    {
+     "do": "fill",
+     "role": "textbox",
+     "name": "标题",
+     "value": "季度对账单 A"
+    },
+    {
+     "do": "fill",
+     "role": "textbox",
+     "name": "负责人",
+     "value": "示例·张"
+    },
+    {
+     "do": "click",
+     "role": "button",
+     "name": "提交"
+    },
+    {
+     "do": "expect",
+     "urlContains": "#/inbox"
+    },
+    {
+     "do": "expect",
+     "textContains": "季度对账单 A"
+    }
+   ]
+  },
+  {
+   "id": "FLOW-02",
+   "name": "新建任务：必填校验拦住并把焦点移到第一个错误",
+   "end": "pc",
+   "fr": [
+    "FR-031",
+    "AC-3"
+   ],
+   "start": "#/create",
+   "steps": [
+    {
+     "do": "click",
+     "role": "button",
+     "name": "提交"
+    },
+    {
+     "do": "expect",
+     "textContains": "标题不能为空"
+    },
+    {
+     "do": "expect",
+     "focusedName": "标题"
+    },
+    {
+     "do": "expect",
+     "urlContains": "#/create"
+    }
+   ],
+   "widget": "form"
+  },
+  {
+   "id": "FLOW-03",
+   "name": "列表 → 详情 → 推进状态",
+   "end": "pc",
+   "fr": [
+    "FR-021"
+   ],
+   "start": "#/inbox",
+   "steps": [
+    {
+     "do": "clickFirst",
+     "role": "link",
+     "namePrefix": "季度对账单"
+    },
+    {
+     "do": "expect",
+     "urlContains": "#/task/"
+    },
+    {
+     "do": "click",
+     "role": "button",
+     "name": "推进到下一状态"
+    },
+    {
+     "do": "expect",
+     "textContains": "进行中"
+    }
+   ]
+  },
+  {
+   "id": "FLOW-04",
+   "name": "删除后可撤销，撤销把它放回去",
+   "end": "pc",
+   "fr": [
+    "FR-011",
+    "AC-1"
+   ],
+   "start": "#/inbox",
+   "steps": [
+    {
+     "do": "clickFirst",
+     "role": "button",
+     "name": "删除"
+    },
+    {
+     "do": "expect",
+     "textContains": "已删除"
+    },
+    {
+     "do": "click",
+     "role": "button",
+     "name": "撤销"
+    },
+    {
+     "do": "expect",
+     "textContains": "季度对账单"
+    }
+   ]
+  },
+  {
+   "id": "FLOW-05",
+   "name": "列表接口失败时给出原因与重试",
+   "end": "pc",
+   "fr": [
+    "FR-011",
+    "AC-4"
+   ],
+   "start": "#/inbox?scn=api-500",
+   "steps": [
+    {
+     "do": "expect",
+     "textContains": "没能加载任务列表"
+    },
+    {
+     "do": "expect",
+     "roleExists": "button",
+     "name": "重试"
+    }
+   ]
+  },
+  {
+   "id": "FLOW-06",
+   "name": "只用键盘也能新建（Enter 提交聚焦的输入框）",
+   "end": "pc",
+   "fr": [
+    "FR-031",
+    "AC-5"
+   ],
+   "start": "#/create",
+   "steps": [
+    {
+     "do": "fill",
+     "role": "textbox",
+     "name": "标题",
+     "value": "键盘新建的任务"
+    },
+    {
+     "do": "fill",
+     "role": "textbox",
+     "name": "负责人",
+     "value": "示例·王"
+    },
+    {
+     "do": "key",
+     "key": "Enter",
+     "role": "textbox",
+     "name": "标题"
+    },
+    {
+     "do": "expect",
+     "urlContains": "#/inbox"
+    },
+    {
+     "do": "expect",
+     "textContains": "键盘新建的任务"
+    }
+   ],
+   "widget": "form"
+  },
+  {
+   "id": "FLOW-M1",
+   "name": "移动端：底部 tab 切到新建（桌面用侧栏，且落地页两端不同）",
+   "end": "mobile",
+   "fr": [
+    "FR-031"
+   ],
+   "start": "#/inbox",
+   "steps": [
+    {
+     "do": "click",
+     "role": "link",
+     "name": "新建任务"
+    },
+    {
+     "do": "expect",
+     "urlContains": "#/create"
+    },
+    {
+     "do": "expect",
+     "textContains": "新建任务仅在桌面端提供"
+    }
+   ],
+   "_note": "⛔ 第 3 步是这条路径的全部价值：前两步在桌面端**同样成立**（侧栏里也有「新建任务」链接），只有它能证明真的跑在移动端形态上。2026-09-05 双重变异实测：没有它时，这条路径在桌面端照样通过。"
+  },
+  {
+   "id": "FLOW-M2",
+   "name": "移动端：详情用 app bar 的返回回到列表（桌面是面包屑/侧栏）",
+   "end": "mobile",
+   "fr": [
+    "FR-011"
+   ],
+   "start": "#/inbox",
+   "steps": [
+    {
+     "do": "clickFirst",
+     "role": "link",
+     "namePrefix": "季度"
+    },
+    {
+     "do": "expect",
+     "urlContains": "#/task"
+    },
+    {
+     "do": "click",
+     "role": "link",
+     "name": "返回列表"
+    },
+    {
+     "do": "expect",
+     "urlContains": "#/inbox"
+    }
+   ]
+  },
+  {
+   "id": "FLOW-M3",
+   "name": "移动端：仅桌面端的功能要给出可执行的替代路径，不是空白页",
+   "end": "mobile",
+   "fr": [
+    "FR-031"
+   ],
+   "start": "#/create",
+   "steps": [
+    {
+     "do": "expect",
+     "textContains": "新建任务仅在桌面端提供"
+    },
+    {
+     "do": "expect",
+     "textContains": "在电脑上打开同一个账号即可新建"
+    },
+    {
+     "do": "click",
+     "role": "link",
+     "name": "返回任务列表"
+    },
+    {
+     "do": "expect",
+     "urlContains": "#/inbox"
+    }
+   ]
+  }
+ ],
+ "_keyboard": "键盘可达是硬门：`interaction-criteria.md` 里「Enter 提交聚焦的输入框」「提交时焦点移到第一个错误」都是 MUST。步骤类型 `key` / `tab` 就是用来验它们的。⛔ 只写在规格里没人验的 MUST，与不存在没有区别。",
+ "_widget": "`widget` 字段把一条 flow 标成「某类组件的键盘契约用例」，`spec-sync-gate` 的 keyboard-covered 据此判有没有漏。契约表见 references/keyboard-contracts.md。"
+}

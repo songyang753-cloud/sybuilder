@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>&lt;产品名&gt; 交互稿</title>
+<!--
+  ⚠️⚠️ 2026-09-02 降级：**这份不是 S6 的推荐形态，别照它做 demo。**
+
+  它只是「锚点契约长什么样」的最小示例。它示范的结构 ——
+  **一个状态一个 `<section>`，靠导航在预先画好的画面之间切换** ——
+  会把 demo 钉死成幻灯片：状态是画出来的，不是跑出来的，
+  于是「操作与真实实现保持一致」从架构上就不可能成立。
+
+  ⭐ 实测：四份产物里唯一照这个模型做的那份（agent-workbench，28 个 data-scene），
+     正是唯一 **93% 的控件点了毫无反应** 的那份（`dead-click-gate.mjs` 实测 66/71）。
+
+  ✅ **要做 demo 请用 `templates/proto/`**（四层可运行原型：数据 → 契约 → 状态 → 视图）。
+     那边的锚点由 runtime 自动写入 body，本文件要求的契约照样满足，且不必手贴。
+
+  ── 以下为原始说明，仅用于理解锚点契约 ──
+
+  S6 demo 骨架（**旧形态，仅作锚点契约示例**）。
+
+  ⚠️ 这个文件此前**不存在**：SKILL.md 第 439 行要求 demo 场景必须带
+  `data-scene` / `data-fr` 锚点，而 templates/ 里没有任何示范，
+  于是实测本 skill 自己的验证项目一个锚点都没有，
+  `reconcile-gate G2/G3` 双双 UNABLE —— **两道最要紧的对账门从未产出过结论**。
+
+  锚点契约（由 `demo-anchor-gate.py` 守，S6 出场必跑）：
+    · 每个场景一个容器，带 data-scene="fNN-状态"（G3 按 `-` 拆「功能-状态」，命名不合就对不上）
+    · 每个场景带非空 data-fr="FR-011,AC-1"（反查不到需求的画面 = 没人要的画面）
+    · data-fr 里的编号必须在 PRD 附件 A 里真的存在（否则是悬空引用）
+
+  另两条硬约束（不由本文件保证，交付前自查）：
+    · **零外链**：不许 <script src> / <link href> / 外部字体 / CDN —— 换台机器要能双击打开
+    · **令牌单一真源**：色值/间距一律 var(--…)，由 tokens.json 生成，不手抄
+-->
+<style>
+  :root{ /* ← 用 scripts/tokens-to-css.py 从 tokens.json 生成后粘进来，别手写 */
+    --bg:#F8F8FA; --surface:#FFF; --text:#222; --muted:#6B6B73; --line:#E8E8EC; --space:16px;
+  }
+  :root[data-theme="dark"]{ --bg:#141418; --surface:#2E2E34; --text:#FBFBFD; --muted:#B4B4BC; --line:#4A4A52; }
+  *{box-sizing:border-box} body{margin:0;font:13px/1.5 system-ui,"Noto Sans SC",sans-serif;
+    background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+  nav{width:220px;flex:0 0 auto;padding:var(--space);border-right:1px solid var(--line);overflow-y:auto}
+  nav button{display:block;width:100%;text-align:left;margin:2px 0;padding:6px 8px;border:0;
+    border-radius:6px;background:none;color:inherit;font:inherit;cursor:pointer}
+  nav button[aria-current="true"]{background:var(--surface);font-weight:600}
+  main{flex:1;padding:calc(var(--space)*2);overflow-y:auto}
+  [data-scene][hidden]{display:none}
+  .meta{color:var(--muted);font-size:11px;margin-bottom:var(--space)}
+</style>
+</head>
+<body>
+<nav id="nav" aria-label="场景导航"></nav>
+<main id="stage">
+
+  <!-- ── 一个场景 = 一个 <section>。复制这块，改 data-scene / data-fr ── -->
+  <section data-scene="f01-empty" data-fr="FR-011,AC-1">
+    <p class="meta">F-01 · 空态　|　需求 FR-011 / AC-1</p>
+    <h1>&lt;这一屏的标题&gt;</h1>
+    <p>&lt;空态要说清三件事：为什么是空的、能做什么、下一步按钮在哪&gt;</p>
+  </section>
+
+  <section data-scene="f01-loading" data-fr="FR-011">
+    <p class="meta">F-01 · 加载中　|　需求 FR-011</p>
+    <p>&lt;加载态。⛔ 别用 skeleton 冒充状态——skeleton 是 loading 的表现策略，不是业务状态&gt;</p>
+  </section>
+
+  <section data-scene="f01-error" data-fr="FR-011,AC-2">
+    <p class="meta">F-01 · 失败　|　需求 FR-011 / AC-2</p>
+    <p>&lt;失败态必须给原因和出路，不许只写「出错了」&gt;</p>
+  </section>
+
+</main>
+<script>
+// 场景切换。零外链、零依赖。
+const scenes = [...document.querySelectorAll('[data-scene]')];
+const nav = document.getElementById('nav');
+function show(id){
+  scenes.forEach(s => { s.hidden = s.dataset.scene !== id; });
+  [...nav.children].forEach(b => b.setAttribute('aria-current', String(b.dataset.go === id)));
+  location.hash = id;
+}
+scenes.forEach(s => {
+  const b = document.createElement('button');
+  b.textContent = s.dataset.scene;
+  b.dataset.go = s.dataset.scene;
+  b.onclick = () => show(s.dataset.scene);
+  nav.appendChild(b);
+});
+show(location.hash.slice(1) || scenes[0].dataset.scene);
+
+// ⭐ 自测门禁：demo 自己先证明自己没坏。交付前把控制台打开看一眼。
+//    「读代码觉得对」不算——本 SOP 反复记的那类缺陷正是读不出来的。
+(() => {
+  const bad = [];
+  if (document.querySelector('script[src], link[href]')) bad.push('有外链——换台机器打不开');
+  scenes.forEach(s => {
+    if (!/^f\d{2}(-[a-z0-9]+)+$/i.test(s.dataset.scene)) bad.push('场景 ID 不合 fNN-… : ' + s.dataset.scene);
+    if (!(s.dataset.fr || '').trim()) bad.push('缺 data-fr: ' + s.dataset.scene);
+  });
+  console[bad.length ? 'error' : 'log'](bad.length ? '❌ demo 自测：\n' + bad.join('\n') : '✅ demo 自测通过（' + scenes.length + ' 个场景）');
+})();
+</script>
+</body>
+</html>

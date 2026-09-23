@@ -1,0 +1,151 @@
+{
+ "_": "S3 产品定义结构口径规格 —— 第二个接入 spec 的流程，用来证明这套机制**不是只为 S2 定制的**。",
+ "_why": "S3 是全流程最贵的一次拍板（WHAT 错了要六七个阶段之后才知道）。它和 S2 的门禁形态**不同**：research-gate 吃一个语料目录，definition-gate 吃**一个文件**，且结构来自**模板**而非硬编码小节名。⇒ spec schema 必须能表达两种形态，否则这套机制只是 S2 的私有工具。",
+ "_discipline": "⛔ 人工编写，禁止静态反推（见 s2-research.json 的同名条）。",
+ "schemaVersion": 1,
+ "stage": "S3",
+ "kind": "single-file",
+ "gate": "scripts/definition-gate.py",
+ "template": "templates/definition-final.md",
+ "artifact": "definition.md",
+ "gateInvocation": "definition-gate.py <definition.md> [--proposals <功能增删提案表.md>]",
+ "_kindNote": "⭐ `kind` 是本次 schema 的关键扩展：`corpus`（S2，目录 + 多文件 + 小节/表）vs `single-file`（S3，一个文件，结构＝模板标题集）。脚手架据此选生成方式；spec-check 据此选校验方式（corpus 校验小节名在**门禁源码**里逐字存在；single-file 校验小节名在**模板**里逐字存在）。",
+ "sections": [
+  {
+   "title": "一、一句话定位",
+   "required": true
+  },
+  {
+   "title": "二、目标用户",
+   "required": true
+  },
+  {
+   "title": "三、核心价值一句话",
+   "required": true
+  },
+  {
+   "title": "四、产品边界",
+   "required": true,
+   "sub": [
+    "做",
+    "⭐ 明确不做（必填，想不出说明边界没想清楚）"
+   ],
+   "note": "⛔「明确不做」想不出＝边界没想清楚，不是可以留空"
+  },
+  {
+   "title": "五、功能集合与优先级",
+   "required": true
+  },
+  {
+   "title": "六、成功长什么样",
+   "required": true,
+   "sub": [
+    "护栏指标（不能变坏的）"
+   ],
+   "criterion": "measurable-goal",
+   "note": "🚨 判据用正则 `成功长什么样|成功指标` 定位本节；目标必须**可测**——要有数字与时间窗（月/周/天/季度/上线后/\\d+D 之一），⛔ 写『提升体验』不算"
+  },
+  {
+   "title": "七、关键路径",
+   "required": true
+  },
+  {
+   "title": "八、状态与数据边界",
+   "required": true
+  },
+  {
+   "title": "九、产品调性",
+   "required": true
+  },
+  {
+   "title": "十、硬约束与不可协商项",
+   "required": true
+  },
+  {
+   "title": "十一、⭐⭐ 单向门清单（走过去回不来的决定）",
+   "required": true,
+   "note": "判据要求**非空**：一个产品定义里一条单向门都没有，说明没想过哪些决定回不来"
+  },
+  {
+   "title": "⭐⭐ 十一之二、证据等级（每条关键结论一行，**必填**）",
+   "required": true,
+   "criterion": "evidence-table",
+   "columns": [
+    "结论",
+    "证据",
+    "等级"
+   ],
+   "note": "🚨 表头必须含**结论 / 证据 / 等级**三列；`evidence-level-filled` 要求等级非空；`evidence-stopline` 与 `evidence-floor` 另有门槛"
+  },
+  {
+   "title": "十二、失败路径（逆向思维，必填）",
+   "required": true,
+   "note": "判据要求**非空**"
+  },
+  {
+   "title": "十三、三个候选与取舍留痕",
+   "required": true,
+   "note": "⭐ 至少 3 个互不相同的候选——把产品名互换后读者看不出差别，那就是一个候选"
+  },
+  {
+   "title": "十四、理想态映射",
+   "required": true
+  },
+  {
+   "title": "附：假设与待确认",
+   "required": true
+  }
+ ],
+ "criteria": {
+  "unjudged-substance": "有实质内容却没有判定的段落 —— ⛔ 写了一堆但没给结论",
+  "downstream-coverage": "覆盖下游 18 项（下游每一处需要「产品层决定」的地方，定义里都要有答案）",
+  "evidence-table": "十一之二 的证据表存在且有 结论/证据/等级 三列",
+  "evidence-level-filled": "每条证据的**等级**非空",
+  "evidence-stopline": "证据止损线已声明",
+  "evidence-floor": "证据等级不得整体低于下限",
+  "measurable-goal": "成功指标可测：有数字 + 时间窗",
+  "sign-off-declared": "**拍板状态**已显式声明（铁律 9：S3 定义收敛是人拍板的五处之一，⛔ 不得代劳）",
+  "feature-evidence": "功能增删每条都有 S2 证据（`[S2…]` / `§` / URL / `[查证…]`）",
+  "proposal-evidence": "提案表每条都有证据锚"
+ },
+ "seeds": {
+  "_": "单文件形态的 seeds：结构性空格（表头、等级词表、拍板状态）填合法值；内容留 ⟨TODO⟩。",
+  "cells": {
+   "等级": "E2",
+   "拍板状态": "未拍板（⛔ 人拍板，不得代劳）"
+  },
+  "blocks": {
+   "十一之二": "证据表：| 结论 | 证据 | 等级 | 三列，每条关键结论一行",
+   "十三": "三个互不相同的候选 + 取舍留痕",
+   "六": "成功指标要带数字与时间窗"
+  }
+ },
+ "harvested": {
+  "_": "在脚手架骨架上跑 definition-gate 收割到的精确要求（每轮追加）。",
+  "requiredTokens": {
+   "definition.md": [
+    "拍板状态（sign-off-declared 判据直接搜这四个字）",
+    "单向门清单必须非空",
+    "失败路径必须非空",
+    "E1 豁免理由：<理由>（证据等级 E1 的豁免写法，⛔ 冒号后不能空）",
+    "「不服务谁」与「明确不做」都必须非空——空表格与 <占位> 看起来像填了，其实没想过"
+   ]
+  },
+  "formats": {
+   "成功指标": "必须含数字 + 时间窗之一：月 / 周 / 天 / 季度 / 上线后 / `\\d+D`",
+   "不适用写法": "只许 `不适用` / `无` / `—` / `-` / `–` / `N/A` 开头，⛔ 自由文本不算",
+   "证据锚": "`[S2…]` / `§<节号>` / `http(s)://` / `[查证…]` 四种之一",
+   "证据等级": "**E0–E5**（⛔ 不是 A/B/C）；S3 拍板最低 **E2**，内部工具可降 E1 但必须写「E1 豁免理由：<理由>」"
+  },
+  "corrections": {
+   "sections": "⚠️ spec 第一版漏了「不服务谁」小节（判据 nonempty-不服务谁）——模板里它是二/四章的子项，不是独立标题。⇒ 靠脚手架跑门禁才发现。"
+  }
+ },
+ "audienceRef": "spec/_audience.json",
+ "audienceGate": {
+  "gate": "scripts/audience-gate.py",
+  "invocation": "audience-gate.py <交付文档.md>",
+  "rule": "正文给人看；附件给人 + AI 编程看；⛔ 过程日志两边都不进",
+  "note": "⚠️ 只拦机械可判的混入（内部路径/过程数字/自检编号/把读者支出去），拦不住「写得好不好读」"
+ }
+}

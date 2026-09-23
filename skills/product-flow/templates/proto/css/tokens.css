@@ -1,0 +1,17 @@
+/* 由 scripts/tokens-to-css.py 从 design/tokens.json 生成 —— ⛔ 不要手写、不要手改。
+   手抄一份就等于多了一处会与 tokens.json 分叉的副本。 */
+:root{
+  --bg:#F7F7F9; --surface:#FFFFFF; --text:#1A1A1E; --muted:#5F5F6B;
+  --line:#E4E4EA; --accent:#2F5BEA; --danger:#B3261E;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-6:24px; --sp-8:32px;
+  --r-1:6px; --r-2:10px;
+  --stage:#E9EBEF;                 /* 设备外框外面的衬底（脚手架用） */
+  --on-accent:#FFFFFF;             /* 强调色之上的前景 —— ⛔ 不许在组件里写死 #fff */
+}
+:root[data-theme="dark"]{
+  --bg:#141418; --surface:#1E1E24; --text:#F4F4F7; --muted:#A8A8B4;
+  --line:#33333C; --accent:#7C9BFF; --danger:#F2B8B5;
+  --stage:#0C0C0F;
+  /* 深色主题的强调色更亮，白字只有 2.63:1 —— 前景改用深色才达标 */
+  --on-accent:#10131C;
+}

@@ -1,0 +1,5 @@
+# Design front-matter parser; platform CLIs are installed separately.
+PyYAML==6.0.3
+# Shared document content/media model and independent CommonMark checks.
+markdown-it-py==3.0.0
+mdurl==0.1.2

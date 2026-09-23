@@ -1,0 +1,9 @@
+# 持续监控档配置（S10 可选；检测确定性，诊断才用模型，按档授权）
+metric: ci_failure_rate        # 一次只盯一个指标（CI 失败率 / 上线后 5xx / PR cycle time…）
+window: 20                     # 滚动窗口（样本数）
+bands:
+  1sigma: log                  # 只记录
+  2sigma: diagnose-readonly    # 只读诊断（产出写 S1 intent 格式入 triage 队列）
+  3sigma: act-via-gate         # 允许行动，但只到「开 PR 进评审门」或预批 runbook 为止
+triage:
+  owner: <谁>                  # fix now / schedule / dismiss(带理由——用于调 band)

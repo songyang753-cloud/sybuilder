@@ -1,0 +1,11 @@
+.DS_Store
+__pycache__/
+*.pyc
+.codex/
+.claude/
+.sybuilder/
+*.lock
+skills/**/.proposals/
+skills/**/.four-node-review/
+skills/**/references/.selftest-progress.jsonl
+skills/**/references/.selftest-progress.jsonl.*

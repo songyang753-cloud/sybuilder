@@ -1,0 +1,422 @@
+{
+  "reviewedAt": "2026-09-22",
+  "scope": "Known bundled/adapted material and closely related tool references; not a license grant for every linked website. Original SYBuilder material: Apache-2.0.",
+  "entries": [
+    {
+      "source": "garrytan/gstack",
+      "revision": "35dd014c580037d1c009776d8b0584587c1bd42c",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/garrytan--gstack.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/design-rulesets.md",
+        "skills/product-flow/references/design-orchestration.md",
+        "skills/product-flow/scripts/taste-memory.py",
+        "skills/coding-standards/repository-enforcement/PLAYBOOK.md",
+        "skills/coding-standards/repository-enforcement/references/hermetic-eval-env.md",
+        "skills/coding-standards/references/rules-ai-collab.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "github/spec-kit",
+      "revision": "d7dfe43606481647cda399497254508093544a87",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/github--spec-kit.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/requirements-quality.md",
+        "skills/product-flow/scripts/requirements-quality-gate.py"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "educlopez/ui-craft",
+      "revision": "ceecc8e1fb0c2befda73da996435900d6dd0c1ac",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/educlopez--ui-craft.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/craft-layer.md",
+        "skills/product-flow/references/finish-bar.md",
+        "skills/product-flow/references/copy-voice.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "meodai/skill.color-expert",
+      "revision": "28e49f7457d7aa92010688e69975c16d2ffe4b01",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "CC-BY-4.0",
+      "licenseFile": "licenses/meodai--skill.color-expert.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/craft-layer.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "OWASP/API-Security",
+      "revision": "33cea37b2ffde3e2e62f6b5d79a029a22a846633",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "CC-BY-SA-4.0",
+      "licenseFile": "licenses/OWASP--API-Security.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/coding-standards/references/authority.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "OWASP/ASVS",
+      "revision": "2b300716ebbef654788d0a14d6c878cecc70c2e9",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "CC-BY-SA-4.0",
+      "licenseFile": "licenses/OWASP--ASVS.txt",
+      "sourceLicensePath": "LICENSE.md",
+      "localPaths": [
+        "skills/coding-standards/references/authority.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "w3c/aria-practices",
+      "revision": "3f094fde1c81b25dfa69162563bf28d093f854d4",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "W3C-20230101",
+      "licenseFile": "licenses/w3c--aria-practices.txt",
+      "sourceLicensePath": "LICENSE.md",
+      "localPaths": [
+        "skills/product-flow/references/keyboard-contracts.md",
+        "skills/product-flow/templates/spec/keyboard-flows.json"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "ConardLi/garden-skills",
+      "revision": "aaf9a82f5efd73e87cc0998edc398e75bfc35901",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/ConardLi--garden-skills.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/craft-layer.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "originaleric/dig-ui-skill",
+      "revision": "a4b9a328bbae6f1e46be503e1160ba68afa6fb95",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "Apache-2.0",
+      "licenseFile": "licenses/originaleric--dig-ui-skill.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/craft-layer.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "Ryan-yang125/motion-lexicon",
+      "revision": "88f979ab6cd81f1d96990f5c559a739c911f8430",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/Ryan-yang125--motion-lexicon.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/motion-spec.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "csthink/dashmotion",
+      "revision": "ae2fe4f28c60caa53da8b15fa3537f4ea576f4ad",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/csthink--dashmotion.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/craft-layer.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "avelikiy/great_cto",
+      "revision": "b42b3abd5985c3e716f8bf30f5024cf732cccf6c",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/avelikiy--great_cto.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/s3-definition.md",
+        "skills/product-flow/references/s8-testcases.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "microsoft/sonder-ui",
+      "revision": "5b6a613cf75545dc11339c0e9fe174460f5c8321",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/microsoft--sonder-ui.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/keyboard-contracts.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "GoogleChrome/web-vitals",
+      "revision": "01e8b5d444810e2b81afd2b1b0194399185499a7",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "Apache-2.0",
+      "licenseFile": "licenses/GoogleChrome--web-vitals.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/coding-standards/references/authority.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "obra/superpowers",
+      "revision": "5bf4e78011075bcfc0dc295f0724994cd123ee71",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/obra--superpowers.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/four-node-review/SKILL.md",
+        "skills/coding-standards/references/rules-ai-collab.md",
+        "skills/product-flow/references/external-sources.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "shanraisshan/claude-code-best-practice",
+      "revision": "7a7644c728efbd10f0810d5d9543caaae42fb43f",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/shanraisshan--claude-code-best-practice.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/s3-s4-product.md",
+        "skills/product-flow/references/s7-s9-build.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "omkamal/pypict-claude-skill",
+      "revision": "fbda212bca79dfa7611be12527b102c89cc8faeb",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/omkamal--pypict-claude-skill.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/testcases-design.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "emilkowalski/skills",
+      "revision": "85e8e2363b713506e1d5b6e07a0eb2da66be1bc3",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/emilkowalski--skills.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/motion-spec.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "LottieFiles/motion-design-skill",
+      "revision": "f9a8a041b85185ee4881b3471d3415e939aac772",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/LottieFiles--motion-design-skill.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/motion-spec.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "cookiy-ai/user-research-skill",
+      "revision": "21eea10a34d3c9b4e711e3d19f0457603dd33e19",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/cookiy-ai--user-research-skill.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/references/s2-research.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "memi-design/design-skills",
+      "revision": "3c033500aea572ef1bdba983b6c134abefca4ecb",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/memi-design--design-skills.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/scripts/interaction-gate.py"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "google-labs-code/design.md",
+      "revision": "9bf8eae67128b6cc55ad9bf86665767deb4c11cd",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "Apache-2.0",
+      "licenseFile": "licenses/google-labs-code--design.md.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/scripts/design-to-tokens.py"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "Fission-AI/OpenSpec",
+      "revision": "bae58cf61479986431bb798acbe5a688a591c18c",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/Fission-AI--OpenSpec.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/templates/prd-complete.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "kettanaito/naming-cheatsheet",
+      "revision": "7b90cd7b2d3ccb104a4443d5e7e152b8fd400533",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/kettanaito--naming-cheatsheet.txt",
+      "sourceLicensePath": "LICENSE.md",
+      "localPaths": [
+        "skills/coding-standards/references/foundation.md"
+      ],
+      "kind": "adapted guidance / method-derived implementation",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "alibaba/open-code-review",
+      "revision": "bccbc15f785269400735d5255540c231e6c02b6d",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "Apache-2.0",
+      "licenseFile": "licenses/alibaba--open-code-review.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/four-node-review/SKILL.md"
+      ],
+      "kind": "external-tool reference; implementation not bundled",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "affaan-m/everything-claude-code",
+      "revision": "bf70150eb2df8070024e5bdf08e4aa08959e2735",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/affaan-m--everything-claude-code.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/four-node-review/SKILL.md"
+      ],
+      "kind": "external-tool reference; implementation not bundled",
+      "changes": "Selected, summarized or translated for SYBuilder; local contracts and examples added. Not an unmodified upstream distribution."
+    },
+    {
+      "source": "yizhiyanhua-ai/fireworks-tech-graph",
+      "revision": "14be3ad3b05389a5d603562c207eb37157637127",
+      "revisionBasis": "vendored v1.0.5 baseline",
+      "license": "MIT",
+      "licenseFile": "skills/product-flow/modules/diagramming/LICENSE",
+      "localPaths": [
+        "skills/product-flow/modules/diagramming/MODULE.md"
+      ],
+      "kind": "vendored code and assets",
+      "changes": "13 modified files and one local-only renderer documented in docs/third-party-audit.md."
+    },
+    {
+      "source": "goldbergyoni/javascript-testing-best-practices",
+      "revision": "63a2bb07bb718d0a34a9c1249ef0df9b1266dad8",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "MIT",
+      "licenseFile": "licenses/goldbergyoni--javascript-testing-best-practices.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/product-flow/SKILL.md",
+        "skills/product-flow/references/external-sources.md"
+      ],
+      "kind": "adapted guidance; upstream implementation not bundled",
+      "changes": "Selected and translated guidance with SYBuilder-specific examples and decision rules."
+    },
+    {
+      "source": "google/eng-practices",
+      "revision": "3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "CC-BY-3.0",
+      "licenseFile": "licenses/google--eng-practices.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/coding-standards/references/foundation.md"
+      ],
+      "kind": "adapted guidance; upstream implementation not bundled",
+      "changes": "Selected and translated guidance with SYBuilder-specific examples and decision rules."
+    },
+    {
+      "source": "block/buzz",
+      "revision": "77729abfb692b25a0f4ec4a69add86af2e32c0dd",
+      "revisionBasis": "publication review snapshot; original consulted revision not reconstructed",
+      "license": "Apache-2.0",
+      "licenseFile": "licenses/block--buzz.txt",
+      "sourceLicensePath": "LICENSE",
+      "localPaths": [
+        "skills/four-node-review/SKILL.md"
+      ],
+      "kind": "adapted guidance; upstream implementation not bundled",
+      "changes": "Selected and translated guidance with SYBuilder-specific examples and decision rules."
+    },
+    {
+      "source": "ZeroZ-lab/cc-design",
+      "revision": "d5e10b4ffe694a1e99bcf88fc953cde6cde23930",
+      "revisionBasis": "publication review snapshot; matching layout, typography and brand-theory references; original consulted revision not reconstructed",
+      "license": "MIT (README declaration)",
+      "licenseFile": "licenses/ZeroZ-lab--cc-design.txt",
+      "sourceLicensePath": "README.md#license (no separate LICENSE file upstream)",
+      "localPaths": [
+        "skills/product-flow/references/craft-layer.md"
+      ],
+      "kind": "condensed design-method guidance; no upstream code or images bundled",
+      "changes": "Chinese condensation and SYBuilder decision rules in sections 1, 2 and 4. Attribution preserves the upstream's declaration without inventing a copyright year."
+    }
+  ]
+}

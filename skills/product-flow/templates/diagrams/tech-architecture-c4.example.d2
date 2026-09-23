@@ -1,0 +1,38 @@
+# 技术架构图 C4 - Container 层（示例）— 对象：product-flow，对应 PRD 附件 N
+# 判据见 references/diagram-standards.md 第 6 节；C4 官方 review checklist 可直接引用。
+# ⛔ PM 只验三条：① 每个框标了技术选型 ② 每条线标了协议/方向 ③ 图题写明是哪一层（C1/C2/C3）。
+# ⚠️ 这是 **Container 层（C2）**，不是模块图 —— 框 = 可独立部署/运行的东西，⛔ 不是代码结构。
+
+direction: down
+title: |md # 技术架构图 C4 · Container 层（示例） | {near: top-center}
+
+PM: "产品经理\n[Person]" {shape: person; style.fill: "#EEF2FF"}
+
+product-flow: {
+  style.fill: "#F0FDF4"
+  label: "product-flow skill [System]"
+  编排: "阶段编排与裁剪\n[Python 3 · 无第三方依赖]"
+  门禁: "门禁执行器\n[Python 3 · 55 脚本]"
+  浏览: "交互稿审计\n[Node + Puppeteer]"
+  出图: "图渲染\n[D2 CLI + TALA]"
+}
+
+外部: {
+  style.fill: "#FEF9C3"
+  飞书: "飞书文档\n[OpenAPI · HTTPS]" {shape: cylinder}
+  Figma: "Figma\n[官方 MCP · HTTPS]" {shape: cylinder}
+  仓库: "项目 git 仓库\n[本地文件系统]" {shape: cylinder}
+}
+
+PM -> product-flow.编排: "跑 skill\n[CLI / stdin]"
+product-flow.编排 -> product-flow.门禁: "本次该跑哪几道\n[进程内调用]"
+product-flow.门禁 -> product-flow.浏览: "交互稿需目检\n[subprocess · JSON]"
+product-flow.门禁 -> product-flow.出图: "图源需渲染\n[subprocess]"
+product-flow.门禁 -> 外部.仓库: "结论落盘\n[文件写入]"
+product-flow.门禁 -> 外部.飞书: "回读校验冻结证据\n[HTTPS · 只读]"
+product-flow.门禁 -> 外部.Figma: "回读设计稿\n[HTTPS · 只读]"
+# ⚠️ 方向必须标：飞书/Figma 这两条**只读**，写入走人工确认，
+#    画成双向就会让人以为 skill 会自动改线上文档。
+
+# ⚠️ 这张图答不了：每个容器内部怎么分层（那是 C3 组件图）、
+#    业务上为什么需要它们（那是 6.1 产品架构图）。

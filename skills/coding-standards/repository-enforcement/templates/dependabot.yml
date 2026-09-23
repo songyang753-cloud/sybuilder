@@ -1,0 +1,18 @@
+# 复制到 .github/dependabot.yml。每周扫描依赖更新（含安全补丁），开 PR 走同一 CI 门禁。
+# 按项目实际栈增删 ecosystem 与 directory。
+version: 2
+updates:
+  - package-ecosystem: gomod          # 删/改：仅当有 Go
+    directory: /backend
+    schedule: {interval: weekly}
+    open-pull-requests-limit: 5
+    commit-message: {prefix: "chore(deps)"}
+  - package-ecosystem: npm            # 删/改：仅当有 Node
+    directory: /frontend
+    schedule: {interval: weekly}
+    open-pull-requests-limit: 5
+    commit-message: {prefix: "chore(deps)"}
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly}
+    commit-message: {prefix: "chore(ci)"}

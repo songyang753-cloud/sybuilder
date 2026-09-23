@@ -1,0 +1,34 @@
+# 强化后的 Go CI job 骨架（粘进 .github/workflows/ci.yml 的 jobs: 下）。
+# 设计要点：hermetic（工具版本钉死）、-race 并发安全、供应链扫描、依赖一致性。
+# 工具钉死：在 backend 里跑一次 `go get -tool honnef.co/go/tools/cmd/staticcheck@<ver>`
+#           和 `go get -tool golang.org/x/vuln/cmd/govulncheck@<ver>`（Go≥1.24），
+#           会写进 go.mod 的 tool 指令 + go.sum 锁定，CI 用 `go tool X` 调用即可复现。
+  backend:
+    name: 后端 (Go)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend        # 单仓多包时按实际目录改/删
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'               # 与 go.mod 一致
+          cache-dependency-path: backend/go.sum
+      - name: 依赖一致性 (go.mod/go.sum 无漂移)
+        run: go mod verify && go mod tidy && git diff --exit-code go.mod go.sum
+      - name: 格式 (gofmt)
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && echo '请 gofmt -w .' && exit 1)
+      - name: 静态检查 (go vet)
+        run: go vet ./...
+      - name: 静态分析 (staticcheck, pinned via go.mod tool)
+        run: go tool staticcheck ./...
+      - name: 测试 + 竞态 + 覆盖率
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+      - name: 覆盖率摘要
+        run: go tool cover -func=coverage.out | tail -1
+      - name: 构建
+        run: go build ./...
+      - name: 漏洞扫描 (govulncheck, pinned via go.mod tool)
+        run: go tool govulncheck ./...
+      # 若有 OpenAPI 契约：- run: npx --yes @redocly/cli@1 lint api/openapi.yaml

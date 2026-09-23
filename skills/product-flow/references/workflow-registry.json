@@ -1,0 +1,1115 @@
+{
+  "schemaVersion": "1.0",
+  "registryVersion": "2026-09-21.1",
+  "description": "product-flow 的机器正本：模块、依赖、输出、门禁、运行别名与 HTML 完成度由本文件计算。文档负责解释，不再另抄一份可执行清单。",
+  "claimOrder": [
+    "exploration",
+    "draft",
+    "review-ready",
+    "module-approved",
+    "integrated-frozen",
+    "production-validated"
+  ],
+  "evidenceCapabilities": {
+    "native": {
+      "definition": "全部适用权威载体均可由真实工具原生读取、运行或回读；本档只是不额外降级，不能替代门禁与人工批准。",
+      "maxClaim": "production-validated"
+    },
+    "mixed": {
+      "definition": "仅部分适用权威载体具备原生证据，其余只能使用受限证据；不得声称完成跨载体冻结。",
+      "maxClaim": "module-approved"
+    },
+    "limited": {
+      "definition": "只有导出物、截图、链接或其他不可原生复验的证据；最多可进入评审。",
+      "maxClaim": "review-ready"
+    },
+    "unavailable": {
+      "definition": "适用证据不可访问或无法验证；只能形成明确标注限制的草稿。",
+      "maxClaim": "draft"
+    }
+  },
+  "stageOrder": [
+    "S1",
+    "S2",
+    "S3A",
+    "S3B",
+    "S4A",
+    "S4B",
+    "S5",
+    "S6",
+    "S7",
+    "G7.5",
+    "S8",
+    "S9.1",
+    "S9.2",
+    "S9.3",
+    "S9.4",
+    "S10"
+  ],
+  "aliases": {
+    "S3": [
+      "S3A",
+      "S3B"
+    ],
+    "S4": [
+      "S4A",
+      "S4B"
+    ],
+    "S9": [
+      "S9.1",
+      "S9.2",
+      "S9.3",
+      "S9.4"
+    ],
+    "business": [
+      "S3A"
+    ],
+    "definition": [
+      "S3B"
+    ],
+    "structure": [
+      "S4A"
+    ],
+    "prd": [
+      "S4B"
+    ],
+    "research": [
+      "S2"
+    ],
+    "experience": [
+      "S5"
+    ],
+    "interaction": [
+      "S6"
+    ],
+    "design": [
+      "S7"
+    ],
+    "core": [
+      "S5",
+      "S6",
+      "S7",
+      "G7.5"
+    ],
+    "solution": [
+      "S8"
+    ],
+    "delivery": [
+      "S9.1",
+      "S9.2",
+      "S9.3",
+      "S9.4"
+    ],
+    "testcases": [
+      "TESTCASES"
+    ],
+    "retro": [
+      "S10"
+    ],
+    "reverse": [
+      "REVERSE"
+    ]
+  },
+  "htmlProfiles": {
+    "draft": {
+      "purpose": "A/B 锁探索切片；只可探索和评审，不能交付研发或声称最终一致。",
+      "visualScope": "选定切片",
+      "interactionScope": "选定任务流",
+      "maxClaim": "review-ready",
+      "requiresAppParity": false
+    },
+    "standalone-interaction": {
+      "purpose": "独立运行 S6；在输入视觉约束范围内完成全部适用状态、反馈、键盘、动效和响应式行为。",
+      "visualScope": "输入定义的全部页面与状态；无视觉权威时显式限制为 UX 基准，不冒充视觉定稿",
+      "interactionScope": "全部适用任务流、状态和边界",
+      "maxClaim": "module-approved",
+      "requiresAppParity": false
+    },
+    "core-full": {
+      "purpose": "核心三件套/完整运行；HTML 必须同时达到完整视觉与完整交互，并作为最终应用验收基准。",
+      "visualScope": "PRD 与 Figma 覆盖的全部适用页面、状态、主题、视口",
+      "interactionScope": "全部适用任务流、状态、反馈、键盘、动效、响应式与错误恢复",
+      "maxClaim": "integrated-frozen",
+      "requiresAppParity": true
+    }
+  },
+  "gateRules": [
+    {
+      "id": "R-META-CONSISTENCY",
+      "modules": [
+        "*"
+      ],
+      "gate": "consistency-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S1-INTENT",
+      "modules": [
+        "S1"
+      ],
+      "gate": "intent-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S2-TRAVERSAL",
+      "modules": [
+        "S2"
+      ],
+      "gate": "traversal-coverage-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S2-REPORT",
+      "modules": [
+        "S2"
+      ],
+      "gate": "report-structure-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S2-AUDIENCE",
+      "modules": ["S2"],
+      "gate": "audience-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S2-FEISHU",
+      "modules": ["S2"],
+      "gate": "feishu-delivery-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S2-RESEARCH-COMPETITIVE",
+      "modules": ["S2"],
+      "gate": "research-gate.py",
+      "ruleType": "conditional",
+      "when": {"researchMode": "competitive-pack"},
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S2-RESEARCH-FULL",
+      "modules": ["S2"],
+      "gate": "research-gate.py",
+      "ruleType": "conditional",
+      "when": {"researchMode": "full-research"},
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S2-G0",
+      "modules": ["S2"],
+      "gate": "chain-gate.py.G0",
+      "ruleType": "conditional",
+      "when": {"researchMode": "full-research"},
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S3A-BUSINESS",
+      "modules": [
+        "S3A"
+      ],
+      "gate": "business-map-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S3B-DEFINITION",
+      "modules": [
+        "S3B"
+      ],
+      "gate": "definition-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S3B-G05",
+      "modules": [
+        "S3B"
+      ],
+      "gate": "chain-gate.py.G0.5",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S3B-G06",
+      "modules": [
+        "S3B"
+      ],
+      "gate": "chain-gate.py.G0.6",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S4A-STRUCTURE",
+      "modules": [
+        "S4A"
+      ],
+      "gate": "product-structure-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S4A-G09",
+      "modules": [
+        "S4A"
+      ],
+      "gate": "chain-gate.py.G0.9",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S4B-PRD",
+      "modules": [
+        "S4B"
+      ],
+      "gate": "prd_completeness_check.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S4B-QUALITY",
+      "modules": [
+        "S4B"
+      ],
+      "gate": "requirements-quality-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S4B-G08",
+      "modules": [
+        "S4B"
+      ],
+      "gate": "chain-gate.py.G0.8",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S5-INTENT",
+      "modules": [
+        "S5"
+      ],
+      "gate": "design-intent-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S5-TOKEN",
+      "modules": [
+        "S5"
+      ],
+      "gate": "token-provenance-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S5-VISUAL",
+      "modules": [
+        "S5"
+      ],
+      "gate": "visual-spec-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S5-AISLOP",
+      "modules": [
+        "S5"
+      ],
+      "gate": "ai-slop-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S5-INTERACTION",
+      "modules": [
+        "S5"
+      ],
+      "gate": "interaction-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S5-IDENTITY",
+      "modules": [
+        "S5"
+      ],
+      "gate": "element-identity-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S6-SCENARIOS",
+      "modules": [
+        "S6"
+      ],
+      "gate": "scenario-matrix-gate.mjs",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S6-ANCHOR",
+      "modules": [
+        "S6"
+      ],
+      "gate": "demo-anchor-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S6-G2",
+      "modules": [
+        "S6"
+      ],
+      "gate": "reconcile-gate.py.G2",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S6-SPEC",
+      "modules": [
+        "S6"
+      ],
+      "gate": "spec-sync-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S6-FLOW",
+      "modules": [
+        "S6"
+      ],
+      "gate": "flow-walk-gate.mjs",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S6-SEAM",
+      "modules": [
+        "S6"
+      ],
+      "gate": "mock-seam-gate.mjs",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S6-DEADCLICK",
+      "modules": [
+        "S6"
+      ],
+      "gate": "dead-click-gate.mjs",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S6-BROWSER",
+      "modules": [
+        "S6"
+      ],
+      "gate": "browser-audit.mjs",
+      "ruleType": "required",
+      "gateKind": "machine",
+      "receiptBacked": true
+    },
+    {
+      "id": "R-S6-AISLOP",
+      "modules": [
+        "S6"
+      ],
+      "gate": "ai-slop-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S6-VISUAL",
+      "modules": [
+        "S6"
+      ],
+      "gate": "visual-spec-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S6-INTERACTION",
+      "modules": [
+        "S6"
+      ],
+      "gate": "interaction-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S6-IDENTITY",
+      "modules": [
+        "S6"
+      ],
+      "gate": "element-identity-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S6-DUAL",
+      "modules": [
+        "S6"
+      ],
+      "gate": "platform-parity-gate.mjs",
+      "ruleType": "conditional",
+      "when": {
+        "productType": "dual"
+      },
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S7-G3",
+      "modules": [
+        "S7"
+      ],
+      "gate": "reconcile-gate.py.G3",
+      "ruleType": "required",
+      "gateKind": "machine",
+      "receiptBacked": true
+    },
+    {
+      "id": "R-S7-EDITABLE",
+      "modules": [
+        "S7"
+      ],
+      "gate": "figma-editability-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S7-IDENTITY",
+      "modules": [
+        "S7"
+      ],
+      "gate": "element-identity-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-G75-FREEZE",
+      "modules": [
+        "G7.5"
+      ],
+      "gate": "g75-freeze-gate.py",
+      "ruleType": "required",
+      "gateKind": "human-approval-backed",
+      "compositionOnly": true,
+      "receiptBacked": true,
+      "standaloneCeiling": "module-approved"
+    },
+    {
+      "id": "R-S8-SOLUTION",
+      "modules": [
+        "S8"
+      ],
+      "gate": "s8-solution-gate.py",
+      "ruleType": "required",
+      "gateKind": "human-approval-backed",
+      "receiptBacked": true,
+      "standaloneCeiling": "module-approved"
+    },
+    {
+      "id": "R-S91-BUILD",
+      "modules": [
+        "S9.1"
+      ],
+      "gate": "selfcheck.sh",
+      "ruleType": "conditional",
+      "when": {
+        "executionMode": "build"
+      },
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S92-COVERAGE",
+      "modules": [
+        "S9.2"
+      ],
+      "gate": "coverage_check.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S92-QUALITY-REPORT",
+      "modules": [
+        "S9.2"
+      ],
+      "gate": "s9-quality-report-gate.py",
+      "ruleType": "required",
+      "gateKind": "human-approval-backed",
+      "receiptBacked": true,
+      "standaloneCeiling": "module-approved"
+    },
+    {
+      "id": "R-S93-PM-GUI",
+      "modules": [
+        "S9.3"
+      ],
+      "gate": "s9-product-walkthrough-gate.py",
+      "ruleType": "required",
+      "gateKind": "human-approval-backed",
+      "receiptBacked": true,
+      "standaloneCeiling": "module-approved"
+    },
+    {
+      "id": "R-S91-DEV-SLICE",
+      "modules": [
+        "S9.1"
+      ],
+      "gate": "s9-dev-slice-gate.py",
+      "ruleType": "required",
+      "gateKind": "structure",
+      "standaloneCeiling": "review-ready"
+    },
+    {
+      "id": "R-S94-LAUNCH",
+      "modules": [
+        "S9.4"
+      ],
+      "gate": "s9-launch-rollback-gate.py",
+      "ruleType": "required",
+      "gateKind": "human-approval-backed",
+      "receiptBacked": true,
+      "standaloneCeiling": "module-approved"
+    },
+    {
+      "id": "R-S10-RETRO",
+      "modules": [
+        "S10"
+      ],
+      "gate": "retro-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-TESTCASES-COVERAGE",
+      "modules": [
+        "TESTCASES"
+      ],
+      "gate": "coverage_check.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    }
+  ],
+  "modules": {
+    "S1": {
+      "label": "需求与问题澄清",
+      "dependencies": [],
+      "inputs": [
+        "用户原始需求或已上线产品基线"
+      ],
+      "outputs": [
+        "input/definition.md"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "input/definition.md": "template"
+      },
+      "outputTemplates": {
+        "input/definition.md": "templates/intent.md"
+      },
+      "track": "doc",
+      "temperature": "anchored"
+    },
+    "S2": {
+      "label": "深度研究",
+      "dependencies": [
+        "S1"
+      ],
+      "inputs": [
+        "input/definition.md",
+        "下游消费者与决策域"
+      ],
+      "outputs": [
+        "research/*",
+        "research/competitor-teardown-report.md",
+        "research/atomic-feature-ledger.md",
+        "research/traversal-events.json",
+        "research/evidence-manifest.json",
+        "research/feishu-delivery-receipt.json",
+        "research-decision-ledger.md",
+        "research-traceability.json"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "research/*": "evidence:研究目录整体，条目形态由 competitive-research.md 定，⛔ 通配不对应单一模板",
+        "research/competitor-teardown-report.md": "template",
+        "research/atomic-feature-ledger.md": "template",
+        "research/traversal-events.json": "template",
+        "research/evidence-manifest.json": "template",
+        "research/feishu-delivery-receipt.json": "generated:feishu-delivery-gate 双格式回读后生成，手写即伪造",
+        "research-decision-ledger.md": "template",
+        "research-traceability.json": "generated:research-gate 对账时产出的追溯映射，手写即伪造"
+      },
+      "outputTemplates": {
+        "research/competitor-teardown-report.md": "templates/competitor-teardown-report.md",
+        "research/atomic-feature-ledger.md": "templates/competitive-research-pack.md",
+        "research/traversal-events.json": "templates/traversal-events.json",
+        "research/evidence-manifest.json": "templates/evidence-manifest.json",
+        "research-decision-ledger.md": "templates/research-decision-ledger.md"
+      },
+      "track": "doc",
+      "temperature": "anchored"
+    },
+    "S3A": {
+      "label": "业务梳理",
+      "dependencies": [
+        "S2"
+      ],
+      "inputs": [
+        "S1 需求",
+        "S2 研究与洞察"
+      ],
+      "outputs": [
+        "business-map.md"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "business-map.md": "template"
+      },
+      "outputTemplates": {
+        "business-map.md": "templates/business-map.md"
+      },
+      "track": "doc",
+      "temperature": "anchored"
+    },
+    "S3B": {
+      "label": "产品定义",
+      "dependencies": [
+        "S3A"
+      ],
+      "inputs": [
+        "business-map.md",
+        "S2 研究与洞察"
+      ],
+      "outputs": [
+        "definition-final.md 或 no-build.md",
+        "proposals.md"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "definition-final.md 或 no-build.md": "template",
+        "proposals.md": "evidence:功能增删提案表，随 definition-final 一并交付，形态见 s3-definition.md"
+      },
+      "outputTemplates": {
+        "definition-final.md 或 no-build.md": "templates/definition-final.md"
+      },
+      "track": "doc",
+      "temperature": "anchored"
+    },
+    "S4A": {
+      "label": "产品结构",
+      "dependencies": [
+        "S3B"
+      ],
+      "inputs": [
+        "definition-final.md",
+        "state.md"
+      ],
+      "outputs": [
+        "product-structure.md"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "product-structure.md": "template"
+      },
+      "outputTemplates": {
+        "product-structure.md": "templates/product-structure.md"
+      },
+      "track": "doc",
+      "temperature": "anchored"
+    },
+    "S4B": {
+      "label": "PRD v0.9",
+      "dependencies": [
+        "S4A"
+      ],
+      "inputs": [
+        "definition-final.md",
+        "product-structure.md",
+        "business-map.md"
+      ],
+      "outputs": [
+        "飞书 PRD v0.9",
+        "PRD.md 镜像",
+        "prd-backfill.md"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "飞书 PRD v0.9": "external:飞书原生文档，本地无模板；镜像用 prd-complete.md",
+        "PRD.md 镜像": "template",
+        "prd-backfill.md": "template"
+      },
+      "outputTemplates": {
+        "PRD.md 镜像": "templates/prd-complete.md",
+        "prd-backfill.md": "templates/prd-backfill.md"
+      },
+      "track": "doc",
+      "temperature": "anchored"
+    },
+    "S5": {
+      "label": "体验策略与 A 锁",
+      "dependencies": [
+        "S4B"
+      ],
+      "inputs": [
+        "PRD v0.9",
+        "S2 视觉与交互研究",
+        "真实内容"
+      ],
+      "outputs": [
+        "design-brief.md",
+        "interaction-spec.md",
+        "A 锁批准记录"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "design-brief.md": "template",
+        "interaction-spec.md": "template",
+        "A 锁批准记录": "evidence:人拍板的批准留痕，进 state.md，⛔ 不模板化"
+      },
+      "outputTemplates": {
+        "design-brief.md": "templates/design-brief.md",
+        "interaction-spec.md": "templates/interaction-spec.md"
+      },
+      "track": "design",
+      "temperature": "anchored"
+    },
+    "S6": {
+      "label": "HTML 可执行体验基准",
+      "dependencies": [
+        "S5"
+      ],
+      "inputs": [
+        "PRD/等价 brief",
+        "交互合同",
+        "真实内容",
+        "已批准视觉方向或显式视觉约束"
+      ],
+      "outputs": [
+        "可运行 HTML",
+        "运行证据",
+        "prd-backfill.md"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "可运行 HTML": "generated:S6 产出的可运行 demo，不是文档，⛔ 无模板",
+        "运行证据": "evidence:真跑截图/日志/退出码",
+        "prd-backfill.md": "template"
+      },
+      "outputTemplates": {
+        "prd-backfill.md": "templates/prd-backfill.md"
+      },
+      "track": "design",
+      "temperature": "anchored"
+    },
+    "S7": {
+      "label": "Figma 高精度视觉母版",
+      "dependencies": [
+        "S5"
+      ],
+      "inputs": [
+        "PRD/等价 brief",
+        "研究洞察",
+        "真实内容",
+        "A 锁批准记录"
+      ],
+      "outputs": [
+        "可编辑 Figma 高精度稿",
+        "DESIGN.md",
+        "设计系统",
+        "prd-backfill.md"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "可编辑 Figma 高精度稿": "external:Figma 原生文件",
+        "DESIGN.md": "template",
+        "设计系统": "evidence:令牌与组件规格，随 DESIGN.md front matter 交付",
+        "prd-backfill.md": "template"
+      },
+      "outputTemplates": {
+        "DESIGN.md": "templates/design-md.md",
+        "prd-backfill.md": "templates/prd-backfill.md"
+      },
+      "track": "design",
+      "temperature": "anchored"
+    },
+    "G7.5": {
+      "label": "PRD/Figma/HTML 三方冻结",
+      "dependencies": [
+        "S6",
+        "S7"
+      ],
+      "inputs": [
+        "PRD v1.0 回灌候选",
+        "Figma 原生回读 receipt",
+        "HTML 浏览器运行 receipt",
+        "三方联合验收"
+      ],
+      "outputs": [
+        "飞书 PRD v1.0",
+        "contract-manifest.json",
+        "triad-reconciliation.md",
+        "三方批准 receipt"
+      ],
+      "maxClaim": "integrated-frozen",
+      "outputKinds": {
+        "飞书 PRD v1.0": "external:飞书原生文档",
+        "contract-manifest.json": "template",
+        "triad-reconciliation.md": "template",
+        "三方批准 receipt": "evidence:三方批准回执，进 state.md"
+      },
+      "outputTemplates": {
+        "contract-manifest.json": "templates/contract-manifest.json",
+        "triad-reconciliation.md": "templates/triad-reconciliation.md"
+      },
+      "track": "seam",
+      "temperature": "gate"
+    },
+    "S8": {
+      "label": "技术、算法与测试方案",
+      "dependencies": [
+        "G7.5"
+      ],
+      "inputs": [
+        "冻结 PRD/Figma/HTML 三件套",
+        "spec 与调研依据",
+        "技术方案就绪度",
+        "测试用例就绪度",
+        "项目研发规范与 coding-standards 版本",
+        "four-node-review 版本与终审约束"
+      ],
+      "outputs": [
+        "飞书技术、算法与测试方案",
+        "S8 受控镜像",
+        "技术/算法/测试追溯矩阵",
+        "三专业批准与回读 receipt"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "飞书技术、算法与测试方案": "external:飞书原生文档；受控镜像用 s8-solution-plan.md",
+        "S8 受控镜像": "template",
+        "技术/算法/测试追溯矩阵": "evidence:TECH/ALG/TEST 对账矩阵，随方案交付",
+        "三专业批准与回读 receipt": "evidence:批准与飞书回读回执"
+      },
+      "outputTemplates": {
+        "S8 受控镜像": "templates/s8-solution-plan.md"
+      },
+      "track": "eng",
+      "temperature": "source"
+    },
+    "S9.1": {
+      "label": "开发实现",
+      "dependencies": [
+        "S8"
+      ],
+      "inputs": [
+        "S8 已批准联合方案",
+        "冻结三件套",
+        "锚定的 coding-standards 与 STD 适用映射"
+      ],
+      "outputs": [
+        "可运行应用",
+        "单元/组件/集成测试与构建证据",
+        "方案偏离同步记录"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "可运行应用": "generated:构建产物，⛔ 无模板",
+        "单元/组件/集成测试与构建证据": "evidence:测试与构建输出",
+        "方案偏离同步记录": "template"
+      },
+      "outputTemplates": {
+        "方案偏离同步记录": "templates/deviation-register.md"
+      },
+      "track": "eng",
+      "temperature": "source"
+    },
+    "S9.2": {
+      "label": "测试工程师 GUI 实走、工程测试与质量验收",
+      "dependencies": [
+        "S9.1"
+      ],
+      "inputs": [
+        "可运行应用",
+        "S8 测试方案与用例",
+        "PRD 验收标准",
+        "真实 diff/manifest",
+        "锚定的 coding-standards 与 four-node-review"
+      ],
+      "outputs": [
+        "飞书工程测试与四节点终审报告",
+        "S9.2 受控镜像",
+        "用例执行证据",
+        "测试工程师对当前构建的 GUI 全流程逐步证据",
+        "覆盖报告",
+        "安全/性能/可访问性/算法评测审计",
+        "三专业批准与回读 receipt",
+        "同构建质量结论（PASS/FAIL/UNABLE；仅 PASS 可进 S9.3）"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "飞书工程测试与四节点终审报告": "external:飞书原生文档；受控镜像用 s9-quality-report.md",
+        "S9.2 受控镜像": "template",
+        "用例执行证据": "evidence:用例执行留痕",
+        "测试工程师对当前构建的 GUI 全流程逐步证据": "evidence:逐步 GUI 实走证据，必须绑定当前构建",
+        "覆盖报告": "generated:coverage_check 等工具产出",
+        "安全/性能/可访问性/算法评测审计": "evidence:各专项审计输出",
+        "三专业批准与回读 receipt": "evidence:批准与回读回执",
+        "同构建质量结论（PASS/FAIL/UNABLE；仅 PASS 可进 S9.3）": "evidence:质量结论判定，写进质量报告"
+      },
+      "outputTemplates": {
+        "S9.2 受控镜像": "templates/s9-quality-report.md"
+      },
+      "track": "eng",
+      "temperature": "source"
+    },
+    "S9.3": {
+      "label": "产品经理 GUI 走查与四方一致性验收",
+      "dependencies": [
+        "S9.2"
+      ],
+      "inputs": [
+        "S9.2 对同一构建的 PASS receipt",
+        "冻结 PRD、Figma、HTML 与同构建最终应用四件原物",
+        "产品经理可操作的真实 GUI 入口",
+        "角色/账号/测试数据"
+      ],
+      "outputs": [
+        "飞书产品经理 GUI 走查与四方验收报告",
+        "S9.3 受控镜像",
+        "产品经理独立 GUI 逐步证据",
+        "PRD↔应用/HTML↔应用/Figma↔应用三条对账",
+        "偏差登记",
+        "产品/设计/测试批准与回读 receipt"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "飞书产品经理 GUI 走查与四方验收报告": "external:飞书原生文档；受控镜像用 s9-product-walkthrough.md",
+        "S9.3 受控镜像": "template",
+        "产品经理独立 GUI 逐步证据": "evidence:产品经理亲自实走的逐步证据",
+        "PRD↔应用/HTML↔应用/Figma↔应用三条对账": "evidence:四方对账结果，写进走查报告",
+        "偏差登记": "template",
+        "产品/设计/测试批准与回读 receipt": "evidence:批准与回读回执"
+      },
+      "outputTemplates": {
+        "S9.3 受控镜像": "templates/s9-product-walkthrough.md",
+        "偏差登记": "templates/deviation-register.md"
+      },
+      "track": "eng",
+      "temperature": "source"
+    },
+    "S9.4": {
+      "label": "灰度与上线",
+      "dependencies": [
+        "S9.3"
+      ],
+      "inputs": [
+        "全部验收与测试证据"
+      ],
+      "outputs": [
+        "灰度记录",
+        "上线记录",
+        "观察计划"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "灰度记录": "evidence:灰度批次与监测留痕",
+        "上线记录": "evidence:上线动作与时间留痕",
+        "观察计划": "evidence:上线后观察指标与周期"
+      },
+      "track": "eng",
+      "temperature": "source"
+    },
+    "S10": {
+      "label": "上线后复盘",
+      "dependencies": [
+        "S9.4"
+      ],
+      "inputs": [
+        "真实观察周期数据"
+      ],
+      "outputs": [
+        "retro.md",
+        "四本账结算",
+        "下一轮决策"
+      ],
+      "maxClaim": "production-validated",
+      "outputKinds": {
+        "retro.md": "template",
+        "四本账结算": "evidence:复盘四本账的结算结果，写进 retro.md",
+        "下一轮决策": "evidence:继续/扩大/调整/停止的人拍板结论"
+      },
+      "outputTemplates": {
+        "retro.md": "templates/retro.md"
+      },
+      "track": "doc",
+      "temperature": "anchored"
+    },
+    "TESTCASES": {
+      "label": "独立用例工程",
+      "dependencies": [],
+      "inputs": [
+        "PRD/等价需求合同"
+      ],
+      "outputs": [
+        "readiness.md",
+        "requirements.md",
+        "cases/<F-xx>.md",
+        "coverage.json",
+        "gaps.md"
+      ],
+      "outputKinds": {
+        "readiness.md": "template",
+        "requirements.md": "template",
+        "cases/<F-xx>.md": "template",
+        "coverage.json": "generated:coverage_check.py 产出，手写它等于伪造对账结果",
+        "gaps.md": "template"
+      },
+      "outputTemplates": {
+        "readiness.md": "templates/testcases-pack.md",
+        "requirements.md": "templates/testcases-pack.md",
+        "cases/<F-xx>.md": "templates/testcases-pack.md",
+        "gaps.md": "templates/testcases-pack.md"
+      },
+      "outputsCanonicalSource": "references/s8-testcases.md#⑤-输出",
+      "gateExitCodes": {
+        "0": "PASS",
+        "1": "FAIL",
+        "2": "UNABLE",
+        "3": "PASS_WITH_GAPS（不算完成）"
+      },
+      "maxClaim": "module-approved",
+      "track": "eng",
+      "temperature": "source"
+    },
+    "REVERSE": {
+      "label": "已上线产品反向提取",
+      "dependencies": [],
+      "inputs": [
+        "可访问的已上线产品"
+      ],
+      "outputs": [
+        "baseline.md",
+        "事实/推断/未知清单"
+      ],
+      "maxClaim": "module-approved",
+      "outputKinds": {
+        "baseline.md": "template",
+        "事实/推断/未知清单": "evidence:三分法清单，写进 baseline.md"
+      },
+      "outputTemplates": {
+        "baseline.md": "templates/baseline.md"
+      },
+      "track": "doc",
+      "temperature": "anchored"
+    }
+  }
+}

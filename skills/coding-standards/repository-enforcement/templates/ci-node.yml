@@ -1,0 +1,60 @@
+# 强化后的 Node/前端 CI job 骨架（粘进 .github/workflows/ci.yml 的 jobs: 下）。
+# 设计要点：npm ci（锁文件严格、可复现）、ESLint 0 警告、类型检查、供应链扫描。
+# typecheck 棘轮：若存量类型错误多，先给该步加 `continue-on-error: true`（咨询门禁），
+#   并在工程章程 Open Items 记"清零后转强制"；清零后删掉 continue-on-error。
+#
+# ⚠️⚠️ 关于这份模板里的每一个 `continue-on-error: true`（2026-09-05 审后加）：
+#   **模板是给人抄的，而抄走的只有模板，不是 references/ratchet.md。**
+#   棘轮文档第 2 步要求「测基线、写进章程 Open Items：存量 N，清零后转强制」——
+#   那条要求不会跟着 YAML 一起被复制。于是「起步咨询」在抄走的那一刻就失去了上下文，
+#   剩下一个**永久**的豁免，而它看起来和一道正常的门完全一样。
+#   ⇒ 因此每处豁免都就地带上必填清单。**给别人抄的模板，必须自带它所依赖的纪律。**
+  frontend:
+    name: 前端 (Node/TS)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend        # 按实际目录改/删
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci                         # 取代 npm install：严格按 lockfile，可复现
+      - name: 代码规范 (ESLint)
+        run: npx eslint . --max-warnings 0
+      - name: 类型检查 (tsc / vue-tsc)
+        run: npm run typecheck               # 存量多时本步加 continue-on-error: true（棘轮）
+      - name: 供应链漏洞 (npm audit)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+        # ⛔ 抄走这一行 = 你接手了一个必须关闭的豁免。按 references/ratchet.md 第 2 步填完再提交：
+        #    存量 <N> 个 / 转强制日期 <YYYY-MM-DD> / 责任人 <@who> / 已记入章程 Open Items <是|否>
+      - name: 测试 + 覆盖率
+        # ⚠️ 这一步曾经**整个缺失**（2026-09-05 审出）：本 skill 的 SKILL.md 明确警告
+        #    「前端 build 都不跑测试 ⇒ CI 绿 ≠ 上线安全」，章程模板也把「测试(含竞态)」列为强制，
+        #    而这份模板当时只有 build —— **它警告别人的那件事，正是它自己在做的事**。
+        #    对照 ci-go.yml：那边一直有「测试 + 竞态 + 覆盖率」。同一份 skill 的两个模板，标准不一致。
+        run: npm test -- --coverage        # vitest/jest 按实际改；无测试脚本时先建最小套件，别删这一步
+      - name: 构建
+        run: npm run build
+
+  # 跨语言通用的密钥扫描 job（任意栈都建议加）
+  security:
+    name: 安全 (密钥扫描)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret 扫描 (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        # ⛔ 密钥扫描不阻断是**安全红线上的豁免**，比其它两处更重：
+        #    此刻它发现了密钥也既不阻断、又不上传 artifact（下面那行关掉了），只剩日志里一行。
+        #    起步咨询本身合理（历史仓库常有误报），但**必须带到期**。填完再提交：
+        #    存量 <N> 个 / 转强制日期 <YYYY-MM-DD> / 责任人 <@who> / 已记入章程 Open Items <是|否>
+        env:
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: 'false'

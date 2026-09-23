@@ -1,0 +1,12 @@
+{
+  "_": "各阶段『新鲜 scaffold 骨架』的结构红基线 —— spec-authoring-gate 的棘轮锚。",
+  "_why": "治 B5『改 spec 引入结构错，17 处磨 7 轮才收敛』:改 spec 若让结构红增加，当场被抓，不用磨到 corpus 门。",
+  "_discipline": "只许降不许升。actual>基线=你引入了结构红，改 spec；actual<基线=你修好了，必须把这里改小(基线腐烂防线，同 CI 棘轮)。",
+  "_excluded": {
+    "s0": "chain-gate 是跨工件对账(G0/G0.5/G0.6/G0.8)，单个 scaffold 骨架无上下游可对，converge 判 UNABLE(rc=2)——如实排除，不是漏。"
+  },
+  "s2": 7,
+  "s3": 0,
+  "s4": 0,
+  "s4a": 0
+}

@@ -1,0 +1,19 @@
+SYBuilder
+Copyright 2026 SYBuilder Contributors
+
+Original SYBuilder material is licensed under the Apache License, Version 2.0.
+Third-party material retains its own terms and attribution; the root license
+does not relicense it. See THIRD_PARTY.md and component-level license files.
+
+No affiliation with or endorsement by referenced products, standards bodies,
+or upstream projects is implied. Product names remain their owners' property.
+
+Retained upstream notices and publication-review revisions are in licenses/.
+OWASP-derived authority.md section Z2 is CC BY-SA 4.0, including its local
+explanatory additions. meodai color guidance is attributed under CC BY 4.0;
+Google engineering-review guidance under CC BY 3.0; W3C keyboard guidance
+under the W3C Software and Document License. These exceptions are scoped in
+THIRD_PARTY.md and the corresponding documents. Preserve them on redistribution.
+
+This is a public development preview, not a warranty of production readiness,
+non-infringement, trademark clearance or upstream endorsement.

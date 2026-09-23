@@ -1,0 +1,13 @@
+{
+  "_说明": "原生证据 receipt —— 由适配器/工具在真实读取·写入·运行后签发,不许执行者手填自证(Codex §5.11)。一次原生动作一张;manifest 只引用 receipt,不直接手填时间戳。environment=test 的 receipt 只能证明契约与门禁,不解除任何真实声明上限。",
+  "receiptSchema": "1.0",
+  "receiptId": "ER-<xxx>",
+  "artifactKind": "<feishu-prd | figma | html | app>",
+  "artifactRef": "<doc-token | file-key | canonical-path | deployment-ref>",
+  "nativeVersion": "<revision | file-version | build-hash —— 必须来自工具返回,不许手编>",
+  "capabilitiesExercised": ["<read | readback | inspect-structure | view-visual | execute>"],
+  "observedAt": "<RFC3339,如 2026-09-08T23:40:51 —— 由签发方写入>",
+  "adapter": { "name": "<签发工具,如 doc-sync-guard.readback>", "version": "<工具版本或 schema 版>" },
+  "rawEvidenceRef": "<指向原始证据的本地路径,如 <file>.md.sync.json —— 没有原始证据的 receipt 不算 receipt>",
+  "environment": "<live | test —— test 只证契约,不解真实上限>"
+}

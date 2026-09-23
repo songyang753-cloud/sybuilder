@@ -1,0 +1,11 @@
+# 复制到 .github/CODEOWNERS。被改路径的负责人会被自动请求评审。
+# !! 占位团队句柄必须替换为真实 GitHub team/用户，否则评审请求无效。
+# 关键路径（鉴权/迁移/CI/标准）建议配为必须评审（配合分支保护规则）。
+
+*                               @org/maintainers
+/<backend>/<auth>/              @org/backend
+/<backend>/<migrations>/        @org/backend
+/.github/                       @org/maintainers
+/docs/ENGINEERING_STANDARDS.md  @org/maintainers
+/SECURITY.md                    @org/maintainers
+/<frontend>/                    @org/frontend

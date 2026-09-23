@@ -1,0 +1,46 @@
+{
+  "_": "三件套的版本/锚点/回读账本（域权威表见 delivery-pipeline §五）。任一权威载体版本变化 → 旧三方冻结自动失效，只重跑受影响对账但不得沿用旧 PASS。⛔ 其他载体不得手工声称『当前版本』——版本只认这里。",
+  "schemaVersion": "1.0",
+  "prd": {
+    "feishuUrl": "",
+    "revision": "",
+    "approvalState": "",
+    "lastReadbackAt": "",
+    "localMirrorHash": "",
+    "readbackReceipt": ""
+  },
+  "figma": {
+    "fileKey": "",
+    "version": "",
+    "keyNodes": [
+      "<SCN-xxx → nodeId>"
+    ],
+    "structureReadbackAt": "",
+    "visualSnapshotRef": "",
+    "structureReceipt": ""
+  },
+  "html": {
+    "buildHash": "",
+    "entry": "",
+    "runEnvironment": "",
+    "lastRunAt": "",
+    "flowReplayRef": "",
+    "runReceipt": ""
+  },
+  "design": {
+    "designMdHash": "",
+    "tokensHash": ""
+  },
+  "spec": {
+    "<文件名>": "<hash>"
+  },
+  "triad": {
+    "version": "TRIAD-v0.0",
+    "frozenAt": "",
+    "reverseLinkWritten": false,
+    "lastReconcileRef": "",
+    "unresolvedDeviations": [],
+    "stopLines": []
+  },
+  "_receipt说明": "readbackReceipt/structureReceipt/runReceipt 填 receipt 文件路径（模板 templates/evidence-receipt.json，校验 receipt-check.py）。G7.5 ⑦⑧⑨ 只认 receipt：receipt-check 通过+environment=live+artifactKind 匹配；裸时间戳=手填自证不再计数。第一位真签发方=doc-sync-guard readback。"
+}

@@ -1,0 +1,68 @@
+{
+ "_": "跨阶段对账（chain-gate）的口径 —— **第四种形态：cross-artifact**。它不判单个产物，判**上下游两个产物之间**对不对得上。",
+ "_why": "前三种形态都在问「这一份写全了吗」；chain-gate 问的是「上游点名的东西，下游接住了吗」。⇒ spec 需要表达**成对的输入**，而不是一个文件或一个目录。",
+ "_discipline": "⛔ 人工编写，禁止静态反推。",
+ "schemaVersion": 1,
+ "stage": "G",
+ "kind": "cross-artifact",
+ "gate": "scripts/chain-gate.py",
+ "_kindNote": "⭐ 四种形态至此齐备：corpus（S2）· single-file（S3/S4A）· single-file+perEntity（S4 PRD）· **cross-artifact（G 对账）**。cross-artifact 的 spec 描述的是「谁 → 谁」的配对与漏项语义，⛔ 没有小节表可校验。",
+ "pairs": [
+  {
+   "id": "G0",
+   "fn": "g0",
+   "upstream": "input/definition.md（S1 的 `## 粗颗粒功能` 一节）",
+   "downstream": "research/（S2 语料目录）",
+   "asks": "S1 点名的每个方向，S2 调研都覆盖到了吗",
+   "note": "🚨 S1 必须有 `## 粗颗粒功能` **小节**，每项以 `**方向名**` 开头。没有这一节时门禁退回扫全文 `「」`，而中文的「」既命名也强调 ⇒ **S1 写得越清楚假漏越多**（2026-09-04 实跑实测）"
+  },
+  {
+   "id": "G0.5",
+   "fn": "g0_5",
+   "upstream": "research/insights.md（每个 `OPP-xx`）",
+   "downstream": "definition.md",
+   "asks": "S2 的每个机会在产品定义里都有归宿吗（采纳/拒绝/推迟）",
+   "note": "⛔ **沉默丢掉不行** —— 不采纳也要写明不采纳"
+  },
+  {
+   "id": "G0.6",
+   "fn": "g0_6",
+   "upstream": "research-decision-ledger.md（high 强度洞察）",
+   "downstream": "definition.md",
+   "asks": "high 强度的洞察在产品定义里有承接吗"
+  },
+  {
+   "id": "G0.8",
+   "fn": "g0_8",
+   "upstream": "definition.md",
+   "downstream": "PRD.md",
+   "asks": "定义里的决定，PRD 都落下来了吗"
+  },
+  {
+   "id": "G0.9",
+   "fn": "g0_9",
+   "upstream": "definition.md",
+   "downstream": "state.md",
+   "asks": "定义与流程状态对得上吗"
+  }
+ ],
+ "harvested": {
+  "_": "在真实产物上跑 chain-gate 收割（每轮追加）。",
+  "formats": {
+   "S1 粗颗粒功能": "必须是 `## 粗颗粒功能` 小节 + 每项 `**方向名**` 开头。⛔ 只用中文「」标注会让门禁扫全文，制造假漏",
+   "OPP 归宿": "每个 `OPP-xx` 在 definition.md 里要能查到采纳/拒绝/推迟之一",
+   "逐对调用，没有全量模式": "chain-gate **一次只验一对**，5 对要跑 5 次。⛔ 别以为跑一次就覆盖全链——漏跑的那对不会有任何提示。"
+  },
+  "corrections": {
+   "门禁自己的 --help 漏列了 G0.9": "⚠️ 2026-09-17 发现：`G0.9` 在代码里真实存在（分发、实现、自证都有），但 `--help` 的用法段**没列它** ⇒ 照 --help 用的人永远不会跑这一对，而它守的是「S3 的证据停止线有没有被搬进 state」——**产出在 A、执行在 B，没人检查搬运＝强制力为零**。已补。⇒ 教训：**「声称≠实际」有反向形态——实际有、文档没说**，同样让能力等于零。"
+  }
+ },
+ "gateInvocation": "chain-gate.py <G0|G0.5|G0.6|G0.8|G0.9> <上游产物> <下游产物>（逐对跑，⛔ 没有「一次跑全部」的模式）",
+ "audienceRef": "spec/_audience.json",
+ "audienceGate": {
+  "gate": "scripts/audience-gate.py",
+  "invocation": "audience-gate.py <交付文档.md>",
+  "rule": "正文给人看；附件给人 + AI 编程看；⛔ 过程日志两边都不进",
+  "note": "⚠️ 只拦机械可判的混入（内部路径/过程数字/自检编号/把读者支出去），拦不住「写得好不好读」"
+ }
+}

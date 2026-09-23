@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "1.0",
+  "modules": [
+    {
+      "id": "agent-evaluation",
+      "ownerSkill": "four-node-review",
+      "entry": "skills/four-node-review/agent-evaluation/MODULE.md",
+      "requiredFor": ["W5"],
+      "distribution": "embedded-first-party"
+    },
+    {
+      "id": "research",
+      "ownerSkill": "product-flow",
+      "entry": "skills/product-flow/modules/research/MODULE.md",
+      "requiredFor": ["S2"],
+      "distribution": "embedded-first-party"
+    },
+    {
+      "id": "diagramming",
+      "ownerSkill": "product-flow",
+      "entry": "skills/product-flow/modules/diagramming/MODULE.md",
+      "requiredFor": ["S2", "S4", "S8"],
+      "distribution": "vendored-mit",
+      "upstream": "yizhiyanhua-ai/fireworks-tech-graph@1.0.5",
+      "license": "MIT"
+    },
+    {
+      "id": "design-quality",
+      "ownerSkill": "product-flow",
+      "entry": "skills/product-flow/modules/design-quality/MODULE.md",
+      "requiredFor": ["S5", "S6", "S7"],
+      "distribution": "embedded-first-party"
+    },
+    {
+      "id": "prototyping",
+      "ownerSkill": "product-flow",
+      "entry": "skills/product-flow/modules/prototyping/MODULE.md",
+      "requiredFor": ["S6"],
+      "distribution": "embedded-first-party"
+    },
+    {
+      "id": "repository-enforcement",
+      "ownerSkill": "coding-standards",
+      "entry": "skills/coding-standards/repository-enforcement/PLAYBOOK.md",
+      "requiredFor": ["S8", "S9-development"],
+      "distribution": "embedded-first-party"
+    }
+  ],
+  "adapters": [
+    {
+      "id": "lark",
+      "entry": "skills/product-flow/adapters/lark/MODULE.md",
+      "platform": "lark-cli",
+      "missing": "UNABLE"
+    },
+    {
+      "id": "dingtalk",
+      "entry": "skills/product-flow/adapters/dingtalk/MODULE.md",
+      "platform": "DingTalk Workspace CLI (dws)",
+      "missing": "UNABLE"
+    },
+    {
+      "id": "figma",
+      "entry": "skills/product-flow/adapters/figma/MODULE.md",
+      "platform": "Figma MCP",
+      "missing": "UNABLE"
+    },
+    {
+      "id": "browser",
+      "entry": "skills/product-flow/adapters/browser/MODULE.md",
+      "platform": "Chrome/CDP or approved GUI automation",
+      "missing": "UNABLE"
+    }
+  ]
+}

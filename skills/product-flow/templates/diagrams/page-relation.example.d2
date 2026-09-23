@@ -1,0 +1,28 @@
+# 页面关系图（示例）— 对象：product-flow 自己，对应 PRD 6.3.1
+# 判据见 references/diagram-standards.md 第 8 节。
+# ⛔ 节点 ID 只能是 P-xx 一族，且必须与 6.3 站点地图**双向集合相等**。
+# ⚠️ 它与 information-architecture.example.d2 是**两张图**：
+#    那张答「页面怎么组织」（层级、⛔ 无回环），这张答「页面怎么跳转」（拓扑、✅ 有回环）。
+# ⭐ 每条边都带触发条件；⭐ 每个 P-xx 都服务于 user-flow.example.d2 里的至少一步。
+
+direction: right
+title: |md # 页面关系图（示例）：节点=页面，连线=跳转 | {near: top-center}
+
+P-01: "P-01 入口\nSKILL.md" { style.fill: "#EEF2FF" }
+P-02: "P-02 阶段说明\nS1–S10 + G7.5" { style.fill: "#EEF2FF" }
+P-03: "P-03 门禁清单\ndesign-quality-gates.md" { style.fill: "#EEF2FF" }
+P-04: "P-04 模板库\ntemplates/" { style.fill: "#EEF2FF" }
+P-05: "P-05 决策记录\ndocs/adr/" { style.fill: "#EEF2FF" }
+
+# ---- 主链（与 4.4 用户流程图一一对应）----
+P-01 -> P-02: "选定要跑的阶段"
+P-02 -> P-04: "取该阶段模板"
+P-04 -> P-03: "填完后查出场门禁"
+
+# ---- 回环：⭐ 只有单向主链 = 漏了返回与重入 ----
+P-03 -> P-04: "门禁报缺口，回去补模板字段"
+P-02 -> P-01: "阶段选错，退回重选"
+
+# ---- 失败 / 例外落点（第 8 节判据 6）----
+P-03 -> P-05: "判据本身有争议 → 查 ADR 取代理由"
+P-05 -> P-02: "按 ADR 结论改阶段做法"
