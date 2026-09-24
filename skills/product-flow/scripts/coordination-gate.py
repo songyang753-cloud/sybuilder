@@ -28,7 +28,7 @@ Claude 与 Codex 并行改同一个仓，当天实际出了五个问题：
   C **shared 附加条件**：改了 `shared` 路径，`.proposals/` 下必须有对应说明条目
 
   另有 `--merge-check <ref>`：**造出合并结果**（不提交），在**结果**上跑
-  `selftest-all --fresh` · `consistency-gate` · `no-loss-gate` · `adr-check`。
+  `selftest-all --fresh` · `consistency-gate` · `no-loss-gate` · 套件 `release-audit` / `verify-modules`。
 
 ═══ ⚠️ 它防不了什么（说清楚，别拿它当万能）═══
 
@@ -311,7 +311,10 @@ GATES = [
     ('selftest-all', ['python3', 'scripts/selftest-all.py', '--fresh'], 'skill'),
     ('consistency-gate', ['python3', 'scripts/consistency-gate.py'], 'skill'),
     ('no-loss-gate', ['python3', 'scripts/no-loss-gate.py'], 'skill'),
-    ('adr-check', ['python3', 'docs/adr/adr-check.py'], 'repo'),
+    # Clean-suite governance moved from private ADR scripts to bundled release
+    # structure/licensing + module contracts; this is not historical ADR approval.
+    ('suite-governance', ['python3', 'scripts/release-audit.py'], 'repo'),
+    ('module-contracts', ['python3', 'scripts/verify-modules.py'], 'repo'),
 ]
 
 
@@ -325,15 +328,24 @@ def merge_check(ref):
         rc, _o, e = _git(['clone', '-q', REPO, r], cwd=d)
         if rc != 0:
             return None, ['克隆不了本仓：%s' % e.strip()[:120]]
-        _git(['checkout', '-q', 'main'], cwd=r)
+        rc, _o, e = _git(['checkout', '-q', 'main'], cwd=r)
+        if rc != 0:
+            return None, ['UNABLE: 无法检出 main；未执行合并检查']
+        rc, _o, e = _git(['rev-parse', '--verify', ref + '^{commit}'], cwd=r)
+        if rc != 0:
+            return None, ['UNABLE: 合并引用无法解析；未执行合并检查']
         rc, o, e = _git(['merge', '--no-commit', '--no-ff', ref], cwd=r)
         rc2, conf, _ = _git(['diff', '--name-only', '--diff-filter=U'], cwd=r)
+        if rc2 != 0:
+            return None, ['UNABLE: 无法读取合并差异']
         conflicts = [x for x in conf.splitlines() if x.strip()]
         bad = []
         if conflicts:
             bad.append('合并有 %d 个**真冲突**，先人工解决：%s'
                        % (len(conflicts), '、'.join(conflicts[:4])))
             return False, bad
+        if rc != 0:
+            return None, ['UNABLE: 合并命令失败，不能以空冲突列表当作成功']
         auto = [l.split()[-1] for l in o.splitlines() if l.startswith('Auto-merging')]
         results = []
         for name, cmd, where in GATES:

@@ -286,6 +286,41 @@ class Contracts(unittest.TestCase):
         issues=check_package(report,path,gate.check_teardown)
         self.assertTrue(any('package-stale' in why for _,why in issues))
 
+    def test_comparison_cannot_omit_native_leaf_from_denominator(self):
+        from _research_package import check_package
+        gate = load('denominator_report', S/'report-structure-gate.py')
+        path, comparison = self.package()
+        text = (self.root/'report.md').read_text()
+        start, end = text.index('### 4.1.1 AF-001'), text.index('## 最细功能正文索引')
+        def second(value):
+            return value.replace('AF-001','AF-002').replace('SHOT-001','SHOT-002').replace('EVENT-001','EVENT-002').replace('功能A','功能B').replace('4.1.1','4.1.2')
+        text = text[:end] + second(text[start:end]) + text[end:]
+        row = next(x for x in text.splitlines() if x.startswith('| `AF-001`') and 'EVENT-001' in x)
+        (self.root/'report.md').write_text(text.replace(row, row+'\n'+second(row)))
+        ledger = (self.root/'ledger.md').read_text()
+        row = next(x for x in ledger.splitlines() if 'AF-001' in x and x.lstrip().startswith('|'))
+        (self.root/'ledger.md').write_text(ledger+'\n'+second(row)+'\n')
+        for name, key in [('evidence-manifest.json','evidence'), ('traversal-events.json','events')]:
+            p = self.root/name; data = json.loads(p.read_text())
+            data[key].append(json.loads(second(json.dumps(data[key][0], ensure_ascii=False))))
+            p.write_text(json.dumps(data))
+        package = json.loads(path.read_text()); comp = package['competitors'][0]
+        for key in ('report','ledger','evidence','events'):
+            comp[key]['sha256'] = source_hash(self.root/comp[key]['path'])
+        path.write_text(json.dumps(package))
+        # Genuine, structurally valid two-leaf report; only the comparison omits one.
+        self.assertEqual(gate.check_teardown((self.root/'report.md').read_text(),
+            str(self.root/'ledger.md'), str(self.root/'evidence-manifest.json'), str(self.root/'traversal-events.json')), [])
+        self.assertIn('package-native-denominator', {k for k,_ in check_package(comparison,path,gate.check_teardown)})
+        comp['featureMap']['AF-002'] = ['AF-002']
+        package['comparisonNodes'].append({'id':'leaf2','parent':'create','features':['AF-002']})
+        for n in package['comparisonNodes'][:2]: n['features'].append('AF-002')
+        path.write_text(json.dumps(package))
+        comparison = '\n'.join(line.replace('EVENT-001 SHOT-001', 'EVENT-001 SHOT-001 EVENT-002 SHOT-002')
+            if line.startswith(('| work |', '| create |')) else line for line in comparison.splitlines())
+        comparison += '\n| leaf2 | COMP-01 | FULL | 工作/创建/功能B | EVENT-002 SHOT-002 | 需定义持久化 |'
+        self.assertEqual(check_package(comparison,path,gate.check_teardown), [])
+
     def test_research_package_missing_rows_and_unknown_absence(self):
         from _research_package import check_package
         gate=load('remediation_report_rows',S/'report-structure-gate.py')

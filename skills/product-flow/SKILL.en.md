@@ -44,7 +44,7 @@ engineering material — without losing information, fabricating facts, or fakin
 |---|---|
 | One person can rewrite it in two hours; nobody needs a hand-off / acceptance / accountability | ⛔ **Don't use this pipeline.** Iterate a prototype directly (when the cost of one version < the cost of a spec, prototype > PRD) |
 | Fixing copy, fixing a bug | Just fix it |
-| Pure technical refactor, no product surface | `engineering-standards` + `four-node-review` |
+| Pure technical refactor, no product surface | `coding-standards` + `four-node-review` |
 | **Someone has to take this over, and they are not inside your head** | ✅ Continue |
 
 ⭐ That last row is the *only* reason half of this machinery exists — the ID chain, the
@@ -82,8 +82,8 @@ record it, nobody can later tell whether it was cut or forgotten.
 full review; the complete chain of "demo for the boss + hand-off for engineering."
 
 **Don't**: fix copy / a bug (just fix it); pure technical refactor with no product surface
-(`engineering-standards` + `four-node-review`); only a PRD and nothing after (`--only prd`);
-only a demo (use `demo-html` directly).
+(`coding-standards` + `four-node-review`); only a PRD and nothing after (`--only prd`);
+only a demo (use `modules/prototyping` directly).
 
 ⚠️ A serious objection to take seriously: **when build cost is low enough, prototype > PRD** —
 make 20–30 versions instead of a spec. The pipeline's value premise is "someone will take it
@@ -121,8 +121,8 @@ reconciliation.
 ## Cross-cutting mechanisms (M1–M11; every stage obeys them)
 
 Full text in `references/mechanisms.md`. In brief: **M1** ID chain · **M2** three sources ·
-**M3** incremental guard · **M4** reconciliation gate (+**M4b** cross-table consistency) ·
-**M5** evidence independence · **M6** stop-lines · **M7** escaped-defect reflow · **M8** gate
+**M3** perspective-rotation convergence · **M4** reconciliation gate (+**M4b** cross-table consistency) ·
+**M5** evidence independence · **M6** honest gaps · **M7** escaped-defect reflow · **M8** gate
 self-proof · **M9** format boundary · **M10** structural-spec single source · **M11**
 landing-detail must be executable (as a module, not prose).
 

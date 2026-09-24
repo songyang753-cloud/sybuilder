@@ -24,7 +24,8 @@ class EvaluationTests(unittest.TestCase):
                 baseline = root / 'baseline.json'
                 baseline.write_text(json.dumps({'suiteHash': w5.digest(suite),
                                                 'cases': {'C1': dict.fromkeys(w5.DIMENSIONS, 1)}}))
-                adapter = str(ROOT / 'scripts/test-w5-adapter.py')
+                adapter = 'adapter.py'
+                (root / adapter).write_bytes((ROOT / 'scripts/test-w5-adapter.py').read_bytes())
                 cfg = {'mode': 'production', 'targetVersion': 'synthetic-test-only',
                        'productionContract': dict.fromkeys(('promptRef', 'toolSchemaRef'), 'suite.json'),
                        'runner': [sys.executable, adapter, 'runner'],

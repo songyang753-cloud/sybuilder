@@ -130,7 +130,7 @@
    - 结果靠 `return` 回传，**`console.log` 不回传**
    - 禁用：`loadAllPagesAsync` / `setPluginData` / `createImageAsync`（不支持）
 4. **命名**：每个 `F-xx` 一个 Page 或 Section，图层命名含功能编号（如 `F-01-导入`），供 M4 对账。
-5. **边界**：**Figma 只做 UI 界面**；架构图 / 功能树 / 页面流程图留在 PRD 里用 `fireworks-tech-graph`，不要搬进 Figma。
+5. **边界**：**Figma 只做 UI 界面**；架构图 / 功能树 / 页面流程图留在 PRD 里用内置 `modules/diagramming`，不要搬进 Figma。
 6. 设计稿完成后，把链接嵌回 **PRD 第四章的「设计稿」列**（`[F-xx 设计稿](figma链接#node-id=xxx)`）。设计稿展示「长什么样」，逻辑列写「怎么交互」，**改了一边另一边必须同步**。
 
 ⚠️ **可分发性边界**：项目设计基线、协作文档 CLI 等可能属于**当前环境专属**，换一台机器就不存在。

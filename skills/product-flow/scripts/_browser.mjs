@@ -8,9 +8,10 @@
 //
 // ⚠️ 本模块**不做任何判据**，只负责「把一段 JS 送进真实渲染的页面并把结果取回来」。
 // ============================================================================
-import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, readdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { existsSync, readdirSync, mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { tmpdir, homedir } from 'node:os';
 
 /** 按优先级找一个能用的 Chromium。找不到返回 null（调用方负责报 UNABLE 而不是折叠成通过）。 */
@@ -64,10 +65,11 @@ export async function browserPreflight() {
   writeFileSync(f, '<title>pf</title><body>pf</body>');
   try { const [r] = await evalInPage(f, '800x600', ['1+1']); return r === 2; }
   catch { return false; }
+  finally { rmSync(tmp, { recursive: true, force: true }); }
 }
 
 export function toUrl(target) {
-  return /^https?:/.test(target) ? target : 'file://' + resolve(target);
+  return /^https?:/.test(target) ? target : pathToFileURL(resolve(target)).href;
 }
 
 
@@ -75,22 +77,14 @@ export function toUrl(target) {
 // 本机常有会话按「ppid=1/无 tty」无差别清后台，浏览器门禁被杀后 chrome 孤儿会留下 ——
 // 一晚累计 297 个，把内核文件表吃光（errno 23），全机测量瘫痪。
 // 约定（与 验证项目 会话对齐）：各工具只认领**自己前缀**的孤儿。本 skill 的实例
-// user-data-dir 恒为 <tmpdir>/pb-*/ud ⇒ 起跑时只杀「ppid=1 且命令行含该前缀」的。
-// ⛔ 判据两条都要：属主不明不代杀；活着的父进程还在管的（ppid≠1）不杀。
+// 历史上按前缀清理不构成所有权证明，已停止自动扫描/杀孤儿。
+// 以下函数仅供诊断兼容；实际清理只处理本次创建的 ChildProcess/进程组。
 export function isOurOrphan(psLine) {
   // psLine 形如 "  PID  PPID COMMAND…"；返回 [pid] 或 null
   const m = psLine.match(/^\s*(\d+)\s+1\s+(.*)$/);
   if (!m) return null;
-  return m[2].includes('--user-data-dir=') && /\/pb-[^/]+\/ud/.test(m[2]) ? m[1] : null;
-}
-function reapOrphans() {
-  try {
-    const out = execFileSync('ps', ['-axo', 'pid,ppid,command'], { encoding: 'utf8' });
-    for (const line of out.split('\n')) {
-      const pid = isOurOrphan(line);
-      if (pid) { try { process.kill(Number(pid), 'SIGTERM'); } catch { /* 已死 */ } }
-    }
-  } catch { /* ps 不可用时静默跳过 —— 自清是尽力而为，不许因它挡住测量 */ }
+  const arg = m[2].match(/--user-data-dir=(\S+)/)?.[1];
+  return arg && resolve(arg).startsWith(resolve(tmpdir()) + '/pb-') && /\/pb-[^/]+\/ud$/.test(arg) ? m[1] : null;
 }
 
 /**
@@ -123,31 +117,72 @@ export async function evalInPage(target, viewport, expressions, opts = {}) {
   if (typeof WebSocket === 'undefined')
     throw new Error('Node ' + process.versions.node
       + ' 没有 WebSocket 全局（需 Node ≥21，建议 ≥22）—— ⛔ 这不是浏览器的问题，是运行时版本');
+  if (process.platform === 'win32') throw new Error('UNABLE: browser process-group cleanup requires POSIX');
+  for (const key of ['requestTimeoutMs', 'timeoutMs']) {
+    if (opts[key] !== undefined && (!Number.isFinite(opts[key]) || opts[key] <= 0))
+      throw new Error('UNABLE: invalid ' + key);
+  }
   const chrome = findChrome();
   if (!chrome) throw new Error('找不到无头 Chrome（~/.cache/puppeteer、~/.cache/ms-playwright、~/Library/Caches/ms-playwright 或 /Applications）');
-  reapOrphans();   // 起跑先清上一轮（本 skill 自己的 pb- 孤儿；见函数头注释）
+  // Never kill processes found by name/profile heuristics: PPID/path is not ownership.
   const [w, h] = viewport.split('x').map(Number);
+  if (![w, h].every(n => Number.isInteger(n) && n > 0)) throw new Error('UNABLE: invalid viewport');
   const tmp = mkdtempSync(join(tmpdir(), 'pb-'));
-  const port = 9300 + Math.floor(Math.random() * 600);
-  const proc = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-sandbox',
-    `--remote-debugging-port=${port}`, `--window-size=${w},${h}`, '--no-first-run',
-    `--user-data-dir=${tmp}/ud`, toUrl(target)], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const proc = spawn(chrome, ['--headless=new', '--disable-gpu',
+    '--remote-debugging-port=0', '--remote-debugging-address=127.0.0.1', `--window-size=${w},${h}`, '--no-first-run',
+    `--user-data-dir=${tmp}/ud`, toUrl(target)], { stdio: 'ignore', detached: process.platform !== 'win32' });
+  let launchError, sock, overall;
+  proc.on('error', error => { launchError = error; });
+  const pend = new Map();
+  let interrupt;
+  const stop = () => {
+    launchError = new Error('UNABLE: browser interrupted or deadline exceeded');
+    interrupt?.(launchError);
+    try { sock?.close(); } catch {}
+  };
+  process.once('SIGINT', stop); process.once('SIGTERM', stop);
+  overall = setTimeout(stop, opts.timeoutMs ?? 90000);
+  try {
   let ws = null;
   for (let i = 0; i < 80 && !ws; i++) {
+    if (launchError) throw launchError;
+    if (proc.exitCode !== null) throw new Error('Browser exited before CDP was ready');
     await new Promise(r => setTimeout(r, 250));
     try {
-      const list = JSON.parse(execFileSync('curl', ['-s', `http://127.0.0.1:${port}/json/list`], { encoding: 'utf8' }));
-      const pg = list.find(t => t.type === 'page' && t.webSocketDebuggerUrl);
-      if (pg) ws = pg.webSocketDebuggerUrl;
+      const [port, browserPath] = readFileSync(join(tmp, 'ud/DevToolsActivePort'), 'utf8').trim().split('\n');
+      if (!/^\d+$/.test(port) || !browserPath?.startsWith('/devtools/browser/')) continue;
+      const endpoint = `http://127.0.0.1:${port}`;
+      const version = await (await fetch(endpoint + '/json/version', { signal: AbortSignal.timeout(1000) })).json();
+      const ownedEndpoint = url => { const u = new URL(url); return u.protocol === 'ws:' && u.hostname === '127.0.0.1' && u.port === port; };
+      if (!ownedEndpoint(version.webSocketDebuggerUrl) || new URL(version.webSocketDebuggerUrl).pathname !== browserPath) continue;
+      const list = await (await fetch(endpoint + '/json/list', { signal: AbortSignal.timeout(1000) })).json();
+      const pg = list.find(t => t.type === 'page' && t.url === toUrl(target) && t.webSocketDebuggerUrl);
+      if (pg && ownedEndpoint(pg.webSocketDebuggerUrl)) ws = pg.webSocketDebuggerUrl;
     } catch { /* 端口还没起来 */ }
   }
-  if (!ws) { proc.kill(); throw new Error('CDP 端口没起来'); }
-  const sock = new WebSocket(ws);
-  let id = 0; const pend = new Map();
-  const send = (method, params) => new Promise(r => { const i = ++id; pend.set(i, r); sock.send(JSON.stringify({ id: i, method, params })); });
-  sock.onmessage = ev => { const m = JSON.parse(ev.data); if (m.id && pend.has(m.id)) { pend.get(m.id)(m); pend.delete(m.id); } };
+  if (launchError) throw launchError;
+  if (!ws) throw new Error('Owned CDP target unavailable');
+  sock = new WebSocket(ws);
+  let id = 0;
+  const rejectPending = error => { for (const p of pend.values()) { clearTimeout(p.timer); p.reject(error); } pend.clear(); };
+  const send = (method, params) => new Promise((resolve, reject) => {
+    if (sock.readyState !== WebSocket.OPEN) return reject(new Error('CDP is not open'));
+    const i = ++id;
+    const timer = setTimeout(() => { pend.delete(i); reject(new Error('CDP timeout: ' + method)); }, opts.requestTimeoutMs ?? 15000);
+    pend.set(i, { resolve, reject, timer });
+    try { sock.send(JSON.stringify({ id: i, method, params })); }
+    catch (error) { clearTimeout(timer); pend.delete(i); reject(error); }
+  });
+  sock.onmessage = ev => {
+    try { const m = JSON.parse(ev.data); const p = pend.get(m.id); if (p) {
+      clearTimeout(p.timer); pend.delete(m.id); m.error ? p.reject(new Error('CDP request failed')) : p.resolve(m);
+    } } catch { rejectPending(new Error('Invalid CDP response')); }
+  };
   const done = new Promise((res, rej) => {
-    sock.onerror = () => rej(new Error('CDP 连接失败'));
+    const fail = error => { rejectPending(error); rej(error); };
+    interrupt = fail;
+    sock.onerror = () => fail(new Error('CDP 连接失败'));
+    sock.onclose = () => fail(new Error('CDP disconnected'));
     sock.onopen = async () => {
       try {
         await send('Runtime.enable', {});
@@ -196,7 +231,7 @@ export async function evalInPage(target, viewport, expressions, opts = {}) {
           }
           first = false;
           const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true });
-          if (!r.result || !r.result.result || r.result.result.subtype === 'error')
+          if (!r.result || !r.result.result || r.result.exceptionDetails || r.result.result.subtype === 'error')
             throw new Error('页面里求值失败：' + (r.result?.exceptionDetails?.text || r.result?.result?.description || '未知'));
           out.push(r.result.result.value);
         }
@@ -204,7 +239,20 @@ export async function evalInPage(target, viewport, expressions, opts = {}) {
       } catch (e) { rej(e); }
     };
   });
-  try { return await done; } finally { try { sock.close(); } catch {} proc.kill(); }
+  return await done;
+  } finally {
+    clearTimeout(overall);
+    process.off('SIGINT', stop); process.off('SIGTERM', stop);
+    for (const p of pend.values()) { clearTimeout(p.timer); p.reject(new Error('Browser closed')); }
+    pend.clear();
+    try { sock?.close(); } catch {}
+    if (proc.pid) {
+      try { process.platform === 'win32' ? proc.kill() : process.kill(-proc.pid, 'SIGTERM'); } catch {}
+      await new Promise(r => setTimeout(r, 150));
+      try { process.platform === 'win32' ? proc.kill('SIGKILL') : process.kill(-proc.pid, 'SIGKILL'); } catch {}
+    }
+    rmSync(tmp, { recursive: true, force: true });
+  }
 }
 
 // ---------------------------------------------------------------- 自证（M8）
@@ -225,6 +273,7 @@ if (process.argv[1] && process.argv[1].endsWith('_browser.mjs')) {
     <body><div id="m"></div><div id="p"></div><div id="t">你好</div></body>`);
 
   let ok = true;
+  try {
   const chk = (n, c) => { console.log((c ? '  ✓ ' : '  ✗ ') + n); ok = ok && c; };
 
   const [a, b] = await evalInPage(f, '900x700',
@@ -271,14 +320,15 @@ if (process.argv[1] && process.argv[1].endsWith('_browser.mjs')) {
   chk('reloadBetween 让每条表达式都跑在干净页面上（三次都是 AX）',
       iso[0] === 'AX' && iso[1] === 'AX' && iso[2] === 'AX');
 
-  // 孤儿收割匹配器（fd 危机后立）：只认领自己前缀的孤儿，两条判据缺一不可
-  chk('孤儿匹配器：ppid=1 且带 pb- 前缀 → 认领',
-      isOurOrphan('  123     1 /App/Chrome --user-data-dir=/tmp/x/pb-ab/ud u') === '123');
+  // 仅验证历史诊断匹配器，不以此授权杀进程；清理只用本次 ChildProcess。
+  chk('诊断匹配器：ppid=1 且带 pb- 前缀 → 列为候选（不是杀进程授权）',
+      isOurOrphan(`  123     1 /App/Chrome --user-data-dir=${join(tmpdir(), 'pb-ab/ud')} u`) === '123');
   chk('孤儿匹配器：父进程活着（ppid≠1）→ 不杀',
       isOurOrphan('  124   567 /App/Chrome --user-data-dir=/tmp/x/pb-ab/ud') === null);
   chk('孤儿匹配器：别家前缀 → 属主不明不代杀',
       isOurOrphan('  125     1 /App/Chrome --user-data-dir=/tmp/other/ud') === null);
 
   console.log('\n' + (ok ? '✅ 自证通过：取数通道可信' : '❌ 自证失败：门禁拿到的数不可信'));
-  process.exit(ok ? 0 : 1);
+  process.exitCode = ok ? 0 : 1;
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 }

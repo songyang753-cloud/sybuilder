@@ -25,15 +25,29 @@
 退出码: 0=判据承重（变异后命令给出了期望的非零码） 1=**判据不承重**（变异后仍是原码）
         2=跑不了（变异没生效/文件不存在/参数错/还原失败——绝不折叠成 0）
 """
-import sys, os, re, io, json, hashlib, signal, subprocess, tempfile, fcntl
-
-REV_TIMEOUT = int(os.environ.get('REVTEST_TIMEOUT', '180'))  # 被测命令超时上限:防「命令挂死→锁被无限持有→第二实例无限等」
+import sys, os, re, io, json, hashlib, signal, subprocess, tempfile
+from _mutation_state import locked_targets, state_path, save_journal, recover
 
 def _run(cmd, **kw):
+    timeout = int(os.environ.get('REVTEST_TIMEOUT', '180'))
+    if timeout <= 0:
+        raise ValueError('REVTEST_TIMEOUT must be positive')
+    if kw.pop('capture_output', False):
+        kw.update(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    child = subprocess.Popen(cmd, start_new_session=True, **kw)
     try:
-        return subprocess.run(cmd, timeout=REV_TIMEOUT, **kw)
-    except subprocess.TimeoutExpired as e:
-        return subprocess.CompletedProcess(cmd, 124, e.stdout or b'', e.stderr or b'')  # 124=超时(GNU timeout 约定)
+        stdout, stderr = child.communicate(timeout=timeout)
+        return subprocess.CompletedProcess(cmd, child.returncode, stdout, stderr)
+    finally:
+        # Finish this invocation's process group before restoring the target.
+        for sig in (signal.SIGTERM, signal.SIGKILL):
+            try: os.killpg(child.pid, sig)
+            except ProcessLookupError: pass
+            try: child.wait(timeout=0.2)
+            except subprocess.TimeoutExpired: pass
+        child.wait()
+        for stream in (child.stdout, child.stderr):
+            if stream: stream.close()
 
 # 🚨🚨 2026-09-10 codex 二轮 #20（Critical）：锁与日志按**工具所在 checkout** 分键，
 #   而本工具允许改**任意目标**。两个 checkout 各跑一份、指向同一个外部文件时，
@@ -43,16 +57,12 @@ def _run(cmd, **kw):
 #     **并不保证目标安全**。⇒ 锁的粒度必须由**目标**决定。
 #   ⛔ 这也意味着 LOCK 不能是模块级常量了（它依赖运行时的 target）。
 def _lock_path(target):
-    _k = hashlib.sha1(os.path.realpath(target).encode()).hexdigest()[:16]
-    return os.path.join(tempfile.gettempdir(), 'product-flow-rt-lock-%s' % _k)
+    return str(state_path('target', target))
 
 
 def _journal_path(target):
-    _k = hashlib.sha1(os.path.realpath(target).encode()).hexdigest()[:16]
-    return os.path.join(tempfile.gettempdir(), 'product-flow-rt-journal-%s.json' % _k)
+    return str(state_path('journal', target))
 
-
-LOCK = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.reverse-test.lock')
 
 def sha(p):
     return hashlib.sha256(io.open(p, 'rb').read()).hexdigest()
@@ -67,10 +77,8 @@ def sha(p):
 #     把一条真正承重的判据报成「不承重」——**反向结论**。
 #   ⭐ 崩溃自愈的保证，恰好在「两个会话并行」这个它被写出来要覆盖的场景下失效。
 #   ⇒ 两处一起改：①日志按 checkout 分键（与锁同粒度）②`_recover()` 移到**拿锁之后**。
-_JOURNAL = os.path.join(
-    tempfile.gettempdir(),
-    'product-flow-rt-journal-%s.json'
-    % hashlib.sha1(os.path.dirname(os.path.abspath(__file__)).encode()).hexdigest()[:12])
+# Current protocol is _mutation_state: private per-user state, canonical target
+# journals plus shared tree locks. Historical unauthenticated journals are not trusted.
 
 
 def _recover(target=None):
@@ -88,11 +96,6 @@ def _recover(target=None):
         任何一次后续运行开头都先自愈。崩溃不再意味着「留在变异态」，
         只意味着「下一次运行时被还原并告知」。
     """
-    _j = _journal_path(target) if target else _JOURNAL
-    if not os.path.exists(_j):
-        return True          # 没有残留 ⇒ 无需还原（⛔ 早退分支必须返回 True，
-        #                      否则 `not _recover()` 把「没事」读成「自愈失败」——
-        #                      改成带返回值的函数时漏了这一处，自证当场抓到）
     # 🚨🚨 2026-09-10 codex 二轮 #19（Critical）：上一版在 `finally` 里**无条件删除日志** ——
     #   于是「目标暂时不可写」或「SIGKILL 留下半截 JSON」这两条路径上，
     #   还原失败之后**唯一的恢复依据也被删了**，`run()` 随后把变异态当成新的「原文」，
@@ -101,27 +104,22 @@ def _recover(target=None):
     #   ⇒ 只有**确认还原成功**（或本来就无需还原）才删日志；失败就保留并大声说出来，
     #     ⛔ 并且**拒绝继续**（返回 False），不让调用方拿变异态当原文。
     try:
-        j = json.load(io.open(_j, encoding='utf-8'))
-        tgt, body = j['target'], j['orig']
-        if os.path.exists(tgt) and io.open(tgt, encoding='utf-8').read() != body:
-            io.open(tgt, 'w', encoding='utf-8').write(body)
-            if io.open(tgt, encoding='utf-8').read() != body:
-                raise IOError('写回后内容仍不一致')
-            print("⚠️ 上一次运行被硬打断，%s 仍是变异态 —— **已自动还原**。" % tgt,
-                  file=sys.stderr)
+        if target is None:
+            raise ValueError('recovery requires an explicit target')
+        recover(target)
     except Exception as e:
-        print("UNABLE: 崩溃残留**未能还原**（%s）—— ⛔ 日志已保留在 %s，"
-              "不要删；先手动 git checkout 该文件再重跑。" % (e, _j),
+        print("UNABLE: 崩溃残留**未能还原**（%s）—— ⛔ 保留日志与当前文件，先人工核对；不要覆盖用户修改。" % e,
               file=sys.stderr)
         return False
-    try:
-        os.remove(_j)
-    except OSError:
-        pass
     return True
 
 
 def run(target, mutate, cmd, expect):
+    with locked_targets([target]):
+        return _run_locked(os.path.realpath(target), mutate, cmd, expect)
+
+
+def _run_locked(target, mutate, cmd, expect):
     if not os.path.exists(target):
         print("UNABLE: 目标文件不存在：" + target); return 2
     # 🚨🚨 2026-09-10 codex 评审 #2（Critical）：上一版**在锁外拍快照** ——
@@ -132,10 +130,7 @@ def run(target, mutate, cmd, expect):
     #     第 134 行还会确认「还原成功」。⭐ 上一轮把 `_recover()` 移进锁是对的，
     #     但**快照本身还在锁外**，保证仍然不成立 —— 又一次「只修了一半」。
     #   ⇒ 拿锁 → 自愈 → **再**拍快照。三步顺序不许换。
-    lock = io.open(_lock_path(target), 'w')   # ⛔ 按目标分键（#20），不按 checkout
-    fcntl.flock(lock, fcntl.LOCK_EX)          # ③ 第二个实例在这里等
     if not _recover(target):  # ⛔ 必须在拿锁**之后**：锁外自愈会伸进别人的活变异（F4）
-        fcntl.flock(lock, fcntl.LOCK_UN)
         return 2        # 自愈失败 ⇒ 跑不了（⛔ 不许拿变异态当原文继续）
     orig = io.open(target, encoding='utf-8').read()
     before_hash = sha(target)
@@ -143,10 +138,14 @@ def run(target, mutate, cmd, expect):
 
     def restore(*_):
         if restored['done']: return
-        io.open(target, 'w', encoding='utf-8').write(orig)
+        if not _recover(target):
+            raise RuntimeError('UNABLE: 恢复被阻断，日志已保留')
         restored['done'] = True
+    previous_signals = {s: signal.getsignal(s) for s in (signal.SIGINT, signal.SIGTERM)}
+    def interrupted(*_):
+        raise SystemExit(2)  # _run cleanup, then outer finally restores; never restore under a live child.
     for s in (signal.SIGINT, signal.SIGTERM):  # ② 被杀也还原
-        signal.signal(s, lambda *a: (restore(), sys.exit(2)))
+        signal.signal(s, interrupted)
     try:
         # ⛔ **先验基线**：被测命令在**未变异**时必须是绿的。
         #    2026-09-05 实测：我的自证里有个 NameError（`g_bad` 未定义）⇒ 基线就是 1，
@@ -193,21 +192,18 @@ def run(target, mutate, cmd, expect):
             return 2                            # ① 硬拒绝
         # ⛔ 顺序不许换：**先落日志再变异**。反过来的话，两条语句之间被杀
         #   就没有任何记录 —— 那正是这条日志要覆盖的窗口。
-        io.open(_journal_path(target), 'w', encoding='utf-8').write(
-            json.dumps({'target': os.path.abspath(target), 'orig': orig},
-                       ensure_ascii=False))
+        if sha(target) != before_hash:
+            raise RuntimeError('UNABLE: 基线执行期间目标变化，未应用变异')
+        save_journal(target, orig, new)
         io.open(target, 'w', encoding='utf-8').write(new)
         r = _run(cmd)
         got = r.returncode
     finally:
+        for s, handler in previous_signals.items():
+            signal.signal(s, handler)
         restore()
-        try:
-            os.remove(_journal_path(target))   # 正常收尾：日志用完即焚
-        except OSError:
-            pass
         if sha(target) != before_hash:
-            print("UNABLE: 还原失败，工作区仍是变异态 —— 立刻 git checkout 该文件"); return 2
-        fcntl.flock(lock, fcntl.LOCK_UN)
+            print("UNABLE: 目标变化，请保留恢复材料并人工核对，不覆盖用户修改"); return 2
 
     ok = (got == expect) if expect is not None else (got != 0)
     print("变异后命令退出码 = %d（期望 %s）" % (got, expect if expect is not None else "非 0"))
@@ -283,8 +279,7 @@ def self_test():
     #   ⚠️ 这条用例不构造真的 SIGKILL（不可靠、会拖慢自证），而是**复现它留下的现场**——
     #     判据要的是「现场能不能被收拾」，不是「怎么造出现场」。
     _orig_body = io.open(tgt, encoding='utf-8').read()
-    io.open(_journal_path(tgt), 'w', encoding='utf-8').write(
-        json.dumps({'target': os.path.abspath(tgt), 'orig': _orig_body}, ensure_ascii=False))
+    save_journal(tgt, _orig_body, "# 被硬打断，留在变异态\n")
     io.open(tgt, 'w', encoding='utf-8').write("# 被硬打断，留在变异态\n")
     _recover(tgt)
     _healed = (io.open(tgt, encoding='utf-8').read() == _orig_body

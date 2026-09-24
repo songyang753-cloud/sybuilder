@@ -67,7 +67,7 @@ cp -r templates/proto <项目>/.product-flow/demo/src
 python3 scripts/spec-to-js.py <项目>/spec src/js
 
 # 交付：合成零外链单文件
-node <本仓根>/skills/demo-html/scripts/bundle.mjs src ../demo.html
+node <本仓根>/skills/product-flow/modules/prototyping/scripts/bundle.mjs src ../demo.html
 
 # 出场前的门（都要跑）
 node scripts/dead-click-gate.mjs      ../demo.html --max-dead-pct 0

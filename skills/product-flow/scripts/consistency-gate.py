@@ -1279,7 +1279,10 @@ def r_output_template(root):
     for mid, m in sorted(mods.items()):
         kinds = m.get('outputKinds') or {}
         tmpls = m.get('outputTemplates') or {}
-        for out in m['outputs']:
+        outputs = set(m['outputs'])
+        for variants in m.get('outputsByResearchMode', {}).values():
+            outputs.update(variants)
+        for out in sorted(outputs):
             key = '%s::%s' % (mid, out)
             k = kinds.get(out)
             if not k:
@@ -1302,7 +1305,8 @@ def r_output_template(root):
                 bad.append('%s 的「%s」分类为 %s 却没写理由（冒号后）—— 不写理由的分类是静音开关'
                            % (mid, out, k))
     # 反方向：基线里挂着的项若已不存在于 registry，同样要划掉（防清单腐烂）
-    live = {'%s::%s' % (mid, o) for mid, m in mods.items() for o in m['outputs']}
+    live = {'%s::%s' % (mid, o) for mid, m in mods.items()
+            for o in set(m['outputs']).union(*(set(v) for v in m.get('outputsByResearchMode', {}).values()))}
     for key in sorted(pending - live):
         bad.append('output-kind-baseline 里的「%s」已不在 registry 里 —— ⛔ 划掉它' % key)
     return (not bad), (bad[:8] if bad else

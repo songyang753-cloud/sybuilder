@@ -9,7 +9,8 @@ import os
 
 from _workflow import (WorkflowError, canonical_bytes, claim_min, gate_result_dir,
                        load_active_run, load_registry, sha256_file,
-                       validate_manifest, gate_evidence, evidence_current, output_was_tested)
+                       validate_manifest, gate_evidence, evidence_current, output_was_tested,
+                       required_rule_ids)
 
 
 def _read(path, label='JSON'):
@@ -95,8 +96,7 @@ def issue_result(root, draft_path):
             verdict = 'NOT-RUN'
         else:
             rec = _read(path, 'gate result')
-            expected_ids = sorted(x['ruleId'] for x in manifest['gatePlan']
-                                  if x['gate'] == item['gate'] and x['required'])
+            expected_ids = required_rule_ids(manifest, item['gate'])
             valid = (rec.get('runId') == manifest['runId']
                      and rec.get('planHash') == manifest['planHash']
                      and rec.get('claimEligible') is True

@@ -28,5 +28,11 @@ if __name__ == '__main__':
     if '--self-test' in sys.argv:
         import runpy
         from pathlib import Path
-        tests = runpy.run_path(str(Path(__file__).resolve().parents[3] / 'scripts/test-remediation-contracts.py'))
+        from _workflow import suite_script
+        try:
+            test_path = suite_script('test-remediation-contracts.py')
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            sys.exit(2)
+        tests = runpy.run_path(str(test_path))
         sys.exit(tests['main']('image'))

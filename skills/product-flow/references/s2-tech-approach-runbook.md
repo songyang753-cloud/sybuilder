@@ -2,7 +2,7 @@
 
 > **何时用本模式**:调研对象是**代码实现 / 技术机制 / 行业技术方案**,目的是**为设计自家方案提供可抄的判据**。
 > 反例:「调研相册竞品」≠本模式(走 teardown/competitive);「调研开源相册的索引实现」「调研手机助手的意图分发方案」=本模式。混合任务两模式并行、各出各的产物。
-> 本模式**不做 UI 遍历**:证据来自源码实读与案头调研,故 S2 通用遍历门(`traversal-coverage-gate.py` 等)不适用;本模式门禁 = `tech-research-gate.py --pre/--post` + 语义终审(见九)。
+> 本模式**不做 UI 遍历**:证据来自源码实读与案头调研，S2 的 GUI 遍历与竞品正文门不适用；技术结构门、通用受众/质量评审和所选平台全文/图片交付门仍必跑，不能以模式切换免除真实图与原生页面审核。
 > 判据来源:2026-09 「A2A 意图分发调研」实跑复盘——19 次用户提醒逐条沉淀,每条判据可回溯一次真实返工,零投机项。
 
 ---
@@ -86,17 +86,19 @@
 
 ## 八、图(判据正本在 diagram-standards.md,此处只指位)
 
-批量框架图走统一 mermaid 主题;门面图(执行摘要/方案蓝图,≤20 张)走 `fireworks-tech-graph` 手绘+视觉审查门;受众含产品时,方案图**另画产品共读版**(零代码符号)。字号/高度红线/节点数上限见 `diagram-standards.md`「视觉质量与受众分层」。
+批量框架图走统一 Mermaid 主题及实际编译器；门面图（执行摘要/方案蓝图，≤20 张）走内置 `modules/diagramming` 的结构源→SVG→PNG 与视觉审查门，不要求额外安装制图 Skill；受众含产品时，方案图**另画产品共读版**（零代码符号）。字号/高度红线/节点数上限见 `diagram-standards.md`「视觉质量与受众分层」。
 
 ## 九、出场门禁
 
 ```bash
+python3 scripts/product-flow-run.py plan --root <项目目录> --mode only --modules research --research-mode tech-approach --write
 python3 scripts/tech-research-gate.py --pre  <research_dir>   # 交付前:结构机检
 # …推送正本…
-python3 scripts/tech-research-gate.py --post <research_dir>   # 推送后:载体回读验真
+python3 scripts/gate-run.py --root <项目目录> scripts/tech-research-gate.py --post <research_dir>
 ```
 - `--pre` 查:小节编号连续;每对象 4 节 + 3 图引用 + ≥3 段带 file:line 摘录;口径数字 ∈ scope.md 声明值∪豁免清单;图文件存在且高度 ≤ 红线。
-- `--post` 查:正本平台回读命中关键节(载体验真)。
+- `--post` 重新执行本地检查，再对飞书或钉钉做同版本全文比对、逐图上传身份与章节位置核验；关键词存在不能代替全文验收。前检不能计作正式出场结果；其余必跑门以当前计划为准。
+- `scope.md` 写 `documentPlatform: feishu` 或 `dingtalk`、`delivery_doc: <正本文档ID>`。`research/review.md` 使用 `templates/research-quality-review.md`；逐对象技术解释与全文章节必须覆盖，不能伪造 GUI 功能账。真实图与源/渲染回执进入 `evidence-manifest.json`。
 - 门自身带 `--self-test`(漏编号/缺图/旧口径三类反例必须红)。
 - 交付前另跑**语义终审**:独立 agent 通读全文,查矛盾/引用错/术语漂移/承诺未兑现,P0 清零才交付。
 

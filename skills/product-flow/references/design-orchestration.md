@@ -339,7 +339,7 @@ ui-ux-pro-max 生成的基线经常直接回落到 Inter；taste 另禁 Fraunces
 
 ## 五、S6 骨架验证门
 
-demo-html 搭完骨架（所有场景空壳 + 导航跑通）、填内容之前，跑一遍验证：
+内置 `modules/prototyping` 搭完骨架（所有场景空壳 + 导航跑通）、填内容之前，跑一遍验证：
 
 ```
 骨架验证 checklist：
