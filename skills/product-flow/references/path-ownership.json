@@ -38,6 +38,8 @@
       "skills/product-flow/scripts/tech-research-gate.py"
     ],
     "codex": [
+      "skills/product-flow/references/evidence-first-writing.md",
+      "skills/product-flow/templates/examples/report-writing/**",
       "skills/product-flow/scripts/_approval.py",
       "skills/product-flow/scripts/_delivery_check.py",
       "skills/product-flow/scripts/_diagram_contract.py",
@@ -101,6 +103,8 @@
       "skills/product-flow/tests/fixtures/filled/s9-quality-report.md"
     ],
     "shared": [
+      "skills/product-flow/references/s2-tech-approach-runbook.md",
+      "skills/product-flow/templates/tech-research-report.md",
       "skills/coding-standards/scripts/reverse-test.sh",
       "DEPENDENCIES.md",
       "PUBLICATION_CHECKLIST.md",
@@ -226,6 +230,7 @@
     ]
   },
   "_shared_note": [
+    "2026-09-24 用户指定 Codex 在最新版本上实施已确认的细粒度研究/PRD写作方案。保留 Claude 新增 tech-approach 原职责与判据，仅为其补入共享写作循环和安全增量更新说明，两条精确路径并列登记 shared；新写作参考和教学示例归 Codex。范围与验证边界见 docs/change-notes/2026-09-24-evidence-first-writing.md。",
     "2026-09-23 用户批准 R1–R10 恢复与文档质量整改，并明确由 Codex 逐项修改后复核/发布。为本次跨模块修复补登记套件发布面、样例与下游图/发布门的精确 shared 路径，保留原 Claude/Codex 主责，不追溯改写历史。原因及逐路径清单见 docs/change-notes/2026-09-23-restoration.md；该公开说明目录不含私有会话、账号或运行日志，不替代旧 .proposals 的历史记录。",
     "⭐ shared 的初始承重文件是 2026-09-12 **实测**出来的重叠，不是拍脑袋列的；后续控制面按交接记录补入：",
     "   comm -12 两侧 diff --name-only 的结果。",

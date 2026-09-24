@@ -3059,7 +3059,7 @@ MUTATIONS = [
     #   ⭐ 加这一发是因为：我扩完量程第一次自验时选中了非规范句式的那张图 ⇒ 没红，
     #     「扩了量程」和「扩了个死的」在产物上一模一样。这发变异专门钉住图源在量程内。
     ("gate-count", "templates/diagrams/product-architecture.example.d2",
-     lambda s: s.replace("45 道确定性门禁", "97 道确定性门禁", 1)),
+     lambda s: re.sub(r'\d+(?= 道确定性门禁)', lambda m: str(int(m.group()) + 1), s, count=1)),
     # 🚨 2026-09-09 第五轮：给**字面量定位段**这条新分支配靶 ——
     #   量程扩了却没有变异守着，等于「没人守的判据」（本仓 §14.4 的原话）。
     ("no-positional-window", "scripts/retro-gate.py",
@@ -3222,10 +3222,10 @@ MUTATIONS = [
      lambda s: s.replace("| ↳ **表现策略** | ①的一部分 |", "| ↳ 骨架屏 | Skeleton |", 1)),
     ("help-exits-zero", "scripts/retro-gate.py",
      lambda s: s.replace("'--help' in sys.argv", "'--HELP-REMOVED' in sys.argv", 1)),
-    # ⚠️ 变异靶必须是**单路由**模板（module-result 后来进了 SKILL 文件树=双路由，
-    #   删一处另一处兜住——多路兜底第 N+1 次）。intent.md 只在 SKILL S1 行有一条路由。
+    # intent.md 已有 SKILL 与技术研究参考两条入口。harness 对参考文档同步变异，
+    # 真正删除全部路由；不能把删掉其中一条后仍 PASS 误认成规则漏检。
     ("stage-artifact-wired", "SKILL.md",
-     lambda s: s.replace("templates/intent.md", "templates/intent-GONE.md")),
+     lambda s: s.replace("intent.md", "intent-GONE.md")),
     # iron-rule-mapped：映射表是「压缩层覆盖可核对」的唯一载体，每类缺陷各一发。
     ("iron-rule-mapped", "references/iron-rules.md",
      lambda s: s.replace("| 51 | P3 |", "| 51GONE | P3 |", 1)),       # 条目失踪＝铁律被漏
@@ -3372,6 +3372,13 @@ def self_test(root):
             print("  ❌ %-20s **变异是 no-op**（目标文本已改写）—— 用例失效，先修用例" % rid)
             ok = False; shutil.rmtree(tmp, True); continue
         io.open(p, 'w', encoding='utf-8').write(mutated)
+        if rid == 'stage-artifact-wired':
+            # 与判据的路由量程一致，仅改临时副本；正常多入口仍应被允许。
+            for ref in glob.glob(os.path.join(dst, 'references', '*.md')):
+                original = read(ref) or ''
+                updated = mut(original)
+                if updated != original:
+                    io.open(ref, 'w', encoding='utf-8').write(updated)
         out = subprocess.run([sys.executable, os.path.abspath(__file__), dst, '--json'],
                              env=dict(os.environ, CG_FAST='1'),
                              capture_output=True, text=True)

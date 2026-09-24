@@ -1,5 +1,7 @@
 # <产品名> PRD
 
+> 起稿执行 `references/evidence-first-writing.md`：先“研究事实→我方决定”，再以一个 F 功能为单位同步写第七章和适用附件，样章经独立消费检查后分批展开。参照 `templates/examples/report-writing/prd-slice.md`，但不复制其中的教学决定。摘要最后写；本模板九章与附件结构、S4/S7 批准时点不变。
+
 > PRD Template v2.0
 >
 > 领导和产品同事读正文理解产品全貌；研发、测试翻附件获取执行细节；AI 按附件生成代码和用例。
