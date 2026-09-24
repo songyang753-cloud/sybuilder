@@ -4,6 +4,8 @@ import json
 import re
 import hashlib
 import uuid
+import os
+from datetime import datetime, timezone, timedelta
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -204,11 +206,50 @@ def begin_attempt(source):
     return record
 
 
-def preflight(source, manifest, for_write=True):
+def check_export_privacy(source, evidence, manifest):
+    """Scan the exact declared export/dependency set, not unrelated local projects."""
+    root = Path(source).resolve().parent
+    paths = {Path(source).resolve()}
+    base = Path(manifest).resolve().parent if manifest else root
+    if manifest:
+        if not Path(manifest).is_file():
+            raise RuntimeError('UNABLE: 声明的外发证据清单不可读取')
+        paths.add(Path(manifest).resolve())
+    for item in evidence:
+        for key in ('sourcePath', 'eventsRef', 'sourceRef', 'svgRef', 'renderReceiptRef'):
+            if item.get(key):
+                ref = Path(item[key])
+                path = (base / ref).resolve()
+                if ref.is_absolute() or '..' in ref.parts or not path.is_relative_to(base) or not path.is_file():
+                    raise RuntimeError('UNABLE: 外发附件路径越界或不可读取')
+                paths.add(path)
+    scanner = Path(__file__).resolve().parents[3] / 'scripts/verify-portability.py'
+    if not scanner.is_file():
+        raise RuntimeError('UNABLE: 缺套件隐私扫描器；请安装完整套件')
+    spec = importlib.util.spec_from_file_location('export_privacy', scanner)
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    terms = []
+    if os.environ.get('SYBUILDER_PRIVATE_DENYLIST'):
+        denylist = Path(os.environ['SYBUILDER_PRIVATE_DENYLIST']).resolve()
+        if (denylist.is_relative_to(root) or denylist.is_relative_to(base)
+                or denylist.is_relative_to(scanner.parents[1])):
+            raise RuntimeError('UNABLE: 私有词表必须位于交付目录及发布仓之外')
+        terms = [s.strip() for s in denylist.read_text().splitlines() if s.strip() and not s.startswith('#')]
+        if not terms:
+            raise RuntimeError('UNABLE: 私有词表为空')
+    findings = module.scan_files(root, sorted(paths), terms)
+    if findings:
+        # Even file names may contain private terms: expose only the count here.
+        raise RuntimeError('FAIL: 外发集合命中隐私规则（%d 处）；请私下复核并重采，未写入远端' % len(findings))
+
+
+def preflight(source, manifest, for_write=True, destination=None):
     text = Path(source).read_text(encoding='utf-8')
     if re.search(r'^\s*```mermaid\b', text, re.M):
         raise RuntimeError('UNABLE: 请用实际 Mermaid 编译器渲染该图源，或使用内置结构化 JSON→SVG→PNG；加入证据清单后再交付')
     images = media_sources(text)
+    if for_write and not images:
+        check_export_privacy(source, [], manifest)
     if images:
         if not manifest or not Path(manifest).is_file():
             raise RuntimeError('UNABLE: 有图片的交付必须提供可读取的证据清单；未执行远端写入')
@@ -223,14 +264,28 @@ def preflight(source, manifest, for_write=True):
             from _image import validate_image
             validate_image(path)
         if for_write:
+            check_export_privacy(source, evidence, manifest)
             for item in evidence:
                 review = item.get('privacyReview') or {}
                 if (item.get('privacyReviewed') is not True or review.get('result') != 'APPROVED'
                         or review.get('actorType') not in ('human', 'agent')
-                        or not all(review.get(k) for k in ('reviewer', 'reviewedAt', 'scope'))):
+                        or not all(review.get(k) for k in ('reviewer', 'reviewedAt', 'scope', 'method'))):
                     raise RuntimeError('UNABLE: 图片尚未完成逐张隐私审核；未执行远端写入')
-                kind = item.get('kind')
+                try:
+                    reviewed = datetime.fromisoformat(review['reviewedAt'].replace('Z', '+00:00'))
+                    now = datetime.now(timezone.utc)
+                    timely = reviewed.tzinfo is not None and now - timedelta(days=30) <= reviewed <= now + timedelta(minutes=5)
+                except (ValueError, TypeError, AttributeError):
+                    timely = False
                 base = Path(manifest).parent
+                bindings = {k: source_hash(base / item[k]) for k in
+                            ('sourcePath', 'eventsRef', 'sourceRef', 'svgRef', 'renderReceiptRef') if item.get(k)}
+                if (not timely or not destination or review.get('destination') != destination
+                        or review.get('evidenceId') != item.get('id')
+                        or review.get('scope') != item.get('sourcePath')
+                        or review.get('sourceBindings') != bindings):
+                    raise RuntimeError('UNABLE: 图片审核已过期或内容/事件/范围/目的地不匹配；需重新审核')
+                kind = item.get('kind')
                 if kind == 'gui-screenshot':
                     ref = base / item.get('eventsRef', '')
                     if not ref.is_file():

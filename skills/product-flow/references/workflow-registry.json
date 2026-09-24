@@ -158,7 +158,8 @@
         "S2"
       ],
       "gate": "traversal-coverage-gate.py",
-      "ruleType": "required",
+      "ruleType": "conditional",
+      "when": {"researchMode": ["teardown", "competitive-pack", "full-research"]},
       "gateKind": "machine"
     },
     {
@@ -167,7 +168,8 @@
         "S2"
       ],
       "gate": "report-structure-gate.py",
-      "ruleType": "required",
+      "ruleType": "conditional",
+      "when": {"researchMode": ["teardown", "competitive-pack", "full-research"]},
       "gateKind": "machine"
     },
     {
@@ -644,6 +646,9 @@
     },
     "S2": {
       "label": "深度研究",
+      "outputsByResearchMode": {
+        "tech-approach": ["research/scope.md", "research/report.md", "research/evidence-manifest.json", "research/document-delivery-receipt.json", "research/review.md", "research-decision-ledger.md"]
+      },
       "dependencies": [
         "S1"
       ],
@@ -664,6 +669,9 @@
       "maxClaim": "module-approved",
       "outputKinds": {
         "research/*": "evidence:研究目录整体，条目形态由 competitive-research.md 定，⛔ 通配不对应单一模板",
+        "research/scope.md": "evidence:技术调研假设与范围合同，按 s2-tech-approach-runbook.md 记录用户确认",
+        "research/report.md": "template",
+        "research/review.md": "template",
         "research/competitor-teardown-report.md": "template",
         "research/atomic-feature-ledger.md": "template",
         "research/traversal-events.json": "template",
@@ -673,6 +681,8 @@
         "research-traceability.json": "generated:research-gate 对账时产出的追溯映射，手写即伪造"
       },
       "outputTemplates": {
+        "research/report.md": "templates/tech-research-report.md",
+        "research/review.md": "templates/research-quality-review.md",
         "research/competitor-teardown-report.md": "templates/competitor-teardown-report.md",
         "research/atomic-feature-ledger.md": "templates/competitive-research-pack.md",
         "research/traversal-events.json": "templates/traversal-events.json",

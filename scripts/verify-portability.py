@@ -16,9 +16,14 @@ PATTERNS = {
 
 
 def scan(root, terms=()):
+    return scan_files(root, sorted(root.rglob('*')), terms)
+
+
+def scan_files(root, paths, terms=()):
+    """Scan an explicit export set; diagnostics never echo matching values."""
     findings: list[str] = []
-    for path in sorted(root.rglob("*")):
-        rel = path.relative_to(root)
+    for path in paths:
+        rel = path.relative_to(root) if path.is_relative_to(root) else pathlib.Path(path.name)
         if ".git" in rel.parts:
             continue
         name_text = rel.as_posix()
@@ -31,6 +36,12 @@ def scan(root, terms=()):
             continue
         # Scan extensionless and binary files too; no scanner-file exemption.
         text = path.read_bytes().decode('utf-8', errors='replace')
+        if path.suffix.lower() == '.json':
+            import json
+            try:
+                text = json.dumps(json.loads(text), ensure_ascii=False)
+            except ValueError:
+                findings.append(f'{rel}: invalid-json-export')
         for line_no, line in enumerate(text.splitlines(), 1):
             if any(term.casefold() in line.casefold() for term in terms):
                 findings.append(f"{rel}:{line_no}: external-private-denylist")

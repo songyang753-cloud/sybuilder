@@ -183,8 +183,8 @@ S5 把「做什么」变成「长什么样、怎么点」，S6 是**整条流水
 `?scn=api-500` 只是让接口抛错。这样「操作与真实实现保持一致」才第一次成为可检验的事 ——
 把 `api.js` 整体换成真 `fetch`，其余三层一行都不用改（借自 MSW 的 Deviation-free）。
 
-`demo-html` skill 仍然负责场景编排 / 交互可达性 / 自包含分发 / 几何自测门禁 / 诚实占位，
-以及把目录版合成零外链单文件（`demo-html/scripts/bundle.mjs`，在那个 skill 里，本 skill 不复制一份）。
+内置 `modules/prototyping/MODULE.md` 负责场景编排 / 交互可达性 / 自包含分发 / 几何自测门禁 / 诚实占位，
+以及把目录版合成零外链单文件（`modules/prototyping/scripts/bundle.mjs`，随套件安装，不需要另装 demo-html）。
 **HTML 工作流内部**顺序不能反：先行为骨架，后视觉皮（反过来会得到好看但点不动的东西）。
 ⚠️ 这说的是 HTML 自己内部的次序——**跨工作流与 Figma 是三锁并行协同**（架构正本 §四），不再互相等锁定。
 

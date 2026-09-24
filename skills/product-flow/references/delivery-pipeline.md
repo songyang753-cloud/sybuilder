@@ -70,7 +70,7 @@ Figma 与 HTML 互相验证；真正的时间里程碑是三个锁：
 
 ⭐ **交互稿与 demo 是同一件东西**（用户 2026-09-07 拍板）：同一套交互逻辑的 HTML 形式，
 即「可执行 UX 基准」——开发用 `templates/proto/` 目录版（app mode），
-分发时由 `demo-html` 的 bundle 构建单文件（share mode）；⛔ 不得出现第二套手写实现。
+分发时由 `modules/prototyping` 的 bundle 构建单文件（share mode）；⛔ 不得出现第二套手写实现。
 
 ## 五、域权威与两次冻结
 

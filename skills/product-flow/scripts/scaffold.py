@@ -261,7 +261,7 @@ def build(stage, out, comps=14, afs=20, root=None, force=False):
             os.makedirs(os.path.join(out, 'cross-compare'), exist_ok=True)
             io.open(os.path.join(out, 'cross-compare', 'entry-families.d2'), 'w',
                     encoding='utf-8').write(
-                        '# %s\n# ⚠️ 这是占位桩，%s —— 真图要用 fireworks-tech-graph 出\n'
+                        '# %s\n# ⚠️ 这是占位桩，%s —— 真图须经内置 modules/diagramming 渲染和校验\n'
                         'direction: right\n"%s" -> "%s"\n' % (why, TODO, TODO, TODO))
         else:
             for rn in ('功能调研报告.md', '设计调研报告.md', '交互调研报告.md'):

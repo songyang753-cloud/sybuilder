@@ -111,9 +111,10 @@ def _verify_text(source_md, readback_md, extra_markers=None):
 
 def _write_and_verify(title, md_path, extra_markers=None, document_ref=None,
                       evidence_manifest=None, allow_overwrite=False):
-    source_md = io.open(md_path, encoding='utf-8').read()
+    with io.open(md_path, encoding='utf-8') as stream:
+        source_md = stream.read()
     from _document_sync import preflight, save_readback, delivery_receipt
-    preflight(md_path, evidence_manifest)
+    preflight(md_path, evidence_manifest, destination={'platform': 'dingtalk', 'document': document_ref or 'new:' + title})
     ref = update(document_ref, md_path, allow_overwrite) if document_ref else create(title, md_path)
     if not document_ref:
         from _document_sync import register_created
@@ -166,7 +167,7 @@ def create_and_verify(title, md_path, extra_markers=None, document_ref=None,
 
 def audience_ok(md_path):
     result = subprocess.run([sys.executable, os.path.join(_HERE, 'audience-gate.py'), md_path],
-                            capture_output=True, text=True)
+                            capture_output=True, text=True, timeout=180)
     return result.returncode == 0, (result.stdout or '') + (result.stderr or '')
 
 

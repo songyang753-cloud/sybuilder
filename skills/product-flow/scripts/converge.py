@@ -77,7 +77,10 @@ def run_gate(stage, artifact, root=None):
     gate = os.path.join(root, rel)
     if not os.path.exists(gate):
         print("UNABLE: 门禁 %s 不存在" % rel, file=sys.stderr); sys.exit(2)
-    r = subprocess.run([sys.executable, gate, artifact], capture_output=True, text=True)
+    try:
+        r = subprocess.run([sys.executable, gate, artifact], capture_output=True, text=True, timeout=180)
+    except subprocess.TimeoutExpired:
+        return 2, 'UNABLE: 门禁执行超时，未获得验收结论'
     return r.returncode, (r.stdout or '') + (r.stderr or '')
 
 

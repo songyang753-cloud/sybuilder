@@ -15,7 +15,11 @@
         "actorType": "<human | agent>",
         "reviewer": "<reviewer>",
         "reviewedAt": "<timestamp>",
-        "scope": "<image and metadata>",
+        "scope": "evidence/SHOT-001.png",
+        "evidenceId": "SHOT-001",
+        "method": "<真实视觉/元数据审核方法，不是自填通过>",
+        "destination": {"platform": "<feishu | dingtalk>", "document": "<实际文档ID或new:确切标题>"},
+        "sourceBindings": {"sourcePath": "<SHA-256>", "eventsRef": "<SHA-256>"},
         "result": "UNREVIEWED"
       },
       "proves": "<这张图能证明的具体功能事实>",

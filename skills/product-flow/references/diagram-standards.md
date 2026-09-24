@@ -502,7 +502,7 @@ AI 参与的步骤，图上必须显式出现这三样，⛔ 缺一条这张图�
 
 ### 门面图(执行摘要/方案蓝图/协议时序,全报告 ≤20 张)
 
-用 `fireworks-tech-graph` 手绘 SVG(Style 1 Flat Icon + validate-svg)+ **视觉审查门**:导出 PNG 后**回读目检**,箭头穿框/标签压盖/marker 反向必修,至多两轮修正;正文字号 ≥17px、标题 ≥22px,导出 scale ≥3。
+用内置 `modules/diagramming` 生成 SVG（Style 1 Flat Icon + validate-svg）+ **视觉审查门**：导出 PNG 后**回读目检**，箭头穿框/标签压盖/marker 反向必修，至多两轮修正；正文字号 ≥17px、标题 ≥22px，导出 scale ≥3。超出两轮仍不合格则报告阻断，不带缺陷交付。
 
 ### 受众分层(受众含产品时必做)
 

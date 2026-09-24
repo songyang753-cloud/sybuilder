@@ -210,9 +210,10 @@ def _write_and_verify(title: str, md_path: str, extra_markers=None, doc_token: s
     """写 + 回读校验一步到位。返回 (doc_token, ok, issues)。⭐ ok=False 时别当成功交付。
     传 doc_token=已有文档 → 原地更新(保持 URL);不传 → 建新文档。
     使用官方 CLI 整篇导入；未声称自动分块，必须以真实回读结果验收。"""
-    src = io.open(md_path, encoding='utf-8').read()
+    with io.open(md_path, encoding='utf-8') as stream:
+        src = stream.read()
     from _document_sync import preflight, save_readback, delivery_receipt
-    preflight(md_path, evidence_manifest)
+    preflight(md_path, evidence_manifest, destination={'platform': 'feishu', 'document': doc_token or 'new:' + title})
     if doc_token:
         tok = update(doc_token, md_path, allow_overwrite)
     else:
@@ -273,7 +274,7 @@ def audience_ok(md_path: str):
     ⛔ 2026-09-17 教训:v8 竞品报告通篇是过程日志(抓取管线/收敛轨迹/需求 N/内部锚点/图见文末),
        audience-gate 一跑全红——但 skill 从没在推飞书前跑它。⇒ 把它焊进推送咽喉。"""
     r = subprocess.run([sys.executable, os.path.join(_HERE, 'audience-gate.py'), md_path],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, timeout=180)
     return (r.returncode == 0, (r.stdout or '') + (r.stderr or ''))
 
 

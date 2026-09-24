@@ -57,12 +57,18 @@ def check_package(report, path, check_teardown):
         mapping = comp.get('featureMap', {})
         if not mapping: bad.append(('package-feature-map', comp['id'] + ' 缺公共 AF→原生 AF 对应'))
         ledger = Path(comp['ledgerPath']).read_text(encoding='utf-8')
+        # Use the same full dictionary denominator as the single-product gate.
+        # A blank line can split a Markdown table; it must not hide later leaves.
+        native_ids = set(re.findall(r'(?<!\w)AF-\d+(?!\d)', section_at(ledger, '功能分解词典') or ''))
+        mapped_ids = {n for values in mapping.values() if isinstance(values, list) for n in values if isinstance(n, str)}
+        if not native_ids or mapped_ids != native_ids:
+            bad.append(('package-native-denominator', comp['id'] + ' 原生最细功能全集未完整映射；范围变化须先更新并重新验收单品账本，不能在横比中删叶子'))
         comp['eventRecords'] = {e.get('id'): e for e in json.loads(Path(comp['eventsPath']).read_text()).get('events', [])}
         comp['shotIds'] = {e.get('id') for e in json.loads(Path(comp['evidencePath']).read_text()).get('evidence', [])}
         comp['featureShots'] = {}
         for af, native in mapping.items():
             all_af.add(af)
-            if not re.fullmatch(r'AF-\d+', af) or not isinstance(native, list):
+            if not re.fullmatch(r'AF-\d+', af) or not isinstance(native, list) or any(not isinstance(n, str) for n in native):
                 bad.append(('package-feature-map', comp['id'] + ' 功能映射非法')); continue
             if any(not re.search(r'(?<!\w)' + re.escape(n) + r'(?!\d)', ledger) for n in native):
                 bad.append(('package-feature-map', comp['id'] + ' 原生功能不在账本'))
@@ -144,5 +150,11 @@ if __name__ == '__main__':
     if '--self-test' in sys.argv:
         import runpy
         from pathlib import Path
-        tests = runpy.run_path(str(Path(__file__).resolve().parents[3] / 'scripts/test-remediation-contracts.py'))
+        from _workflow import suite_script
+        try:
+            test_path = suite_script('test-remediation-contracts.py')
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            sys.exit(2)
+        tests = runpy.run_path(str(test_path))
         sys.exit(tests['main']('research'))

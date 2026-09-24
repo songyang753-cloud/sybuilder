@@ -38,6 +38,21 @@
       "skills/product-flow/scripts/tech-research-gate.py"
     ],
     "codex": [
+      "docs/document-evidence.md",
+      "scripts/test-crawler-regressions.cjs",
+      "scripts/test-gate-binding.py",
+      "scripts/test-review-boundaries.py",
+      "scripts/test-w5-boundaries.py",
+      "scripts/test-w5.py",
+      "scripts/verify-portability.py",
+      "skills/product-flow/references/mechanisms.md",
+      "skills/product-flow/references/review-perspectives.md",
+      "skills/product-flow/references/s7-figma.md",
+      "skills/product-flow/scripts/_mutation_state.py",
+      "skills/product-flow/scripts/capture-live-ui.js",
+      "skills/product-flow/scripts/mutation-sweep.py",
+      "skills/product-flow/scripts/reverse-test.py",
+      "skills/product-flow/templates/proto/README.md",
       "skills/product-flow/references/evidence-first-writing.md",
       "skills/product-flow/templates/examples/report-writing/**",
       "skills/product-flow/scripts/_approval.py",
@@ -103,6 +118,11 @@
       "skills/product-flow/tests/fixtures/filled/s9-quality-report.md"
     ],
     "shared": [
+      "skills/four-node-review/SKILL.md",
+      "skills/four-node-review/agent-evaluation/MODULE.md",
+      "skills/four-node-review/agent-evaluation/run.py",
+      "skills/product-flow/scripts/_browser.mjs",
+      "skills/product-flow/scripts/tech-research-gate.py",
       "skills/product-flow/references/s2-tech-approach-runbook.md",
       "skills/product-flow/templates/tech-research-report.md",
       "skills/coding-standards/scripts/reverse-test.sh",

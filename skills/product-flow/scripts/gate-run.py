@@ -54,7 +54,8 @@
 import hashlib, io, json, os, re, signal, subprocess, sys, time
 
 from _workflow import (WorkflowError, gate_result_dir, load_active_run,
-                       load_registry, resolve_plan, sha256_file, gate_evidence, evidence_current)
+                       load_registry, resolve_plan, sha256_file, gate_evidence, evidence_current,
+                       required_rule_ids)
 
 MAX_STDOUT = 256 * 1024          # PRD 附件 E：单个 stdout 上限
 RESULT_DIR = os.path.join('.product-flow', 'gates')
@@ -204,6 +205,11 @@ def run(argv, root, adhoc=False):
             die('报告 mode 必须与当前计划 researchMode 一致；不能用旧摘要门代替正式深拆')
         if not adhoc and gate == 'research-quality-gate.py' and option('--phase', 'final') != 'final':
             die('发布前 pre 评审不能充当 S2 最终页面验收；调试请用 --adhoc')
+        if not adhoc and gate == 'tech-research-gate.py' and not option('--post'):
+            die('技术调研正式记录须 --post（内含 --pre 与全文/媒体回读）；本地检查请用 --adhoc')
+        if not adhoc and gate == 'coverage_check.py' and '--design-only' in argv:
+            if any(m.startswith('S9') for m in manifest.get('modules', [])):
+                die('设计对账不能代替 S9 实际测试；请另签 TESTCASES 设计模块结果')
         if not adhoc and gate == 'diagram-id-gate.py' and '--formal' not in argv:
             die('正式图交付需要 --formal，旧图源诊断不能抵消图位/渲染验收')
         if not adhoc and gate in {'s8-solution-gate.py', 's9-quality-report-gate.py',
@@ -258,8 +264,7 @@ def run(argv, root, adhoc=False):
         rec.update({'runId': manifest['runId'], 'planHash': manifest['planHash'],
                     'registryVersion': manifest['registryVersion'],
                     'registryHash': manifest['registryHash'],
-                    'ruleIds': [x['ruleId'] for x in manifest.get('gatePlan', [])
-                                if x.get('gate') == key]})
+                    'ruleIds': required_rule_ids(manifest, key)})
     if why:
         rec['warning'] = why
     if PREREQ.get(gate):
@@ -425,8 +430,7 @@ def status(root, skill_root, blocking=False):
             if g not in got:
                 continue
             r = got[g]
-            expected_rules = sorted(x['ruleId'] for x in manifest.get('gatePlan', [])
-                                    if x.get('gate') == g and x.get('required'))
+            expected_rules = required_rule_ids(manifest, g)
             if (r.get('runId') != manifest.get('runId')
                     or r.get('planHash') != manifest.get('planHash')
                     or sorted(r.get('ruleIds') or []) != expected_rules

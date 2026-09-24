@@ -8,7 +8,8 @@
 //    想并发的人得自己另写脚本——而那会被 serial-orchestration-gate 判红。
 //
 // 用法: node competitor-sweep.mjs <manifest.json> <outdir> [--steps 30]
-//   manifest.json = [{ "name": "chatgpt", "port": 9222 }, { "name": "kimi", "port": 9223 }, ...]
+//   manifest.json = [{ "name": "sample-one", "port": 9222, "actions": "actions.json" }, ...]
+//   actions 为清单目录内的授权策略；缺省仅允许安全导航。summary 不证明全产品覆盖。
 // 退出码: 0=全部跑完(单个竞品失败不致命,记进 summary) 2=UNABLE(清单读不了/为空)
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -31,14 +32,44 @@ let list;
 try { list = JSON.parse(fs.readFileSync(manifestPath, 'utf8')); }
 catch (e) { console.error(`清单读不了: ${e.message}`); process.exit(2); }
 if (!Array.isArray(list) || list.length === 0) { console.error('清单为空'); process.exit(2); }
+try {
+  if (!/^\d+$/.test(steps) || Number(steps) < 1 || Number(steps) > 1000) throw new Error('steps must be 1..1000');
+  const names = new Set(), base = fs.realpathSync(path.dirname(path.resolve(manifestPath)));
+  for (const item of list) {
+    if (!item || typeof item.name !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/.test(item.name) || names.has(item.name)) throw new Error('name must be a unique safe directory name');
+    names.add(item.name);
+    if (!Number.isInteger(item.port) || item.port < 1 || item.port > 65535) throw new Error('invalid port');
+    if (item.actions !== undefined) {
+      if (typeof item.actions !== 'string' || path.isAbsolute(item.actions)) throw new Error('actions must be a relative policy path');
+      const policy = fs.realpathSync(path.resolve(base, item.actions));
+      if (!policy.startsWith(base + path.sep) || !fs.statSync(policy).isFile()) throw new Error('policy escapes manifest directory');
+      item.actions = policy;
+    }
+  }
+} catch (error) { console.error('UNABLE: invalid manifest: ' + error.message); process.exit(2); }
 
 // 串行跑一个竞品:起子进程,等它退出,resolve。⛔ 绝不同时起下一个。
-function runOne(name, port) {
+let interrupted = false;
+function runOne(name, port, actions) {
   return new Promise((resolve) => {
     const dst = path.join(outdir, name);
+    if (fs.existsSync(dst)) { resolve({ name, port, code: 2, ok: false, err: 'evidence directory exists' }); return; }
     fs.mkdirSync(dst, { recursive: true });
     process.stderr.write(`\n▶ ${name} (port ${port}) —— 串行,前一个已退出才起本个\n`);
-    const child = spawn('node', [WALK, String(port), dst, '--steps', String(steps)], { stdio: 'inherit' });
+    const child = spawn(process.execPath, [WALK, String(port), dst, '--steps', String(steps), ...(actions ? ['--actions', actions] : [])], { stdio: 'inherit' });
+    let killTimer;
+    const stop = () => {
+      child.kill('SIGTERM');
+      killTimer ??= setTimeout(() => child.kill('SIGKILL'), 1000);
+    };
+    const onSignal = () => { interrupted = true; stop(); };
+    const deadline = setTimeout(stop, 300000);
+    process.once('SIGINT', onSignal); process.once('SIGTERM', onSignal);
+    const cleanup = () => {
+      clearTimeout(deadline); clearTimeout(killTimer);
+      process.off('SIGINT', onSignal); process.off('SIGTERM', onSignal);
+    };
+    child.once('close', cleanup); child.once('error', cleanup);
     child.on('close', (code) => resolve({ name, port, code, ok: code === 0 }));
     child.on('error', (e) => resolve({ name, port, code: -1, ok: false, err: e.message }));
   });
@@ -47,11 +78,13 @@ function runOne(name, port) {
 const summary = [];
 // ⭐ 串行的核心:for...of + await,上一个 await 完(子进程 close)才进下一轮。
 //    ⛔ 不许改成 Promise.all(list.map(...)) —— 那会同时起 N 个浏览器,正是要防的事。
-for (const { name, port } of list) {
-  const r = await runOne(name, port);
+for (const { name, port, actions } of list) {
+  const r = await runOne(name, port, actions);
   summary.push(r);
   process.stderr.write(`  ${r.ok ? '✅' : '🔴'} ${name} 退出码 ${r.code}${r.err ? ' · ' + r.err : ''}\n`);
+  if (interrupted) break;
 }
 
 fs.writeFileSync(path.join(outdir, 'sweep-summary.json'), JSON.stringify({ total: list.length, ok: summary.filter(s => s.ok).length, results: summary }, null, 1));
 console.log(JSON.stringify({ total: list.length, ok: summary.filter(s => s.ok).length, failed: summary.filter(s => !s.ok).map(s => s.name) }));
+if (interrupted) process.exitCode = 2;

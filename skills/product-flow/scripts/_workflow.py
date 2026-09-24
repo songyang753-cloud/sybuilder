@@ -11,12 +11,24 @@ from pathlib import Path
 
 SKILL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REGISTRY_PATH = os.path.join(SKILL_ROOT, 'references', 'workflow-registry.json')
+RESEARCH_MODES = ('teardown', 'competitive-pack', 'full-research', 'tech-approach')
 CLAIMS = ['exploration', 'draft', 'review-ready', 'module-approved',
           'integrated-frozen', 'production-validated']
 
 
 class WorkflowError(ValueError):
     pass
+
+
+def suite_script(name):
+    """Resolve only the supported complete suite (including symlink installs)."""
+    root = Path(__file__).resolve().parents[3]
+    markers = ('install.sh', 'LICENSE', 'shared', 'skills/coding-standards/SKILL.md',
+               'skills/four-node-review/SKILL.md')
+    path = root / 'scripts' / name
+    if any(not (root / p).exists() for p in markers) or not path.is_file():
+        raise WorkflowError('UNABLE: 不完整的套件布局；请用官方安装器安装完整 SYBuilder，不能单独拷贝本 helper')
+    return path
 
 
 def canonical_bytes(value):
@@ -182,7 +194,8 @@ def _ordered(registry, selected):
 
 
 def _matches(condition, context):
-    return all(context.get(k) == v for k, v in (condition or {}).items())
+    return all(context.get(k) in v if isinstance(v, list) else context.get(k) == v
+               for k, v in (condition or {}).items())
 
 
 def claim_min(registry, claims):
@@ -224,6 +237,15 @@ def gate_plan_for(registry, selected, context):
                                    % json.dumps(rule.get('when'), ensure_ascii=False, sort_keys=True)})
         plan.append(item)
     return plan
+
+
+def required_rule_ids(manifest, gate):
+    """Canonical executed-rule binding; N/A remains in the plan, not the receipt."""
+    ids = [x['ruleId'] for x in manifest.get('gatePlan', [])
+           if x.get('gate') == gate and x.get('required') is True]
+    if len(ids) != len(set(ids)):
+        raise WorkflowError('计划包含重复规则：%s' % gate)
+    return sorted(ids)
 
 
 def required_gates_for_module(registry, module_id, context=None):
@@ -269,8 +291,8 @@ def resolve_plan(mode, requested=None, start=None, product_type='web',
     if evidence_capability not in evidence_profiles:
         raise WorkflowError('evidenceCapability 必须是 native/mixed/limited/unavailable')
     effective_research_mode = research_mode or 'full-research'
-    if effective_research_mode not in ('teardown', 'competitive-pack', 'full-research'):
-        raise WorkflowError('researchMode 必须是 teardown/competitive-pack/full-research')
+    if effective_research_mode not in RESEARCH_MODES:
+        raise WorkflowError('researchMode 必须是 ' + '/'.join(RESEARCH_MODES))
     if document_platform not in ('feishu', 'dingtalk'):
         raise WorkflowError('documentPlatform 必须是 feishu/dingtalk')
 
@@ -321,8 +343,8 @@ def resolve_plan(mode, requested=None, start=None, product_type='web',
                     'dependency': dep,
                     'contract': '导入经验证的 %s 产物，或在 Gap 中登记假设/停止线' % dep,
                 })
-        outputs += [{'module': module_id, 'artifact': x}
-                    for x in module.get('outputs', [])]
+        module_outputs = module.get('outputsByResearchMode', {}).get(effective_research_mode, module.get('outputs', []))
+        outputs += [{'module': module_id, 'artifact': x} for x in module_outputs]
     gate_plan = gate_plan_for(registry, selected, context)
     gates = []
     for item in gate_plan:

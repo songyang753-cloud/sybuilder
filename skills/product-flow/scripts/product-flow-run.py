@@ -321,7 +321,7 @@ def parser():
     plan.add_argument('--html-profile')
     plan.add_argument('--evidence-capability', default='native')
     plan.add_argument('--research-mode', default='full-research',
-                      choices=['teardown', 'competitive-pack', 'full-research'])
+                      choices=__import__('_workflow').RESEARCH_MODES)
     plan.add_argument('--document-platform', default='feishu', choices=['feishu', 'dingtalk'])
     plan.add_argument('--intake', help='JSON：inputs/assumptions/openDecisions/stopLines/requiredBackfills')
     plan.add_argument('--run-id')

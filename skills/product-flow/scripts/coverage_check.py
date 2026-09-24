@@ -102,6 +102,7 @@ def parse_cases(case_dir):
 
 
 def main():
+    design_only = '--design-only' in sys.argv
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
     out_path = None
     if "-o" in sys.argv:
@@ -198,6 +199,8 @@ def main():
                                    and all(c[3] for c in cases if c[1] == o)})
 
     result = {
+        "verification_scope": "test-design" if design_only else "coverage-and-execution-readiness",
+        "product_execution": "NOT_VERIFIED",
         "requirements_total": len(reqs),
         "requirements_active": len(active),
         "requirements_skipped": len(skipped),
@@ -218,7 +221,7 @@ def main():
         "covered_only_by_skips": covered_only_by_skip,
         "dup_case_ids": [{"tc": t, "first_file": a, "dup_file": b} for t, a, b in dup_case_ids],
         # 覆盖率只对「PRD 里已存在的需求」成立，不代表被测充分。
-        "coverage_means_sufficient": (ok and readiness == "CLEAN" and not case_skips),
+        "coverage_means_sufficient": (not design_only and ok and readiness == "CLEAN" and not case_skips),
         "rows": rows,
     }
 
@@ -280,7 +283,9 @@ def main():
     #   ⛔ 返 0 会让「11 条用例里 3 条根本没跑」被读成「测过了」。
     # ⭐ 2026-09-15 收紧（C1）：未提供 --gaps ⇒ 缺口状态未知，同样不许返 0。
     #   0 的语义是「无未解决缺口」——没读过缺口清单就返 0 是在声称没核过的事。
-    return 3 if (gap_ids or case_skips or readiness == "UNKNOWN") else 0
+    if design_only:
+        print("测试设计对账：未执行用例不阻断设计交付；产品执行状态 NOT_VERIFIED，不能声明测试通过。")
+    return 3 if (gap_ids or (case_skips and not design_only) or readiness == "UNKNOWN") else 0
 
 
 

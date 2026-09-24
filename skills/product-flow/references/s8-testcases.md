@@ -105,11 +105,14 @@ python3 scripts/flows-to-testcases.py <spec目录> <cases输出目录>
 ## ④ 双向覆盖对账
 
 ```bash
-python3 scripts/coverage_check.py <requirements.md> <cases 目录> -o coverage.json --gaps readiness.md
+python3 scripts/coverage_check.py <requirements.md> <cases 目录> -o coverage.json --gaps readiness.md --design-only
 ```
 
 - **正向**：每个 `FR/AC` 有用例？没有 → 需求没测。
 - **反向**：每个用例能反查到 `FR/AC`？不能 → 在测没人要的东西。
+
+`--design-only` 只批准用例设计对账：完整设计可如实标注「未执行 + 理由」，产品执行状态始终 NOT_VERIFIED。
+缺规格/漏覆盖/非法用例仍阻断；输出 0 不表示产品测试通过。S9 实际执行不得使用设计档替代，需另附本版实测证据。
 
 ⚠️ **反向漏更危险**：它意味着有人在没有需求依据的情况下自己发挥，这部分永远没人负责。
 

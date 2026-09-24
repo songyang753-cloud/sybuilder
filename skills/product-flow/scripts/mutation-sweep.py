@@ -25,7 +25,8 @@
 
 退出码: 0=每条判据都有反例守着 1=**发现无人守的判据** 2=跑不了
 """
-import sys, os, re, io, ast, glob, subprocess, hashlib, signal, fcntl
+import sys, os, re, io, ast, glob, subprocess, hashlib, signal
+from _mutation_state import locked_targets
 
 ADD_DEF = re.compile(r'^(\s*)def add\(rid, desc, ok, ev\):(.*)$', re.M)
 # 策略 B：不用 add(rid,…) 的门，改逐个把「记录一处失败」的调用变成空操作。
@@ -41,7 +42,6 @@ FAIL_SITE = re.compile(
 #    行首正则一条都匹配不到 —— 2026-09-05 实测 mock-seam 3 处只扫到 1 处，
 #    而输出读起来完全正常（「扫了 1 条判据」不会让人觉得少了什么）。
 FAIL_SITE_JS = re.compile(r'([ \t]*)((?:bad|fails|issues|problems|errs|miss)\.push\()')
-LOCK = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.reverse-test.lock')
 
 def rule_ids(src):
     """add(...) 调用点的第一个实参。返回 (字面量, 是否动态拼接)。
@@ -181,6 +181,15 @@ def _cut_text(src, mutated, width=110):
 
 
 def sweep(paths):
+    # Hold the same tree and target locks as reverse-test across copying/testing.
+    root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    linked = [os.path.join(d, f) for d, _, fs in os.walk(root) for f in fs
+              if os.path.islink(os.path.join(d, f)) and os.path.isfile(os.path.join(d, f))]
+    with locked_targets([root] + list(paths) + linked):
+        return _sweep_locked(paths)
+
+
+def _sweep_locked(paths):
     """🚨🚨 2026-09-09：**改副本模式，真实工作区零写入。**
 
     此前是**原地改真实文件**（`open(p,'w').write(mutated)`），靠 `finally`
@@ -196,6 +205,8 @@ def sweep(paths):
       必须共享一个锁文件）。⇒ 准确说法是「**被测文件**零写入；锁文件仍写」，
       因此「只读 checkout 可运行」也**不成立**（只读仓库上锁都建不了）。
       现有只读夹具只把被测 gate chmod 444，没把仓库设成只读，所以照不出这一条。
+      以上为历史边界。当前锁已迁到 _mutation_state 的用户私有临时目录，
+      不再写 checkout 内的锁；但被测自证自身可能写文件，不能据此宣称所有只读项目都可运行。
     """
     import shutil as _sh, tempfile as _tf
     _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -206,7 +217,6 @@ def sweep(paths):
     #   ⭐ 这正是 reverse-test 刚修掉的「锁外快照」在另一个工具里的**同型复发** ——
     #     我修了一个工具，没回头查同一形状的另一处。
     #   ⇒ 拿锁 → 再复制。
-    lock = io.open(LOCK, 'w'); fcntl.flock(lock, fcntl.LOCK_EX)
     _work = _tf.mkdtemp(prefix='ms-copy-')
     _copy = os.path.join(_work, os.path.basename(_root))
     # 🚨🚨 2026-09-10 codex 评审 #4（Critical）：`symlinks=True` **保留软链** ⇒
@@ -230,7 +240,11 @@ def sweep(paths):
                 _skipped_links.append(os.path.relpath(_fp, _root))
         return _out
 
-    _sh.copytree(_root, _copy, symlinks=False, ignore=_ig)
+    try:
+        _sh.copytree(_root, _copy, symlinks=False, ignore=_ig)
+    except BaseException:
+        _sh.rmtree(_work, ignore_errors=True)
+        raise
     if _skipped_links:
         print("   ⏭️  跳过目录软链（跟随它会无界遍历）：%s"
               % "、".join(_skipped_links[:4]))
@@ -268,7 +282,7 @@ def sweep(paths):
         _d = os.path.dirname(_ap)
         if _d not in _ext:
             _dst = os.path.join(_work, 'ext-%d' % len(_ext))
-            _sh.copytree(_d, _dst, symlinks=False)
+            _sh.copytree(_d, _dst, symlinks=False, ignore=_ig)
             _make_writable(_dst)
             _ext[_d] = _dst
         return os.path.join(_ext[_d], os.path.basename(_ap))
@@ -406,7 +420,6 @@ def sweep(paths):
                 else:
                     print("   ✅ %-28s 置真 ⇒ 自证红（有反例守着）" % rid)
     finally:
-        fcntl.flock(lock, fcntl.LOCK_UN)
         _sh.rmtree(_work, ignore_errors=True)
     print()
     # 🚨 一道门里**所有**判据都报「无人守」，先怀疑方法错配（见文件头的适用边界），

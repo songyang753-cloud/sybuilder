@@ -64,13 +64,9 @@ def scan(target):
         for sec, rid, desc, pat, why in RULES:
             for m in pat.finditer(s):
                 line = s[:m.start()].count('\n') + 1
-                txt = s.split('\n')[line - 1].strip()
-                # ⚠️ 只报长度与前 4 字符，绝不打印密钥值本身。
-                #    「按长度决定要不要打印」是错的判据 —— 短值恰恰是人设密码。
-                if rid == 'hardcoded-secret':
-                    v = re.search(r'["\']([^"\']{8,})["\']', txt)
-                    if v: txt = txt[:txt.index(v.group(1))] + "<%d 字符, 前4=%s…>" % (
-                        len(v.group(1)), v.group(1)[:4])
+                # Do not echo source lines, secret prefixes or unrelated secrets
+                # adjacent to a match. Location and rule are sufficient to fix it.
+                txt = '<匹配 %d 字符；内容不回显>' % len(m.group(0))
                 hits.append({"sec": sec, "rule": rid, "desc": desc, "why": why,
                              "file": p, "line": line, "text": txt[:160]})
     return hits
@@ -127,9 +123,9 @@ def self_test():
         killed = any(h["rule"] == rid for h in hits); ok &= killed
         print("  %s %-30s 反例必须被抓到" % ("✅" if killed else "❌", "%s %s" % (sec, rid)))
     # 不许打印密钥原值
-    leak = any('sk-live-abcdef123456789' in h["text"] for h in hits)
+    leak = any('sk-l' in h["text"] for h in hits)
     ok &= not leak
-    print("  %s %-30s 报告里不许出现密钥原值（只报长度+前4字符）" % ("✅" if not leak else "❌", "不泄露密钥"))
+    print("  %s %-30s 报告里不许出现密钥原值或前缀（只报长度与位置）" % ("✅" if not leak else "❌", "不泄露密钥"))
     rc = subprocess.call([sys.executable, os.path.abspath(__file__), os.path.join(t, 'nope')],
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     g2 = rc == 2; ok &= g2
