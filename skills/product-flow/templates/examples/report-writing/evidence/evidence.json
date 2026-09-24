@@ -1,0 +1,140 @@
+{
+  "kind": "local-teaching-browser-evidence",
+  "source": "demo.html",
+  "sourceSha256": "5410993ece25add8333d7f92773dcc02909ac574ba31758755e4cd6a571c2116",
+  "browser": "HeadlessChrome/153.0.8010.36",
+  "viewport": {
+    "width": 1100,
+    "height": 1100
+  },
+  "events": [
+    {
+      "id": "E01",
+      "action": "打开教学应用",
+      "assertion": "document.querySelectorAll('.row').length===1",
+      "result": "PASS",
+      "image": "initial.png",
+      "sha256": "2c87911d954e2020aa3dad2b9369975bedda5383001c432ba7838c5f2f71f2fc"
+    },
+    {
+      "id": "E02",
+      "action": "仅空白名称保存",
+      "assertion": "document.getElementById('error').textContent==='请输入任务名称' && items.length===1 && document.getElementById('name').value==='   '",
+      "result": "PASS",
+      "image": "create-error.png",
+      "sha256": "2e56a9894c4e15cff963e271c52ddd64d3680c703e6a3b4f7077e0569ed070a6"
+    },
+    {
+      "id": "E03",
+      "action": "21 字名称保存",
+      "assertion": "document.getElementById('error').textContent==='任务名称不能超过 20 个字符' && items.length===1",
+      "result": "PASS"
+    },
+    {
+      "id": "E04",
+      "action": "20 字名称保存",
+      "assertion": "items.length===2 && items[1].name.length===20",
+      "result": "PASS"
+    },
+    {
+      "id": "E05",
+      "action": "取消后重新打开新建",
+      "assertion": "items.length===2 && document.getElementById('name').value===''",
+      "result": "PASS"
+    },
+    {
+      "id": "E06",
+      "action": "去空白后同名保存",
+      "assertion": "document.getElementById('error').textContent==='进行中已有同名任务' && items.length===2",
+      "result": "PASS"
+    },
+    {
+      "id": "E07",
+      "action": "带首尾空白名称保存",
+      "assertion": "items.length===3 && items[2].name==='整理截图' && document.getElementById('editor').hidden",
+      "result": "PASS",
+      "image": "create-success.png",
+      "sha256": "94d7b7da4e81c23223e0492898a2dc22062be93d5c61b10465223902036ad96b"
+    },
+    {
+      "id": "E08",
+      "action": "重命名为另一进行中任务名",
+      "assertion": "items[2].name==='整理截图' && document.getElementById('error').textContent==='进行中已有同名任务'",
+      "result": "PASS",
+      "image": "rename-error.png",
+      "sha256": "35be2f5bd93049c81c47801697450ed4d6bbfd693a633f15890d95b1a6dbb0f6"
+    },
+    {
+      "id": "E09",
+      "action": "取消重命名后再打开",
+      "assertion": "document.getElementById('name').value==='整理截图'",
+      "result": "PASS"
+    },
+    {
+      "id": "E10",
+      "action": "保存自己的原名",
+      "assertion": "document.getElementById('editor').hidden && items[2].name==='整理截图'",
+      "result": "PASS"
+    },
+    {
+      "id": "E11",
+      "action": "合法重命名",
+      "assertion": "items[2].name==='整理图文' && items.length===3",
+      "result": "PASS",
+      "image": "rename-success.png",
+      "sha256": "7b191d8a89a7e6c207304b041c11f635ddb23acd36dc80b3cab273831b61cf2e"
+    },
+    {
+      "id": "E12",
+      "action": "归档进行中任务",
+      "assertion": "items[2].archived && !document.querySelector('[data-id=\"3\"]')",
+      "result": "PASS",
+      "image": "archive-result.png",
+      "sha256": "f64316f44df077ed91dde3ec9aa7c387a91f390062a8ea7cffbb5aaac8c7e4ad"
+    },
+    {
+      "id": "E13",
+      "action": "在归档列表定位任务",
+      "assertion": "document.querySelector('[data-id=\"3\"] span').textContent==='整理图文'",
+      "result": "PASS",
+      "image": "archive-list.png",
+      "sha256": "8f6abb9a03e31f50c2ba1a855cd3949da4eef1d6a742d753b2c38f209f991ec2"
+    },
+    {
+      "id": "E14",
+      "action": "已归档名称可被新任务使用",
+      "assertion": "items.length===4 && items[3].name===items[2].name && !items[3].archived",
+      "result": "PASS"
+    },
+    {
+      "id": "E15",
+      "action": "同名恢复冲突",
+      "assertion": "items[2].archived && document.getElementById('notice').textContent.includes('恢复失败')",
+      "result": "PASS",
+      "image": "restore-error.png",
+      "sha256": "3f4e25116a9302efbc690874e8fca7fe200f3fd40635a0973a4e565a5527e412"
+    },
+    {
+      "id": "E16",
+      "action": "冲突解除后恢复",
+      "assertion": "!items[2].archived && document.getElementById('list').textContent==='这里还没有任务'",
+      "result": "PASS",
+      "image": "restore-result.png",
+      "sha256": "087ebc16660f5355ab343ff9426b25e6b154249776b1716b247bc7569281fdf2"
+    },
+    {
+      "id": "E17",
+      "action": "进行中查看恢复结果",
+      "assertion": "document.querySelector('[data-id=\"3\"] span').textContent==='整理图文'",
+      "result": "PASS",
+      "image": "restore-active.png",
+      "sha256": "9269454e64bc7ce43e779d69715920fbbd7d4999eb7c71a06dafb876a6c222ac"
+    },
+    {
+      "id": "E18",
+      "action": "刷新后检查持久化",
+      "assertion": "items.length===1 && items[0].name==='核对需求'",
+      "result": "PASS"
+    }
+  ]
+}

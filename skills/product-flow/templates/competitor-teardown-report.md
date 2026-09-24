@@ -2,6 +2,7 @@
 
 > 模式：`teardown`　版本/端：<...>　实测日期：<YYYY-MM-DD>　账号/套餐：<...>
 > 交付正本：选定的飞书或钉钉文档；本地 Markdown 是受控源稿。按 `references/delivery-quality-contract.md` 验证正文、图片、版本和专业评审。正文不放执行日志。
+> 起稿先读 `references/evidence-first-writing.md` 和 `templates/examples/report-writing/research-domain.md`。先写功能域样章，审过后逐域扩写；下面字段是覆盖提示，不是每项填一个短语即完成。摘要最后写，目录顺序不变。
 
 ## 〇 执行摘要
 

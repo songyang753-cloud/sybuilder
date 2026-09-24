@@ -1,6 +1,7 @@
 # 技术方案调研报告模板(researchMode=tech-approach)
 
 > 判据正本:`references/s2-tech-approach-runbook.md`。本模板只放结构骨架,⛔ 不复述判据。
+> 先按 `references/evidence-first-writing.md` 写机制样章再逐对象展开：每个策略决策点解释输入、分支、数据结构、输出与失败回路，代码摘录和图的数量不代表内容已经讲透。摘要最后写，不改变本模板目录。
 > 交付=正本平台原生文档(飞书用官方 lark-cli,`docs +create/+update --doc-format markdown`,本地图 `![alt](<@./相对路径.png>)` 内联);图判据见 `references/diagram-standards.md`「视觉质量与受众分层」。
 
 ## 〇 执行摘要(BLUF)

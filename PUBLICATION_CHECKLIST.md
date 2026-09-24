@@ -14,5 +14,8 @@ original suite on 2026-09-22. Do not equate publication with completion of
 The checker verifies checklist completion, manifest structure and retained files; it
 cannot establish legal rights or visually inspect images. Human/agent review records must
 support the checkmarks. External private denylist and detailed operational logs stay outside
-this public repository. Public commit metadata uses a project identity, not a private account
-or employer address; the repository owner's public GitHub handle remains visible by design.
+this public repository. New release commits use the existing project identity, not a private
+account or employer address. This is not a claim that historical metadata is anonymized:
+the 2026-09-24 upstream update includes personal author metadata. Rewriting published
+history requires separate approval. The repository owner's public GitHub handle remains
+visible by design.

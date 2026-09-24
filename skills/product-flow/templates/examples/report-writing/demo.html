@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
+<title>任务盒 · 本地教学样例</title>
+<style>
+*{box-sizing:border-box}body{font:18px/1.65 system-ui,sans-serif;color:#172b4d;background:#f4f6fa;margin:0}main{max-width:920px;margin:30px auto}h1{font-size:30px;margin-bottom:0}p{margin:10px 0}small{color:#52637d}section{background:white;border:1px solid #d6deeb;border-radius:12px;padding:24px;margin-top:18px}button{font:inherit;cursor:pointer;background:#eef3ff;color:#163f85;border:1px solid #9baed0;border-radius:7px;padding:6px 16px;margin-right:8px}button:focus,input:focus{outline:3px solid #87adff}input{font:inherit;padding:8px;width:100%;border:1px solid #8094b5;border-radius:6px}.row{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e4e9f1;padding:14px 0;gap:12px}.row span{overflow-wrap:anywhere}#notice{min-height:30px;color:#245a36}#error{color:#a31629;min-height:30px}#editor{border:2px solid #7198dc}nav{margin:22px 0}label{display:block}#help{margin:8px 0 18px}
+</style>
+<main>
+<h1>任务盒</h1>
+<p>本地教学样例 · 无账号、无联网、无持久化；刷新后回到初始数据。</p>
+<nav><button id="active">进行中</button><button id="archived">已归档</button><button id="new">新建任务</button></nav>
+<p id="notice" role="status" aria-live="polite"></p>
+<section><h2 id="viewTitle"></h2><div id="list"></div></section>
+<section id="editor" hidden>
+<h2 id="editorTitle"></h2><label for="name">任务名称</label><input id="name" autocomplete="off" aria-describedby="help error">
+<p id="help"><small>去除首尾空白后为 1–20 个字符；不得与进行中的其他任务重名。取消不会保存本次输入。</small></p>
+<p id="error" role="alert"></p><button id="save">保存</button><button id="cancel">取消</button>
+</section>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+let items=[{id:1,name:'核对需求',archived:false}],nextId=2,view=false,editing=null;
+function message(text){$('notice').textContent=text;}
+function render(){
+  $('viewTitle').textContent=view?'已归档任务':'进行中的任务';
+  $('list').replaceChildren();
+  const visible=items.filter(x=>x.archived===view);
+  if(!visible.length){$('list').textContent='这里还没有任务';return;}
+  for(const item of visible){
+    const row=document.createElement('div');row.className='row';row.dataset.id=item.id;
+    const name=document.createElement('span');name.textContent=item.name;row.append(name);
+    const actions=document.createElement('div');
+    function button(text,action,handler){const b=document.createElement('button');b.textContent=text;b.dataset.action=action;b.onclick=handler;actions.append(b);}
+    if(!view){
+      button('重命名','rename',()=>edit(item.id));
+      button('归档','archive',()=>{item.archived=true;message('已归档，可在“已归档”中恢复');render();});
+    }else{
+      button('恢复','restore',()=>{
+        if(items.some(x=>!x.archived&&x.name===item.name)){message('恢复失败：进行中已有同名任务。请先重命名进行中的任务再恢复。');return;}
+        item.archived=false;message('已恢复到进行中');render();
+      });
+    }
+    row.append(actions);$('list').append(row);
+  }
+}
+function edit(id){editing=id;$('editor').hidden=false;$('editorTitle').textContent=id===null?'新建任务':'重命名任务';$('name').value=id===null?'':items.find(x=>x.id===id).name;$('error').textContent='';$('name').focus();}
+function closeEditor(){$('editor').hidden=true;$('name').value='';$('error').textContent='';editing=null;}
+$('new').onclick=()=>edit(null);
+$('active').onclick=()=>{view=false;closeEditor();message('');render();};
+$('archived').onclick=()=>{view=true;closeEditor();message('');render();};
+$('cancel').onclick=()=>{closeEditor();message('已取消，任务未改变');};
+$('save').onclick=()=>{
+  const name=$('name').value.trim();
+  const error=!name?'请输入任务名称':Array.from(name).length>20?'任务名称不能超过 20 个字符':items.some(x=>!x.archived&&x.id!==editing&&x.name===name)?'进行中已有同名任务':'';
+  if(error){$('error').textContent=error;return;}
+  const created=editing===null;
+  if(created)items.push({id:nextId++,name,archived:false});else items.find(x=>x.id===editing).name=name;
+  closeEditor();view=false;message(created?'任务已创建':'名称已更新');render();
+};
+render();
+</script>
+</html>

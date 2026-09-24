@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Offline remediation regressions; synthetic receipts never certify live delivery."""
 import copy
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -34,6 +36,51 @@ class Contracts(unittest.TestCase):
         for name in ('report.md', 'ledger.md', 'evidence-manifest.json', 'traversal-events.json', 'shot.png', 'readback.xml'):
             shutil.copy(GOLD / name, self.root / name)
         return self.root
+
+    def test_writing_example_evidence_is_bound_to_source_and_decodable_images(self):
+        from _image import validate_image
+        example=S.parent/'templates/examples/report-writing'
+        evidence=json.loads((example/'evidence/evidence.json').read_text())
+        digest=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+        self.assertEqual(evidence['sourceSha256'],digest(example/evidence['source']))
+        shots=[e for e in evidence['events'] if 'image' in e]
+        self.assertTrue(shots)
+        self.assertEqual(len({e['id'] for e in evidence['events']}),len(evidence['events']))
+        self.assertEqual(len({e['sha256'] for e in shots}),len(shots))
+        for event in shots:
+            path=example/'evidence'/event['image']
+            self.assertEqual(event['sha256'],digest(path))
+            self.assertEqual(validate_image(path),(evidence['viewport']['width'],evidence['viewport']['height']))
+
+    def test_writing_example_images_are_real_local_report_links(self):
+        import re
+        example=S.parent/'templates/examples/report-writing'
+        shots={e['image'] for e in json.loads((example/'evidence/evidence.json').read_text())['events'] if 'image' in e}
+        links=re.findall(r'!\[[^\]]*\]\(evidence/([^\)]+)\)',(example/'research-domain.md').read_text())
+        self.assertEqual(set(links),shots)
+        for link in links:self.assertTrue((example/'evidence'/link).is_file())
+
+    def test_writing_capture_refuses_existing_evidence_directory(self):
+        sentinel=self.root/'preserve.txt';sentinel.write_text('existing evidence')
+        script=S.parent/'templates/examples/report-writing/capture.cjs'
+        result=subprocess.run(['node',str(script),'--out',str(self.root)],capture_output=True,text=True,timeout=15)
+        self.assertEqual(result.returncode,1)
+        self.assertIn('existing evidence is never overwritten',result.stderr)
+        self.assertEqual(sentinel.read_text(),'existing evidence')
+
+    def test_template_routing_accepts_remaining_route_but_rejects_orphan(self):
+        gate=load('remediation_template_routes',S/'consistency-gate.py')
+        (self.root/'templates').mkdir();(self.root/'references').mkdir()
+        (self.root/'templates/intent.md').write_text('# Intent\n')
+        skill=self.root/'SKILL.md';ref=self.root/'references/research.md'
+        skill.write_text('Use templates/intent.md');ref.write_text('Read intent.md')
+        self.assertTrue(gate.r_artifact_wired(str(self.root))[0])
+        mutation=next(mut for rid,_,mut in gate.MUTATIONS if rid=='stage-artifact-wired')
+        skill.write_text(mutation(skill.read_text()))
+        self.assertTrue(gate.r_artifact_wired(str(self.root))[0])
+        ref.write_text(mutation(ref.read_text()))
+        passed,issues=gate.r_artifact_wired(str(self.root))
+        self.assertFalse(passed);self.assertIn('templates/intent.md',issues[0])
 
     def test_public_report_routes_use_bundled_modules_and_selected_platform(self):
         template = (S.parent / 'templates/research-report.md').read_text()

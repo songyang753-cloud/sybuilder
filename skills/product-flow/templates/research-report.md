@@ -2,6 +2,7 @@
 
 > 公开执行正本：`references/delivery-quality-contract.md`、`references/competitive-research.md` 与 `spec/s2-research.json`；历史私有提案不是安装或执行依赖。
 > 本模板用于 `competitive-pack/full-research` 的综合报告；单品最细拆解用 `competitor-teardown-report.md`。
+> 生成顺序见 `references/evidence-first-writing.md`：先单品详解与配图，后逐级横比，再形成决策与摘要。组装保留同版已验收详解，不能重新压成模块概述；读者目录仍按本模板。
 > 交付走 `scripts/_documents.py`，按任务合同选择飞书或钉钉。
 > 飞书内部固定使用官方 `lark-cli --as user`。推前必过内容审核，写后必须完成同版本正文/媒体回读和原生页面审核。
 
