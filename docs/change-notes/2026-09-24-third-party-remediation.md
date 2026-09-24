@@ -79,6 +79,7 @@ The user explicitly approved a cross-suite implementation plan. The following sh
 - skills/four-node-review/agent-evaluation/run.py — enforce that contract with fail-closed validation and owned execution.
 - scripts/verify-suite.sh — wire targeted regressions into normal acceptance.
 - scripts/test-remediation-contracts.py — preserve previous repair coverage and native feature-leaf denominator.
+- scripts/test-release-regressions.py — migrate the existing offline image-upload fixture to explicit synthetic, destination/hash-bound review metadata; real preflight remains strict.
 - skills/product-flow/SKILL.md and skills/product-flow/SKILL.en.md — naming/mechanism/current-stage consistency.
 - skills/product-flow/references/design-orchestration.md, skills/product-flow/references/design-quality-gates.md, skills/product-flow/references/diagram-standards.md — use bundled capabilities.
 - skills/product-flow/references/no-loss-renames.md — exact documented migrations; original no-loss baseline unchanged.
