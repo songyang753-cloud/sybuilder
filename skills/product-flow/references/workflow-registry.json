@@ -201,6 +201,14 @@
       "gateKind": "machine"
     },
     {
+      "id": "R-S2-RESEARCH-TECH",
+      "modules": ["S2"],
+      "gate": "tech-research-gate.py",
+      "ruleType": "conditional",
+      "when": {"researchMode": "tech-approach"},
+      "gateKind": "machine"
+    },
+    {
       "id": "R-S2-RESEARCH-COMPETITIVE",
       "modules": ["S2"],
       "gate": "research-gate.py",

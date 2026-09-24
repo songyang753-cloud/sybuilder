@@ -32,7 +32,7 @@ title: |md # 业务流程图（示例）：一次 PRD 的产出与冻结 | {near
 product-flow: {
   style.fill: "#F0FDF4"
   裁: "F-02 流程裁剪\n(workflow-registry)"
-  门: "F-03 执行 45 道确定性门禁\n三态 PASS/FAIL/UNABLE"
+  门: "F-03 执行 46 道确定性门禁\n三态 PASS/FAIL/UNABLE"
   判: "◆ 全绿 / 有红 / UNABLE" {shape: diamond}
   证: "F-04 收集冻结证据\n(飞书回读 · Figma · HTML)"
 }
@@ -47,7 +47,7 @@ product-flow: {
 #   渲染出来才看出是**网关误用**：两条路走到同一个活动，等于没有分叉。
 #   ⭐ 轻档/全档是**输入参数**，不是决策分叉；BPMN 的网关必须导向**不同的活动**。
 产品经理.填 -> product-flow.裁: "档位（轻/全）作为输入"
-product-flow.裁 -> product-flow.门: "本次该跑哪几道（轻档少跑几道 / 全档 45 道门禁）"
+product-flow.裁 -> product-flow.门: "本次该跑哪几道（轻档少跑几道 / 全档 46 道门禁）"
 product-flow.门 -> product-flow.判
 product-flow.判 -> 产品经理.改: 有红
 产品经理.改 -> product-flow.门: 重跑

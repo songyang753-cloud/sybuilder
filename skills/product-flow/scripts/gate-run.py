@@ -5,7 +5,7 @@
 不再共用一条互相覆盖）。
 
 ═══ 为什么需要它（OPP-09）═══
-本流水线有 45 道门禁（口径＝`_roster.gate_names()`，唯一正本）。
+本流水线有 46 道门禁（口径＝`_roster.gate_names()`，唯一正本）。
 ⚠️ 2026-09-10：这里曾长期写着「22 道」——**过期了六道而无人发现**，
    因为 `gate-count` 这条元规则当时**只扫 md，不扫脚本 docstring**。
    ⭐ 不是判据写错了，是**它没往这儿看**。量程已扩（脚本里只认「本流水线共 N 道」这类总数句式）。它们各自都能出声，**而声音落在终端里就没了**。
@@ -78,6 +78,7 @@ EXIT_SEMANTICS = {
     'element-identity-gate.py': STD, 'figma-editability-gate.py': STD,
     'interaction-gate.py': STD, 'reconcile-gate.py': STD,
     'requirements-quality-gate.py': STD, 'research-gate.py': STD, 'retro-gate.py': STD,
+    'tech-research-gate.py': STD,
     's8-solution-gate.py': STD, 's9-quality-report-gate.py': STD,
     's9-product-walkthrough-gate.py': STD,
     's9-dev-slice-gate.py': STD, 's9-launch-rollback-gate.py': STD,
