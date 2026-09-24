@@ -1542,6 +1542,7 @@ GATE_TEMPLATE_PAIRS = (
 # 显式豁免表 —— 与配对表互补，**合起来必须覆盖每一道门禁**（规则 gate-pairing-declared）。
 # ⛔ 豁免不是「先欠着」，是「已经决定不配，理由在此」；空理由不算豁免。
 GATE_PAIRING_EXEMPT = {
+    'tech-research-gate.py':   '验报告实例结构（scope.md 声明的编号/图/摘录/口径），不读模板骨架——模板 2.N 为占位形态不可判；自证内建正例+三类反例夹具',
     'research-quality-gate.py': '跨报告/图片/平台回执/三角色评审做版本对账；模板 research-quality-review.md，自证与 test-remediation-contracts.py 覆盖空评审和版本失效',
     'audience-gate.py':        '吃**任意交付文档**（竞品分析/PRD/设计稿/交互稿），不绑单一模板；'
                                '口径来自 spec/_audience.json，自证内建 8 个夹具（含「内部路径写在附件里→放行」正例）',

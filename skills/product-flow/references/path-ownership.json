@@ -32,7 +32,10 @@
       "skills/product-flow/templates/s9-dev-slice.md",
       "skills/product-flow/templates/s9-launch-rollback.md",
       "skills/product-flow/tests/fixtures/filled/s9-dev-slice.md",
-      "skills/product-flow/tests/fixtures/filled/s9-launch-rollback.md"
+      "skills/product-flow/tests/fixtures/filled/s9-launch-rollback.md",
+      "skills/product-flow/references/s2-tech-approach-runbook.md",
+      "skills/product-flow/templates/tech-research-report.md",
+      "skills/product-flow/scripts/tech-research-gate.py"
     ],
     "codex": [
       "skills/product-flow/scripts/_approval.py",
@@ -63,7 +66,6 @@
       "skills/product-flow/references/delivery-pipeline.md",
       "skills/product-flow/references/flow-tailoring.md",
       "skills/product-flow/references/competitive-research.md",
-      "skills/product-flow/references/iron-rules.md",
       "skills/product-flow/references/s2-research.md",
       "skills/product-flow/references/s2-teardown-runbook.md",
       "skills/product-flow/scripts/research-gate.py",
@@ -219,7 +221,8 @@
       "skills/product-flow/templates/retro.md",
       "skills/product-flow/templates/state.md",
       "skills/product-flow/templates/testcases-pack.md",
-      "skills/product-flow/tests/fixtures/filled/definition.md"
+      "skills/product-flow/tests/fixtures/filled/definition.md",
+      "skills/product-flow/references/iron-rules.md"
     ]
   },
   "_shared_note": [
@@ -242,7 +245,8 @@
     "⚠️ 2026-09-15 第三次归属补登（WO-002 终审批次）：用户当日指示「WO-002 不用管 codex 了，你来做」——用例工程模块（s8-testcases/testcases-design/testcases-readiness/testcases-adapters/coverage_check）及其消费面（reconcile-gate/flow-tailoring/s8-solution-plan/s9-quality-gates）由 codex 单独名下改为 shared 双列（codex 保留主责）；testcases-adapters.md 与 coverage_check.py、reconcile-gate.md 此前**不在任何清单**（孤儿规则只抓改动文件，没改过所以一直没被抓），一并补登。新模板 templates/testcases-pack.md 登记 shared。⛔ 非为绿改锚：改动内容与理由见 .proposals/wo-002-review-fixes-2026-09-15.md，留 codex/用户复核。",
     "2026-09-15 登记 .four-node-review/**（WO-002 终审的 state 与轮次证据）归 claude——终审是 Claude 执行的审计工作面，产物要可复核所以入仓。",
     "⚠️ 2026-09-15 第四次补登（S2 载体级升级批次）：ownership-inventory-baseline.json（全量归属棘轮的基线，双方都会动）与 templates/research-report.md 归 shared；skills/four-node-review/** 归 claude —— 它是终审流水线 skill 本体，逃逸回流一直由 Claude 写，此前**不在任何清单**（孤儿规则只看改动文件，没改过就一直没被抓，正是本次新增 E 棘轮要治的形状）。",
-    "⚠️ 2026-09-16：workflow-registry.json 由 codex 单独名下改为 shared 双列（codex 主责保留）。理由：用户批准的「测试口径三正本合一」要求 registry 的 TESTCASES.outputs 与唯一正本 s8-testcases.md ⑤ 对齐；只改该模块 outputs + 加 outputsCanonicalSource 指针与 gateExitCodes，⛔ 不动 schema 与其它模块。经过见 .proposals/review-gap-closure-2026-09-16.md，留 codex/用户复核。"
+    "⚠️ 2026-09-16：workflow-registry.json 由 codex 单独名下改为 shared 双列（codex 主责保留）。理由：用户批准的「测试口径三正本合一」要求 registry 的 TESTCASES.outputs 与唯一正本 s8-testcases.md ⑤ 对齐；只改该模块 outputs + 加 outputsCanonicalSource 指针与 gateExitCodes，⛔ 不动 schema 与其它模块。经过见 .proposals/review-gap-closure-2026-09-16.md，留 codex/用户复核。",
+    "🚨 2026-09-24 归属变更(如实登记,⛔ 不是绕过门禁):用户指派 claude 实施 S2 tech-approach 模式(含全仓门禁计数 45→46 机械同步),iron-rules.md 第 15 条计数行属该同步范围;此后该文件双方都会因计数同步而改 ⇒ 改为 shared,语义性修改仍须 change-note 说明。"
   ],
   "_tombstones_why": [
     "🚨 2026-09-15：清单里有 5 条指向**已不存在的文件**（阶段重编号后的旧路径）。",
