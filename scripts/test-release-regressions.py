@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Offline regression checks. No account, network, or paid-model access."""
 import importlib.util
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -217,8 +218,12 @@ class ReleaseRegressionTests(unittest.TestCase):
                     {'id': 'EVENT-1', 'evidenceId': 'SHOT-1', 'classification': 'observed'}]}))
                 manifest.write_text(json.dumps({'evidence': [{'id': 'SHOT-1', 'sourcePath': 'a.png', 'anchor': 'Feature',
                     'kind': 'gui-screenshot', 'eventsRef': 'events.json', 'eventId': 'EVENT-1',
+                    # Schema-only synthetic approval: platform calls below are mocked.
                     'privacyReviewed': True, 'privacyReview': {'actorType': 'agent', 'reviewer': 'synthetic-review',
-                    'reviewedAt': '2026-09-23', 'scope': 'synthetic blank pixels', 'result': 'APPROVED'}}],
+                    'reviewedAt': datetime.now(timezone.utc).isoformat(), 'scope': 'a.png',
+                    'method': 'synthetic blank-pixel fixture', 'result': 'APPROVED', 'evidenceId': 'SHOT-1',
+                    'destination': {'platform': 'feishu', 'document': 'new:Report'},
+                    'sourceBindings': {'sourcePath': digest, 'eventsRef': sync.source_hash(root / 'events.json')}}}],
                     'delivery': {'document': 'doc-1', 'nativeVersion': '7', 'uploadEvidenceRef': 'upload.json',
                     'uploadEvidenceHash': sync.source_hash(upload),
                     'images': [{'evidenceId': 'SHOT-1', 'sourceHash': digest, 'mediaId': 'media-1'}]}}))
