@@ -88,6 +88,9 @@ class WritingContractTests(unittest.TestCase):
     def test_cross_feature_link_must_exist(self):
         text = self.text.replace('END:关闭列表返回首页，不改变数据', 'F-02#normal')
         self.assertTrue(any('behavior-dangling' in i for i in behavior_issues(text, {'F-01'})))
+        # A separate reachable END must not hide a link to a nonexistent action.
+        inactive = self.text.replace('END:关闭列表返回首页，不改变数据', 'END:可关闭；或 F-01#permission')
+        self.assertTrue(any('behavior-inactive-target' in i for i in behavior_issues(inactive, {'F-01'})))
 
     def test_missing_branch_type(self):
         text = '\n'.join(x for x in self.text.splitlines() if '| interruption |' not in x)

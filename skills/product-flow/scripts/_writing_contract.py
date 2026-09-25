@@ -142,6 +142,8 @@ branches stay unknown; they cannot establish a verified normal path.
         if missing:
             issues.append('behavior-coverage: %s missing %s (declare applicable, N/A with reason, or research UNKNOWN)' % (fid, ','.join(sorted(missing))))
     exits, edges = set(), {}
+    inactive = {row['功能'] + '#' + row['分支'] for row in rows
+                if re.match(r'^(?:N/A|UNKNOWN)[:：]', row['前态'])}
     for row in rows:
         if re.match(r'^(?:N/A|UNKNOWN)[:：]', row['前态']):
             continue
@@ -157,6 +159,8 @@ branches stay unknown; they cannot establish a verified normal path.
         for link in links:
             if link not in keys:
                 issues.append('behavior-dangling: ' + link)
+            elif link in inactive:
+                issues.append('behavior-inactive-target: ' + link)
     # Loops are valid only if a documented exit or managed wait is reachable.
     reachable = set(exits)
     while True:
