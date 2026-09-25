@@ -78,6 +78,7 @@ def scope_issues(upstream, downstream):
             new = set(re.findall(r'(?<!\w)F-\d+', row['目标功能']))
             disposition = row['处置']
             if (disposition not in ('新增', '删除', '拆分', '合并') or
+                    row.get('状态') != 'APPROVED' or
                     not all(meaningful(row[k]) for k in ('理由', '批准依据')) or
                     not old.issubset(expected) or not new.issubset(actual) or
                     (disposition == '新增' and (old or not new)) or

@@ -65,15 +65,17 @@ class WritingContractTests(unittest.TestCase):
 
     def test_scope_approved_split(self):
         scope = '| ID | 功能名称 |\n|---|---|\n| F-01 | 管理 |\n'
-        scope += '\n| 原功能 | 目标功能 | 处置 | 理由 | 批准依据 |\n|---|---|---|---|---|\n| F-01 | F-02 F-03 | 拆分 | 创建删除结果不同 | DEC-01 范围批准 |\n'
+        scope += '\n| 原功能 | 目标功能 | 处置 | 理由 | 批准依据 | 状态 |\n|---|---|---|---|---|---|\n| F-01 | F-02 F-03 | 拆分 | 创建删除结果不同 | DEC-01 范围批准 | APPROVED |\n'
         target = '| ID | 功能名称 |\n|---|---|\n| F-02 | 创建 |\n| F-03 | 删除 |\n'
         self.assertEqual(scope_issues(scope, target), [])
 
     def test_scope_unapproved_split(self):
         scope = '| ID | 功能名称 |\n|---|---|\n| F-01 | 管理 |\n'
-        scope += '\n| 原功能 | 目标功能 | 处置 | 理由 | 批准依据 |\n|---|---|---|---|---|\n| F-01 | F-02 F-03 | 拆分 | 创建删除结果不同 | TBD |\n'
+        scope += '\n| 原功能 | 目标功能 | 处置 | 理由 | 批准依据 | 状态 |\n|---|---|---|---|---|---|\n| F-01 | F-02 F-03 | 拆分 | 创建删除结果不同 | TBD | APPROVED |\n'
         target = '| ID | 功能名称 |\n|---|---|\n| F-02 | 创建 |\n| F-03 | 删除 |\n'
         self.assertTrue(any('scope-decision' in i for i in scope_issues(scope, target)))
+        pending = scope.replace('TBD', '等待产品负责人批准').replace('APPROVED', 'UNREVIEWED')
+        self.assertTrue(any('scope-decision' in i for i in scope_issues(pending, target)))
 
     def test_filler_cannot_replace_data_rule(self):
         text = self.text.replace('只读，条目数量和值不变', '执行操作')
@@ -131,7 +133,7 @@ class WritingContractTests(unittest.TestCase):
 
     def test_explicit_removal_in_upstream(self):
         scope = self.text.replace('| F-01 | 查看列表 |', '| F-01 | 查看列表 |\n| F-02 | 导出 |')
-        scope += '\n| 原功能 | 目标功能 | 处置 | 理由 | 批准依据 |\n|---|---|---|---|---|\n| F-02 | — | 删除 | 首版仅查看，不对外导出 | DEC-01 用户范围决定 |\n'
+        scope += '\n| 原功能 | 目标功能 | 处置 | 理由 | 批准依据 | 状态 |\n|---|---|---|---|---|---|\n| F-02 | — | 删除 | 首版仅查看，不对外导出 | DEC-01 用户范围决定 | APPROVED |\n'
         self.assertEqual(scope_issues(scope, self.text), [])
 
     def test_scope_unrequested_feature(self):
