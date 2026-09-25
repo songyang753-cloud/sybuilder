@@ -14,6 +14,7 @@ BEHAVIOR_COLUMNS = tuple(SPEC['behaviorColumns'])
 QUESTIONS = SPEC['consumerQuestions']
 EMPTY = re.compile(r'^(?:[-—/\s]*|TBD|TODO|待补|待定|同上|略|<[^>]+>|⟨TODO⟩)$', re.I)
 GENERIC = re.compile(r'^(?:按(?:页面提示|产品要求|实际情况|常规)(?:处理|操作)?|执行操作|完成任务|支持恢复|相关文案)[。.!！]?$')
+REVIEW_STAMP = re.compile(r'^(?:符合要求|内容完整|完整|审核通过|检查通过|未发现问题|按需处理)[。.!！]?$')
 
 
 def meaningful(value):
@@ -220,7 +221,8 @@ def consumer_issues(text, record, features, base):
             paragraph = section_exact(text, answer.get('section', ''))
             fid = answer.get('feature', '')
             owns_section = isinstance(fid, str) and re.search(r'(?<![\w-])' + re.escape(fid) + r'(?![\w-])', answer.get('section', ''))
-            if (not owns_section or not meaningful(answer.get('answer')) or answer.get('decision') != 'PASS' or
+            if (not owns_section or not meaningful(answer.get('answer')) or
+                    REVIEW_STAMP.fullmatch(answer['answer'].strip()) or answer.get('decision') != 'PASS' or
                     not meaningful(excerpt) or not paragraph or excerpt not in paragraph):
                 issues.append('consumer-evidence: %s/%s needs an answer and exact body citation' % (answer.get('feature'), answer.get('question')))
     batches = record.get('batches', [])

@@ -109,6 +109,9 @@ class WritingContractTests(unittest.TestCase):
         self.assertTrue(any('consumer-independent' in i for i in self.consumer()))
 
     def test_empty_answers_do_not_mean_reviewed(self):
+        for answer in ('符合要求', '内容完整。', '完整', '检查通过', '未发现问题', '按需处理'):
+            self.record['reviews'][0]['consumption'][0]['answer'] = answer
+            self.assertTrue(any('consumer-evidence' in i for i in self.consumer()), answer)
         self.record['reviews'][0]['consumption'] = []
         self.assertTrue(any('consumer-coverage' in i for i in self.consumer()))
 
