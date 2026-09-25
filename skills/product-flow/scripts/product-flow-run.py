@@ -316,8 +316,10 @@ def parser():
     plan.add_argument('--from', dest='start')
     plan.add_argument('--modules')
     plan.add_argument('--product-type', default='web')
-    plan.add_argument('--delivery-intent', default='production')
-    plan.add_argument('--execution-mode', default='handoff')
+    plan.add_argument('--delivery-intent', default='production',
+                      help='exploration/review/handoff/production；本地样章用 exploration，不代表原生交付')
+    plan.add_argument('--execution-mode', default='handoff',
+                      help='handoff/build；没有 offline 模式，工具不可用需如实保留草稿/UNABLE')
     plan.add_argument('--html-profile')
     plan.add_argument('--evidence-capability', default='native')
     plan.add_argument('--research-mode', default='full-research',

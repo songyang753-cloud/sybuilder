@@ -1,5 +1,7 @@
 # 设计质量门禁（S5/S6/S7 共用）
 
+新增 S4B/G7.5：`prd-quality-gate.py --source <PRD.md> --scope <批准定义.md> --review <prd-review.md> --phase final`。0=PASS、1=FAIL、2=UNABLE。检查批准功能范围、逐功能行为闭环、独立消费答案、批次版本及同版原生回执；`--phase pre` 不能关闭正式交付。模板 `templates/prd-quality-review.md`；自证 `--self-test`。不认证评审身份、事实或专业判断，必须实际独立执行。
+
 S2 补充：`dingtalk-delivery-gate.py` 与飞书门共享完整正文、真解码图片和章节映射检查；`research-quality-gate.py` 验证三角色评审、当前正文图片版本、live 回执及最终原生页面审核。它们不证明专业判断或审美正确，详见 `references/delivery-quality-contract.md`。
 
 > 这些门禁**判的是可证伪的东西**，不判好不好看。好不好看归 S5.3 评审视角。
@@ -81,7 +83,7 @@ peer 会话 `编程规范skill` 2026-09-05 的实证（形态极隐蔽，值得�
 （2026-09-06 记：我一度把这句里的数字从 51 直接改成 52 让门变绿 —— 
 那等于宣称当天新建的 `selftest-all.py` 也在 09-05 被扫过。**数字对上了，话变假了**；
 script-count 只对账数字，对账不了这句话诚不诚实。）
-全部带自证脚本的自证共 **1369 个用例**（2026-09-24 候选树实测；
+全部带自证脚本的自证共 **1426 个用例**（2026-09-25 候选树实测；
 计数记录不等于验收通过，最终状态以同一冻结版本的完整 `--fresh` 日志为准）。
 干净副本复核方式：`git archive HEAD | tar -x` 解包后直接跑
 `python3 scripts/selftest-all.py --fresh`，零手工补文件；缺依赖或未验项必须如实保留。
@@ -106,7 +108,7 @@ script-count 只对账数字，对账不了这句话诚不诚实。）
    ⚠️ 而这一段本身**今天被我覆盖回旧版一次** —— 把隔离副本的文档拷回主树时，
      连带把刚订正的注解一起盖掉了。⭐ **正本回拷是覆盖，不是合并**。
 （2026-09-09 第五轮独立复核批次；增量见 `.proposals/one-shot-adoption-2026-09-09.md`。）
-反例两个口径：按「期望非零退出码」545 个 / 按标题带「反例」697 个（两个口径本来就不一样：
+反例两个口径：按「期望非零退出码」545 个 / 按标题带「反例」747 个（两个口径本来就不一样：
 `demo-anchor-gate` 12 条反例全不写「期望 N」，数字口径下是 0 —— 单看任何一个口径都会漏）。
 **每道门禁至少在一个口径下有反例**；逐脚本数字见 `references/.selftest-progress.jsonl`。
 —— 2026-09-06 由 `scripts/selftest-all.py` 实测（正本 `references/.selftest-measured.json`；
@@ -361,7 +363,7 @@ demo 里可以有一个 `data-el` 从未登记，于是它的名称契约、所�
 
 ---
 
-## 门禁总目录（46 道门禁 + 5 个专项扫描）
+## 门禁总目录（47 道门禁 + 5 个专项扫描）
 
 > 🔗 **外部挂接（不计入 gate-count 统计的产品门禁）**：`coding-standards` 的 `selfcheck.sh` 经 `gate-run.py` 在
 > S9.1（Build 模式）落盘——运行时使用 S8 锚定的真实路径，正本与判据归那个 skill 所有，这里只登记退出码语义

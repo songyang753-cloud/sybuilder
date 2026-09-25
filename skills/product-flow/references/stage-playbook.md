@@ -4,6 +4,8 @@ S2 正式出场还必须经过 `research-quality-gate.py --phase final`。平台
 
 S8/S9 正式批准均带 `--context` 绑定本版产物，完整用法见 `references/delivery-quality-contract.md`。
 
+S4B/G7.5 正式放行还须 `prd-quality-gate.py --source <PRD> --scope <批准范围> --review <prd-review.md> --phase final`。全流程、独立 PRD、续跑均适用；逐功能规则、分支、独立消费及同版原生交付不能省略。写法见 `evidence-first-writing.md` §7–8，S4 的设计 OPEN 不因此变成缺口。
+
 > ⭐ 本表是 `SKILL.md` §【SOP】的详版正文,按**渐进式披露**外移:跑到哪个阶段再读这里对应行,SKILL 主文件只留骨架与指针。
 > ⚠️ 出场条件里的编号(①②a②g…)是**历史追加序＝稳定引用键**(有跨文件引用,⛔ 不重排)。
 > ⛔ 门禁不过不许进下一阶段。门禁条数/规则数以 `references/design-quality-gates.md` 为准,本表不复述。

@@ -26,6 +26,8 @@
 
 ## S2 → 九章 PRD → 设计/交互/测试
 
+最细行为表、范围处置与独立消费遵循 `evidence-first-writing.md` §7–8。每个功能的适用分支必须闭环，行数/字符数只提示篇幅。研究未知不伪造成我方规则。
+
 研究覆盖 PRD 一至九章需要的事实：背景/目标/用户/场景/业务流程/概要设计/详细设计/数据埋点/非功能要求，以及附件中的字段、状态、权限、风险和验收。重点对账 6.1 模块 M、6.2 功能 F、6.3 页面 P、第七章逐功能卡、附件 D 字段和 E 状态。研究 AF 是事实粒度，我方 F/FR 是需求决策粒度，两者用显式映射，不强行一对一。
 
 每个研究结论标 adopt/adapt/reject/defer/watch 和理由、目标位置及证伪指标；反方向每项 PRD/设计/交互规则要能追溯到研究证据或显式产品决策。研究应比后续选择集更宽、更细，不能为了支持已定方案删掉反例。竞品行为不自动变成我方需求。
@@ -49,6 +51,8 @@
 `templates/research-quality-review.md` 是三角色专业评审记录。先 `research-quality-gate.py --source <源稿> --review <记录> --phase pre`，上传回读后检查原生页面直至文末，复核全部章节的图文邻接、长表、字号和图尺寸，再 `--phase final`。最终检查必须绑定当前源稿/图片哈希、有效 live 回执、同版平台页面截图。未完成原生阅读检查，S2 不关闭；作者不能伪造他人的批准。
 
 ## S8/S9：批准必须对应本版产物
+
+S4B/G7.5 同样必须跑 `prd-quality-gate.py --source <PRD> --scope <批准范围> --review <prd-review.md> --phase final`，使用 `templates/prd-quality-review.md`。上游范围、逐功能答案、独立轨迹与同版原生回执绑定；S4 通过不表示 S7 设计已完成。缺真实评审或原生回读，只能交草稿/UNABLE。
 
 四个方案/质量/产品走查/发布门的正式调用均提供 `--context <contract-manifest.json>`。在其中的 `approvalBindings` 为 S8、S9.2、S9.3、S9.4 分别填写 sourceHash/version/scope/artifacts（kind/path/sha256）及 approvalEvidence（JSON，含 sourceHash/version 和批准来源）；表内批准版本和范围必须一致。主体类型 agent 与 human 分开，助手评审不冒充业务负责人签字。
 

@@ -106,7 +106,7 @@ def gate_evidence(gate_path, args):
         from _research_package import load_inputs
         try: inputs += load_inputs(option('--package-manifest'))[1]
         except (OSError, ValueError) as exc: raise WorkflowError(str(exc)) from exc
-    if gate.name == 'research-quality-gate.py':
+    if gate.name in ('research-quality-gate.py', 'prd-quality-gate.py'):
         import importlib.util
         spec = importlib.util.spec_from_file_location('quality_inputs', str(gate))
         helper = importlib.util.module_from_spec(spec); spec.loader.exec_module(helper)

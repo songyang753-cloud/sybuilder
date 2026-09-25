@@ -380,6 +380,8 @@ def g0_5(ins_path, def_path):
 def g0_8(def_path, prd_path):
     dfn, prd = read(def_path), read(prd_path)
     fwd, decay = [], []
+    from _writing_contract import scope_issues
+    fwd.extend(scope_issues(dfn, prd))
     for name, dpat, ppat in DEF_ITEMS:
         in_def = re.search(dpat, dfn)
         if not in_def: continue                      # 定义里就没有 → 归 definition-gate 管

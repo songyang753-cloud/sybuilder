@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0",
+  "behaviorColumns": ["功能", "分支", "前态", "触发与条件", "后态", "数据结果", "反馈", "下一步", "依据"],
+  "branchTypes": ["normal", "boundary", "permission", "cancel", "failure", "interruption"],
+  "consumerQuestions": {
+    "product": ["intent", "atomicity", "scope", "decision"],
+    "ux": ["entry", "transition", "recovery", "journey"],
+    "qa": ["normal", "boundary", "negative", "expected"]
+  },
+  "note": "正文/附件的行为表是规则正本，审核记录只引用正文。正常、边界、权限、取消、失败、中断逐类确认适用性；允许同类型多个具名分支。N/A 必须给理由，研究 UNKNOWN 必须有补证和结论限制。不是固定目录级数，也不是产品所有隐藏条件均已发现的证明。"
+}

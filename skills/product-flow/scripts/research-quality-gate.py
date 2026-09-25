@@ -11,19 +11,24 @@ import sys
 import tempfile
 from _document_sync import source_hash, media_sources
 from _section import _iter_headings
+from _writing_contract import consumer_issues, review_files
 
 
 def read_record(path):
     text = Path(path).read_text(encoding='utf-8')
     blocks = re.findall(r'^```json\s*\n(.*?)^```\s*$', text, re.M | re.S)
     if len(blocks) != 1: raise ValueError('review-schema: exactly one JSON record required')
-    return json.loads(blocks[0])
+    record = json.loads(blocks[0])
+    if not isinstance(record, dict) or not isinstance(record.get('reviews'), list) or any(not isinstance(r, dict) for r in record['reviews']):
+        raise ValueError('review-schema: object with reviews array required')
+    return record
 
 
 def bound_inputs(source, review):
     record = read_record(review)
     base = Path(review).resolve().parent
     files = [str(Path(source).resolve()), str(Path(review).resolve())]
+    files += review_files(record, base)
     files += [str((Path(source).parent / ref).resolve()) for _, ref in media_sources(Path(source).read_text())]
     for field in ('pageEvidence',):
         files += [str((base / item['path']).resolve()) for item in record.get(field, [])]
@@ -41,14 +46,16 @@ def bound_inputs(source, review):
     return files
 
 
-def check(source, review, phase='final'):
+def check(source, review, phase='final', features=None, scope=None):
     record = read_record(review)
     text = Path(source).read_text(encoding='utf-8')
     issues = []
     expected = {str(Path(source).name): source_hash(source)}
     for _, ref in media_sources(text): expected[ref] = source_hash(Path(source).parent / ref)
+    if scope is not None:
+        expected['@scope'] = source_hash(scope)
     if record.get('inputs') != expected: issues.append('review-stale: 正文/图片版本与评审记录不一致')
-    afs = set(re.findall(r'(?<!\w)AF-\d+(?!\d)', text))
+    afs = set(re.findall(r'(?<!\w)AF-\d+(?!\d)', text)) if features is None else set(features)
     sections = {title for _, _, title in _iter_headings(text)}
     reviews = record.get('reviews', [])
     if {r.get('role') for r in reviews} != {'product', 'ux', 'qa'} or len(reviews) != 3:
@@ -62,6 +69,7 @@ def check(source, review, phase='final'):
     for finding in record.get('findings', []):
         if finding.get('severity') in ('P0', 'P1') and (finding.get('status') != 'CLOSED' or not finding.get('evidence')):
             issues.append('review-open: P0/P1 未关闭')
+    issues += consumer_issues(text, record, afs, Path(review).parent)
     if phase == 'final':
         base = Path(review).parent
         receipt = base / record.get('receipt', '')
@@ -109,12 +117,10 @@ def _boundary():
 def self_test():
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp); src = root / 'report.md'; review = root / 'review.md'
-        src.write_text('# Report\n\n## AF-001 Rename\nDetails.')
-        record = {'inputs': {'report.md': source_hash(src)}, 'reviews': [
-            {'role': role, 'actorType': 'agent', 'reviewer': 'synthetic-reviewer',
-             'reviewedAt': '2026-09-23', 'decision': 'APPROVED', 'rationale': 'Synthetic structural fixture only.',
-             'features': ['AF-001'], 'sections': ['Report', 'AF-001 Rename']}
-            for role in ('product', 'ux', 'qa')]}
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tests'))
+        from writing_fixtures import text_fixture, record_fixture
+        src.write_text(text_fixture('AF-001'))
+        record = record_fixture(root, src.read_text(), 'AF-001')
         review.write_text('```json\n' + json.dumps(record) + '\n```\n')
         cases = [('正例：pre-review record', not check(src, review, 'pre')),
                  ('反例：pre is not final', bool(check(src, review, 'final')))]
@@ -126,7 +132,7 @@ def self_test():
 
 def main():
     if '--self-test' in sys.argv: return self_test()
-    p = argparse.ArgumentParser()
+    p = argparse.ArgumentParser(allow_abbrev=False)
     p.add_argument('--source', required=True); p.add_argument('--review', required=True)
     p.add_argument('--phase', choices=['pre', 'final'], default='final')
     a = p.parse_args()

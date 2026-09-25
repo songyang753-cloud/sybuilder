@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "registryVersion": "2026-09-21.2",
+  "registryVersion": "2026-09-25.1",
   "description": "product-flow 的机器正本：模块、依赖、输出、门禁、运行别名与 HTML 完成度由本文件计算。文档负责解释，不再另抄一份可执行清单。",
   "claimOrder": [
     "exploration",
@@ -303,6 +303,13 @@
         "S4B"
       ],
       "gate": "requirements-quality-gate.py",
+      "ruleType": "required",
+      "gateKind": "machine"
+    },
+    {
+      "id": "R-S4B-CONSUMER",
+      "modules": ["S4B", "G7.5"],
+      "gate": "prd-quality-gate.py",
       "ruleType": "required",
       "gateKind": "machine"
     },
@@ -773,17 +780,20 @@
       "outputs": [
         "协作文档 PRD v0.9",
         "PRD.md 镜像",
-        "prd-backfill.md"
+        "prd-backfill.md",
+        "prd-review.md"
       ],
       "maxClaim": "module-approved",
       "outputKinds": {
         "协作文档 PRD v0.9": "external:所选飞书或钉钉原生文档，本地无模板；镜像用 prd-complete.md",
         "PRD.md 镜像": "template",
-        "prd-backfill.md": "template"
+        "prd-backfill.md": "template",
+        "prd-review.md": "template"
       },
       "outputTemplates": {
         "PRD.md 镜像": "templates/prd-complete.md",
-        "prd-backfill.md": "templates/prd-backfill.md"
+        "prd-backfill.md": "templates/prd-backfill.md",
+        "prd-review.md": "templates/prd-quality-review.md"
       },
       "track": "doc",
       "temperature": "anchored"

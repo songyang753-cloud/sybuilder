@@ -5,7 +5,7 @@
 不再共用一条互相覆盖）。
 
 ═══ 为什么需要它（OPP-09）═══
-本流水线有 46 道门禁（口径＝`_roster.gate_names()`，唯一正本）。
+本流水线有 47 道门禁（口径＝`_roster.gate_names()`，唯一正本）。
 ⚠️ 2026-09-10：这里曾长期写着「22 道」——**过期了六道而无人发现**，
    因为 `gate-count` 这条元规则当时**只扫 md，不扫脚本 docstring**。
    ⭐ 不是判据写错了，是**它没往这儿看**。量程已扩（脚本里只认「本流水线共 N 道」这类总数句式）。它们各自都能出声，**而声音落在终端里就没了**。
@@ -71,6 +71,7 @@ EXIT_SEMANTICS = {
     'ai-slop-gate.py': STD, 'audience-gate.py': STD, 'cdp-reuse-gate.py': STD,
     'serial-orchestration-gate.py': STD, 'spec-authoring-gate.py': STD, 'report-structure-gate.py': STD,
     'feishu-delivery-gate.py': STD, 'dingtalk-delivery-gate.py': STD, 'research-quality-gate.py': STD,
+    'prd-quality-gate.py': STD,
     'chain-gate.py': STD, 'consistency-gate.py': STD,
     'no-loss-gate.py': STD,
     'diagram-id-gate.py': STD,
@@ -188,6 +189,12 @@ def run(argv, root, adhoc=False):
     if not os.path.isfile(gate_path):
         die('门禁脚本不存在：%s' % gate_path)
     gate = os.path.basename(gate_path)
+    if not adhoc and any(a.split('=', 1)[0] in {'--self-test', '--help', '-h', '--list-rules'} for a in argv[1:]):
+        die('帮助、自证和规则列表不是产物验收；诊断请用 --adhoc')
+    if not adhoc and gate in ('research-quality-gate.py', 'prd-quality-gate.py'):
+        selectors = [a.split('=', 1)[0] for a in argv[1:] if a.startswith('--')]
+        if len(selectors) != len(set(selectors)) or any(a not in {'--source', '--review', '--scope', '--phase'} for a in selectors):
+            die('质量门正式输入参数不得重复或缩写；避免检查对象和证据绑定不一致')
     # 落盘键 = 脚本名[+子门号]。G2/G3 曾共用 reconcile-gate.py.json 互相覆盖 ——
     # 一条 PASS 顶两门（Codex 复审定为 P0 假阳性）。子门号进键，各留各的记录。
     sub = next((a for a in argv[1:] if re.match(r'^G\d[\d.]*$', a)), None)
@@ -203,8 +210,20 @@ def run(argv, root, adhoc=False):
             return default
         if not adhoc and gate == 'report-structure-gate.py' and option('--mode') != manifest.get('researchMode'):
             die('报告 mode 必须与当前计划 researchMode 一致；不能用旧摘要门代替正式深拆')
-        if not adhoc and gate == 'research-quality-gate.py' and option('--phase', 'final') != 'final':
-            die('发布前 pre 评审不能充当 S2 最终页面验收；调试请用 --adhoc')
+        if not adhoc and gate == 'traversal-coverage-gate.py':
+            selectors = [a.split('=', 1)[0] for a in argv[1:] if a.startswith('--')]
+            if len(selectors) != len(set(selectors)) or any(a not in {'--deep-tree', '--report', '--events', '--evidence-manifest', '--threshold'} for a in selectors):
+                die('正式遍历参数不得重复或缩写；实际执行与记录绑定必须一致')
+            if not option('--events') or not option('--evidence-manifest'):
+                die('正式遍历验收须同时提供事件账与证据清单；只有控件词出现不等于实测')
+            try:
+                full_coverage = float(option('--threshold', '1')) == 1.0
+            except (ValueError, TypeError):
+                full_coverage = False
+            if not full_coverage:
+                die('正式遍历验收须覆盖全部已发现控件；不得降低分母或阈值')
+        if not adhoc and gate in ('research-quality-gate.py', 'prd-quality-gate.py') and option('--phase', 'final') != 'final':
+            die('发布前 pre 评审不能充当研究/PRD 最终页面验收；调试请用 --adhoc')
         if not adhoc and gate == 'tech-research-gate.py' and not option('--post'):
             die('技术调研正式记录须 --post（内含 --pre 与全文/媒体回读）；本地检查请用 --adhoc')
         if not adhoc and gate == 'coverage_check.py' and '--design-only' in argv:

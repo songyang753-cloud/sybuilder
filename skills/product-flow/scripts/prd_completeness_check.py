@@ -31,7 +31,7 @@ import io, os, re, sys, json, tempfile, subprocess
 import _prd_parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _section import (section_at, section_or_table,   # noqa: E402  段落定位唯一正本
+from _section import (section_at, section_or_table, before_section,   # noqa: E402  段落定位唯一正本
                       _iter_headings)
 
 EXIT_OK, EXIT_GAP, EXIT_BAD = 0, 2, 3
@@ -81,19 +81,19 @@ def col_of(cols, *names):
 
 # ---------------------------------------------------------------- 第四章
 def ch4_sections(s):
-    """第四章逐功能：表格数据行数 + 逻辑列要点条数 + 原文（供三选一检查）"""
+    """逐功能正文（含下级小节）；数量仅用于诊断，不代替行为闭环。"""
     out = {}
-    parts = re.split(r'(?m)^### M: .*?/ (F-\d+): (.*)$', s)
-    for i in range(1, len(parts), 3):
-        fid, body = parts[i], parts[i + 2]
-        # ⚠️ 2026-09-10 复核这一处：它**不是**「全文定位一节」那一族 ——
-        #   `body` 已经是 `re.split(r'^### M: …/ (F-\d+):')` 切出来的**功能块**，
-        #   这里只是把块尾多余的部分掐掉。⭐ 但 `'\n## '` 这种写法仍认不出
-        #   缩进标题与 setext ⇒ 缩进写法下会**多吃**下一块的内容。
-        #   ⇒ 用正本的标题识别来找块内第一个标题行，边界语义不变。
-        _bl = body.split('\n')
-        _cut = next((ln for ln, _lv, _t in _iter_headings(body) if ln > 0), None)
-        body = '\n'.join(_bl[:_cut]) if _cut is not None else body
+    main = before_section(s, '附件 A')
+    lines, heads = main.splitlines(), list(_iter_headings(main))
+    for start, level, title in heads:
+        match = re.fullmatch(r'(?:M\s*[:：].*?/\s*)?(F-\d+)\s*(?:[:：]\s*|\s+)(.+)', title)
+        if not match or level not in (2, 3, 4):
+            continue
+        fid = match.group(1)
+        if fid in out:
+            raise ValueError('duplicate feature body: ' + fid)
+        end = next((ln for ln, lv, _ in heads if ln > start and lv <= level), len(lines))
+        body = '\n'.join(lines[start + 1:end])
         rows = [l for l in body.split('\n')
                 if l.startswith('|') and not re.match(r'^\|[\s\-:|]+\|$', l) and '| 页面 |' not in l]
         bullets = sum(l.count('<br>-') + (1 if re.search(r'\|\s*-\s', l) else 0) for l in rows)
@@ -144,7 +144,34 @@ def appendix(s, start, end=None):
 
 def appendix_feats(s, start, end):
     seg = appendix(s, start, end)
-    return None if seg is None else set(re.findall(r'F-\d+', seg))
+    if seg is None:
+        return None
+    # Only actual feature declarations/rows, never an incidental F reference.
+    from _writing_contract import meaningful, tables
+    covered = set()
+    for _cols, rows in tables(seg):
+        for row in rows:
+            values = list(row.values())
+            if '归属' in row and all(meaningful(v) for v in values):
+                covered.update(re.findall(r'(?<!\w)F-\d+(?!\d)', row['归属']))
+            if values and re.fullmatch(r'F-\d+', values[0]) and len(values) > 1 and all(meaningful(v) for v in values[1:]):
+                covered.add(values[0])
+    for line in seg.splitlines():
+        direct = re.match(r'^\s*(F-\d+)\s+(?:字段|文案|Toast|默认状态)[：: ](.+)', line)
+        if direct and meaningful(direct.group(2)):
+            covered.add(direct.group(1))
+    lines, heads = seg.splitlines(), list(_iter_headings(seg))
+    for line, level, title in heads:
+        declaration = re.match(r'^(F-\d+)\b', title)
+        if not declaration:
+            continue
+        end_line = next((n for n, lv, _ in heads if n > line and lv <= level), len(lines))
+        body = '\n'.join(lines[line + 1:end_line])
+        if any(rows and all(all(meaningful(v) for v in row.values()) for row in rows) for _, rows in tables(body)):
+            covered.add(declaration.group(1))
+        elif re.search(r'N/A\s*[：:]\s*\S.+', body):
+            covered.add(declaration.group(1))
+    return covered
 
 
 THREE_WAY = ("两端同一套交互", "降级版", "只在一端存在")
@@ -239,7 +266,12 @@ def check(path, min_rows=4, min_bullets=12, stage=None):
     thin = [f for f in thin if f not in missing4]
     r["stats"]["ch4_ok"] = len(feats) - len(set(thin) | set(missing4))
     if missing4: r["gaps"].append(("第四章缺整节", missing4))
-    if thin:     r["gaps"].append(("第四章颗粒度不足(<%d行或<%d要点)" % (min_rows, min_bullets), thin))
+    if thin:
+        r['na'].append('篇幅提示（不作质量判据）：%s；行为闭环和独立消费评审仍必跑' % ', '.join(thin))
+    from _writing_contract import behavior_issues
+    depth = behavior_issues(s, set(feats))
+    if depth:
+        r['gaps'].append(('逐功能行为闭环', depth))
 
     # 2-5 · 附件 A/D/E/F 逐功能覆盖
     APX = [("A 验收标准", '# 附件 A', '# 附件 B'), ("D 字段规格", '# 附件 D', '# 附件 E'),
@@ -255,6 +287,9 @@ def check(path, min_rows=4, min_bullets=12, stage=None):
             cov = None if seg is None else _prd_parse.features_with_ac(s, seg)
         else:
             cov = appendix_feats(s, a, b)
+            if label.startswith('E') and cov is not None:
+                # E is the authoritative branch table, validated above.
+                cov.update(feats if not depth else [])
         if cov is None:
             r["gaps"].append(("附件 %s 整节缺失" % label, ["<整节>"])); continue
         miss = [f for f in feats if f not in cov]
@@ -453,6 +488,12 @@ GOOD = """## 三、概要设计
 
 # 附件 A · 验收标准
 FR-011 所属 F-01。NFR-001 P95 ≤500ms 首屏 200ms 60fps。并发 100 QPS 排队。
+- AC-1 Given 已选照片 When 点击导入 Then 已导入照片出现在库中且源文件保留。
+- AC-2 Given 选择超过500张 When 尝试导入 Then 不创建任务，保留选择并提示500张上限，可调整后重试。
+- AC-3 Given 正在导入 When 单张不可读 Then 保留成功项及失败清单，显示失败文件原因，可只重试失败项。
+- AC-4 Given 正在导入 When 点击取消 Then 停止处理，保留已导入项，显示数量并返回照片库。
+- AC-5 Given 已选照片 When 读取权限被拒绝 Then 不写入该文件，提示授权或移除后重试。
+- AC-6 Given 正在导入 When 应用关闭 Then 保留成功项；重开显示未完成清单，重新选择未完成项后可继续。
 存储上限 20GB 磁盘。兼容 macOS 13 / Chrome 120 最低版本。
 NFR-A11Y-001 无障碍：全部交互键盘可达，对比度 ≥4.5:1，读屏可读。\nNFR-OBS-001 可观测性：关键路径结构化日志含 traceId，告警阈值已定。
 
@@ -468,6 +509,15 @@ F-01 字段：路径 string 必填。
 
 # 附件 E · 状态机
 F-01 空/加载/成功/失败/无权限/极值。
+
+| 功能 | 分支 | 前态 | 触发与条件 | 后态 | 数据结果 | 反馈 | 下一步 | 依据 |
+|---|---|---|---|---|---|---|---|---|
+| F-01 | normal | 已选照片 | 确认导入合法文件 | 导入完成 | 照片加入库，原片保留 | 显示导入数量 | END:返回照片库查看结果 | FR-011/AC-1 |
+| F-01 | boundary | 已选照片 | 超过500张 | 选择待调整 | 不创建导入任务，保留选择 | 显示500张上限 | F-01#normal | FR-011/AC-2 |
+| F-01 | failure | 正在导入 | 单张文件不可读 | 部分完成 | 保留成功项与失败清单 | 标明失败文件和原因 | F-01#normal | FR-011/AC-3 |
+| F-01 | cancel | 正在导入 | 点击取消 | 导入停止 | 保留已经导入项，未处理项不写入 | 展示已导入和取消数量 | END:返回照片库 | FR-011/AC-4 |
+| F-01 | permission | 已选照片 | 文件读取权限被拒绝 | 等待授权 | 不写入该文件 | 提示授权或移除该项 | F-01#normal | FR-011/AC-5 |
+| F-01 | interruption | 正在导入 | 应用关闭 | 导入停止 | 保留成功项，未完成项下次重新选择 | 重开后显示未完成清单 | F-01#normal | FR-011/AC-6 |
 
 # 附件 F · 文案规格
 F-01 Toast ≤18 字。
@@ -529,7 +579,8 @@ CASES = [
      GOOD.replace("两端同一套交互。", "**双端**。"), EXIT_GAP),
     ("反例5 缺无障碍 NFR", GOOD.replace("NFR-A11Y-001 无障碍：全部交互键盘可达，对比度 ≥4.5:1，读屏可读。\nNFR-OBS-001 可观测性：关键路径结构化日志含 traceId，告警阈值已定。", ""), EXIT_GAP),
     ("反例6 成本/规模列留空", GOOD.replace("| 否 | M |", "| 否 |  |"), EXIT_GAP),
-    ("反例7 第四章颗粒度不足", re.sub(r'\| 失败 \|.*\n', '', GOOD), EXIT_GAP),
+    ("正例7 表格较短但行为完整（数量不冒充质量）", re.sub(r'\| 失败 \|.*\n', '', GOOD), EXIT_OK),
+    ("反例7b 缺失败行为处置", re.sub(r'\| F-01 \| failure \|.*\n', '', GOOD), EXIT_GAP),
     # ⭐ 2026-09-01 变异审计：20 条判据里 **12 条变异存活** —— 其中 10 条**根本没有用例**，
     #    另 2 条（B.2 / NFR-AI）被同一个用例同时触发，谁都没被单独守住。
     #    ⚠️ 表格列的反例要连表头 + 分隔行 + 数据行一起改，只改表头会让解析器直接失配。

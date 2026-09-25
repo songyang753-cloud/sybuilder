@@ -91,7 +91,7 @@ def check(md):
             def _body_of(b):
                 return re.sub(r'任务[：:][^\n]*', '', b, count=1)
             noexit = [re.search(r'任务[：:](.{0,20})', b).group(1).strip() for b in blocks
-                      if not re.search(r'↳|失败|中断|回到', _body_of(b))]
+                      if not re.search(r'(?:失败|中断|取消|↳)[^\n]*(?:→|->|回到|返回|保留|重试|退出)[^\n\s。；]+', _body_of(b))]
             if noexit:
                 bad.append('② 有任务流没有失败/中断出路（逐条判，不共享失败词）：%s' % '、'.join(noexit))
     # ⚠️ 不用固定字符窗口（本仓第 N 次教训：窗口会吃进下一节的表）——切到下个标题
@@ -104,7 +104,7 @@ def check(md):
 
     def _row_real(r):
         cells = [c.strip().strip('*`') for c in r.strip().strip('|').split('|')]
-        return any(c and not _PH.match(c) for c in cells)
+        return len(cells) >= 2 and all(c and not _PH.match(c) for c in cells)
 
     data = [r for r in rows[2:] if r.replace('|', '').replace('-', '').strip()
             and not re.match(r'^\|\s*<', r.strip()) and _row_real(r)]
@@ -112,6 +112,8 @@ def check(md):
         bad.append('③ 没有「权限矩阵」段')
     elif not data:
         bad.append('③ 权限矩阵没有一行真实内容')
+    elif any(not _row_real(row) for row in rows[2:] if set(row.strip()) - set('|:- ')):
+        bad.append('③ 权限矩阵存在未决定的角色格；每格须明确允许/拒绝/有条件及依据')
     # 🚨🚨 2026-09-09 第五轮独立复核抓到的**最严重一处**：起点是
     #   `md.find('状态与异常结构')`，于是正文里一句
     #     > 本文的状态与异常结构一节见文末。
@@ -427,7 +429,7 @@ def _self_test():
     chk('反例②：任务流无失败出路 → 1', run(GOOD.replace('       ↳ 失败：AI 置信度低，回到人工挑片\n', '')) == 1)
     _EXIT = '       ↳ 失败：AI 置信度低，回到人工挑片\n'
     _T2_NOEXIT = _EXIT + '任务：批量导出成片\n入口 → 选目标 → 导出完成\n'
-    _T2_EXIT = _T2_NOEXIT + '       ↳ 中断：断网后可续传\n'
+    _T2_EXIT = _T2_NOEXIT + '       ↳ 中断：保留已传片段，返回导出进度页重试未传片段\n'
     chk('反例②b：两条任务只有一条有出路 → 1（曾经整段一个失败词替所有任务背书）',
         run(GOOD.replace(_EXIT, _T2_NOEXIT)) == 1)
     chk('正例②c：两条任务各有出路 → 0（逐条判不是过度严判）',

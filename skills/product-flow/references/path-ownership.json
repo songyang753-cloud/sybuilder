@@ -54,6 +54,15 @@
       "skills/product-flow/scripts/reverse-test.py",
       "skills/product-flow/templates/proto/README.md",
       "skills/product-flow/references/evidence-first-writing.md",
+      "skills/product-flow/scripts/_writing_contract.py",
+      "skills/product-flow/scripts/_prd_parse.py",
+      "skills/product-flow/scripts/product-structure-gate.py",
+      "skills/product-flow/tests/fixtures/filled/product-structure.md",
+      "skills/product-flow/scripts/prd-quality-gate.py",
+      "skills/product-flow/templates/prd-quality-review.md",
+      "skills/product-flow/tests/test_delivery_depth.py",
+      "skills/product-flow/tests/test_writing_contract.py",
+      "skills/product-flow/tests/writing_fixtures.py",
       "skills/product-flow/templates/examples/report-writing/**",
       "skills/product-flow/scripts/_approval.py",
       "skills/product-flow/scripts/_delivery_check.py",
@@ -118,6 +127,8 @@
       "skills/product-flow/tests/fixtures/filled/s9-quality-report.md"
     ],
     "shared": [
+      "skills/product-flow/scripts/prd_completeness_check.py",
+      "skills/product-flow/tests/fixtures/filled/PRD.md",
       "skills/four-node-review/SKILL.md",
       "skills/four-node-review/agent-evaluation/MODULE.md",
       "skills/four-node-review/agent-evaluation/run.py",
@@ -250,6 +261,7 @@
     ]
   },
   "_shared_note": [
+    "2026-09-25 用户要求 Codex 按已批准的稳定质量方案逐项实施并总复审。本批为现有 PRD 完备度检查与其教学夹具增加精确 shared 路径，保留 Claude 原主责；新增消费检查/回归归 Codex。不追溯抹除历史越权。修改理由和未验证边界见 docs/change-notes/2026-09-25-stable-document-quality.md。",
     "2026-09-24 用户指定 Codex 在最新版本上实施已确认的细粒度研究/PRD写作方案。保留 Claude 新增 tech-approach 原职责与判据，仅为其补入共享写作循环和安全增量更新说明，两条精确路径并列登记 shared；新写作参考和教学示例归 Codex。范围与验证边界见 docs/change-notes/2026-09-24-evidence-first-writing.md。",
     "2026-09-23 用户批准 R1–R10 恢复与文档质量整改，并明确由 Codex 逐项修改后复核/发布。为本次跨模块修复补登记套件发布面、样例与下游图/发布门的精确 shared 路径，保留原 Claude/Codex 主责，不追溯改写历史。原因及逐路径清单见 docs/change-notes/2026-09-23-restoration.md；该公开说明目录不含私有会话、账号或运行日志，不替代旧 .proposals 的历史记录。",
     "⭐ shared 的初始承重文件是 2026-09-12 **实测**出来的重叠，不是拍脑袋列的；后续控制面按交接记录补入：",

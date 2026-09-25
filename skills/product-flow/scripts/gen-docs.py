@@ -76,7 +76,7 @@ def render(spec):
     if pe:
         L += ['### 逐条重复块', '',
               '- **标题格式**：`%s`' % pe.get('headingFormat', ''),
-              '- **每块下限**：表格数据行 ≥ %s · 要点 ≥ %s' % (pe.get('minTableRows'), pe.get('minBullets'))]
+              '- **%s**：表格数据行 %s · 要点 %s' % ('篇幅诊断参考（非放行门槛）' if pe.get('countIsDiagnostic') else '每块下限', pe.get('minTableRows'), pe.get('minBullets'))]
         for k in ('note', 'rowsNote', 'bulletsNote', 'designLinkNote'):
             if pe.get(k):
                 L.append('- %s' % pe[k])

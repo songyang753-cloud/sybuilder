@@ -158,19 +158,19 @@ class Contracts(unittest.TestCase):
 
     def test_quality_final_requires_bound_pages_and_current_receipt(self):
         gate=load('remediation_quality',S/'research-quality-gate.py')
-        source=self.root/'report.md';source.write_text('# Report\n## AF-001 Create\nDetailed behavior')
-        sections=['Report','AF-001 Create']
+        sys.path.insert(0, str(S.parent / 'tests'))
+        from writing_fixtures import text_fixture, record_fixture
+        source=self.root/'report.md';source.write_text(text_fixture('AF-001'))
+        record=record_fixture(self.root, source.read_text(), 'AF-001')
+        sections=record['reviews'][0]['sections']
         shutil.copy(GOLD/'shot.png',self.root/'page.png')
         receipt={'receiptSchema':'2.0','adapter':{'name':'doc-sync-guard.readback'},'environment':'live',
                  'nativeVersion':'v1','sourceHash':source_hash(source),'artifactRef':'synthetic-doc'}
         receipt_path=self.root/'receipt.json';receipt_path.write_text(json.dumps(receipt))
-        record={'inputs':{'report.md':source_hash(source)},'reviews':[
-            {'role':role,'actorType':'agent','reviewer':'synthetic-'+role,'reviewedAt':'2026-09-23',
-             'decision':'APPROVED','rationale':'Synthetic schema test, not live approval',
-             'features':['AF-001'],'sections':sections} for role in ('product','ux','qa')],
+        record.update({
             'receipt':'receipt.json','document':'synthetic-doc','nativeVersion':'v1',
             'pageSections':sections,'pageEvidence':[{'path':'page.png','sha256':source_hash(self.root/'page.png'),'nativeVersion':'v1','sections':sections}],
-            'visualDecision':'APPROVED','visualRationale':'Synthetic record only'}
+            'visualDecision':'APPROVED','visualRationale':'Synthetic record only'})
         review=self.root/'review.md'
         def save():review.write_text('```json\n'+json.dumps(record)+'\n```\n')
         # Isolate page/version checks; real receipt authenticity is covered by receipt-check.

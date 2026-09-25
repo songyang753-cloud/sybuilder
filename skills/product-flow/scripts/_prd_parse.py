@@ -15,9 +15,11 @@
 
 ═══ 统一判据 ═══
 「某功能有验收标准」= 附件 A 里存在一条 **FR/NFR 标题**（`##`~`####` 任意层级），
-且其「所属」字段指向该功能。松紧都不取，取**契约本身**。
+且其「所属」字段指向该功能，并至少有一条具体的条件/操作/预期 AC。
+条件可在同一 FR 的 Given/When/Then 框架共用，或在每条 AC 内独立说明。
 """
 import re
+from _section import _iter_headings, _blank_fenced
 
 # ⭐ 判据锚在**结构**上，不锚在 markdown 层级上。
 # 起因：同一个 skill 里 FR 有三种写法并存 ——
@@ -52,15 +54,13 @@ def appendix(text, start='# 附件 A', end='# 附件 B'):
     「None ≠ 空段，调用方要能分辨」，而调用方第一行就是 `appendix(text) or ''`
     ——**契约写对了，执行方立刻把它抹平了**。
     """
-    try:
-        i = text.index(start)
-    except ValueError:
-        return None                      # 连附件 A 都没有 —— 这才是真的「没有」
-    try:
-        j = text.index(end, i)
-    except ValueError:
-        j = len(text)                    # 附件 A 是最后一节，合法
-    return text[i:j]
+    heads = list(_iter_headings(text))
+    start_title, end_title = start.lstrip('# '), end.lstrip('# ')
+    hit = next((ln for ln, _, title in heads if re.match(re.escape(start_title) + r'(?:\s|[·：:]|$)', title)), None)
+    if hit is None:
+        return None
+    last = next((ln for ln, _, title in heads if ln > hit and re.match(re.escape(end_title) + r'(?:\s|[·：:]|$)', title)), len(text.splitlines()))
+    return '\n'.join(_blank_fenced(text).splitlines()[hit:last])
 
 
 def fr_owners(text, seg=None):
@@ -114,9 +114,48 @@ def ac_pairs(text, seg=None):
     return out
 
 
+def acceptance_records(text, seg=None):
+    """Return executable (FR, AC) -> owner records, not arbitrary mentions."""
+    source = seg if seg is not None else (appendix(text) or '')
+    owners = fr_owners(text, source)
+    records, current, frame, seen_ac = {}, None, [], False
+    def concrete(value):
+        value = re.sub(r'[`*_]', '', value).strip(' ：:。\n')
+        return bool(value) and not re.search(r'<[^>]+>|⟨TODO⟩|\b(?:TBD|TODO)\b|待补|待定', value, re.I) and value not in ('执行操作', '完成任务', '按常规处理', '具体验收条件')
+
+    def scenario(value):
+        clean = re.sub(r'[`*_]', '', value)
+        match = re.search(r'(?:\bGiven\b|给定|前提)[：:\s]*(.+?)(?:\bWhen\b|当|执行)[：:\s]*(.+?)(?:\bThen\b|则|应)[：:\s]*(.+)', clean, re.I | re.S)
+        return bool(match and all(concrete(part) for part in match.groups()))
+
+    lines = source.splitlines()
+    for index, line in enumerate(lines):
+        declaration = FR_DECL.match(line)
+        if declaration and OWNER.search(declaration.group(2)):
+            current = declaration.group(1)
+            frame, seen_ac = [], False
+        elif line.lstrip().startswith('#') and declaration:
+            current = None
+        elif line.lstrip().startswith('#'):
+            current = None
+        if AC_ITEM.match(line) and current:
+            seen_ac = True
+            tail = index + 1
+            while tail < len(lines) and not AC_ITEM.match(lines[tail]) and not FR_DECL.match(lines[tail]) and not lines[tail].lstrip().startswith('#'):
+                tail += 1
+            body = AC_ITEM.sub('', '\n'.join(lines[index:tail]), count=1)
+            if concrete(body) and (scenario(body) or scenario('\n'.join(frame))):
+                owner = owners.get(current)
+                if owner:
+                    records[(current, AC_ITEM.match(line).group(1))] = owner
+        elif current and not declaration and not seen_ac:
+            frame.append(line)
+    return records
+
+
 def features_with_ac(text, seg=None):
-    """→ 附件 A 里**真的有验收标准**的功能集合（所属为 F-xx 的那些）。"""
-    return {v for v in fr_owners(text, seg).values() if v and v != '全局'}
+    """Ownership alone is not acceptance: require a condition/action/result AC."""
+    return set(acceptance_records(text, seg).values()) - {'全局'}
 
 
 def self_test():
@@ -128,8 +167,9 @@ def self_test():
         print(('  ✓ ' if cond else '  ✗ ') + name)
         ok = ok and cond
 
-    two = "# 附件 A\n## FR-011　所属 F-01　MUST\n正文\n# 附件 B"
-    three = "# 附件 A\n### FR-101　所属 F-01　MUST\n正文\n# 附件 B"
+    ac = '- AC-1 Given 名称为空 When 点击创建 Then 不创建条目并提示必填。'
+    two = "# 附件 A\n## FR-011　所属 F-01　MUST\n" + ac + "\n# 附件 B"
+    three = "# 附件 A\n### FR-101　所属 F-01　MUST\n" + ac + "\n# 附件 B"
     mention = "# 附件 A\n本条与 F-01 无关，仅作说明。\n# 附件 B"
     glob_ = "# 附件 A\n## NFR-A11Y-001　所属 全局　MUST\n# 附件 B"
 
@@ -139,7 +179,7 @@ def self_test():
         features_with_ac(mention) == set())
     chk("所属「全局」的 NFR 不算某个功能的验收标准", features_with_ac(glob_) == set())
     chk("NFR-A11Y-001 这类带字母段的编号解析得出", 'NFR-A11Y-001' in fr_owners(glob_))
-    plain = "# 附件 A\nFR-011 所属 F-01。NFR-001 P95 ≤500ms。\n# 附件 B"
+    plain = "# 附件 A\nFR-011 所属 F-01。NFR-001 P95 ≤500ms。\n" + ac + "\n# 附件 B"
     chk("纯文本写法认得出（本 skill 自证夹具就是这种，第三种格式）",
         features_with_ac(plain) == {'F-01'})
     chk("所属值尾随的中文句号要剥掉（`所属 F-01。` → F-01，不是 'F-01。'）",
@@ -179,7 +219,7 @@ def self_test():
     #    ⭐⭐ 更该记的是：`appendix` 的 docstring 从第一天就写着「None ≠ 空段，
     #        调用方要能分辨」，而调用方第一行就把这个区别抹平了 ——
     #        **契约写对了不等于有人守它。**
-    tail = ("# 附件 A\n### FR-011　所属 F-01　MUST\n- **AC-1** 附件 A 就是最后一节\n")
+    tail = ("# 附件 A\n### FR-011　所属 F-01　MUST\n" + ac + "\n")
     chk("附件 A 是最后一节（没有附件 B）时也要解析得出",
         ac_ids(tail) == ['AC-1'] and features_with_ac(tail) == {'F-01'})
     chk("附件 B 之后的内容不许被吃进附件 A",
@@ -190,7 +230,7 @@ def self_test():
     # ⭐ 2026-09-04：可追溯矩阵把 FR 放第一列时，那一行会被 FR_DECL 匹配到
     #    且不带「所属」—— 此前它**把标题声明的所属抹成 None**，
     #    于是一份完整 PRD 的附件 A 覆盖率归零。
-    dup = ("# 附件 A\n### FR-011　所属 F-01　MUST\n- **AC-1** 甲\n"
+    dup = ("# 附件 A\n### FR-011　所属 F-01　MUST\n" + ac + "\n"
            "## 可追溯矩阵\n| FR | 功能 | 场景 |\n|---|---|---|\n"
            "| FR-011 | F-01 | f01-empty |\n# 附件 B")
     chk("可追溯矩阵里再提一次 FR（不带所属）不许抹掉标题里声明的所属",
@@ -200,6 +240,10 @@ def self_test():
                 "| FR-099 | F-09 |\n# 附件 B")
     chk("只在矩阵里出现、从没声明过所属的 FR 仍是 None（修复不许变成瞎猜）",
         fr_owners(only_tbl).get('FR-099', 'MISSING') is None)
+    chk('只有 FR 所属、不含可执行 AC 不算覆盖',
+        not features_with_ac('# 附件 A\n## FR-001 所属 F-01 MUST\n说明。'))
+    chk('空泛 AC 不算覆盖',
+        not features_with_ac('# 附件 A\n## FR-001 所属 F-01 MUST\n- AC-1 功能正常。'))
     return ok
 
 

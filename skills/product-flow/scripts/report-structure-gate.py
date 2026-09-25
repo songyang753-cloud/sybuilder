@@ -169,7 +169,7 @@ def check_teardown(src, ledger_path=None, manifest_path=None, events_path=None):
                 bad.append(('body-evidence-mismatch', '%s 索引证据与该功能正文配图不一致' % af))
             required_body = [
                 ('角色/入口/前置', r'角色|入口|前置'), ('对象/字段/规则', r'对象|字段|规则|默认值|校验'),
-                ('一个动作', r'动作'), ('状态变化', r'状态变化|before\s*→\s*after'),
+                ('一个动作', r'动作'), ('状态变化', r'状态变化|before\s*→\s*after|前态[^\n]*后态'),
                 ('结果与反馈', r'结果|反馈'), ('失败与恢复', r'失败|异常|恢复|重试|回退|取消'),
                 ('下游输入', r'PRD|设计|交互|技术|算法|测试'),
             ]
@@ -179,10 +179,12 @@ def check_teardown(src, ledger_path=None, manifest_path=None, events_path=None):
             if grade == 'verified' and (not re.search(r'<!--\s*evidence:SHOT-\d+', body) or not re.search(r'!\[[^\]]*SHOT-\d+', body)):
                 bad.append(('feature-body-shot', '%s 正文没有邻接真实截图及机器锚点' % af))
             prose = re.sub(r'[`#|<>!*_\-\s\d.:/]+', '', body)
-            if len(prose) < 100:
-                bad.append(('feature-body-thin', '%s 正文有效文字过薄（%d字符）；索引值不能冒充说明' % (af, len(prose))))
+            if not prose.strip():
+                bad.append(('feature-body-thin', '%s 没有正文说明；索引值不能冒充说明' % af))
     if not rows:
         bad.append(('no-body-index', '缺最细功能正文索引数据行；树图/清单不能替代正文'))
+    from _writing_contract import behavior_issues
+    bad.extend(('behavior-closure', issue) for issue in behavior_issues(src, report_ids, research=True))
     for _line, _level, title in _iter_headings(before_section(src, '最细功能正文索引')):
         ids = set(re.findall(r'(?<!\w)AF-\d+(?!\d)', title))
         if len(ids) > 1:
@@ -287,7 +289,7 @@ def self_test():
         manifest = os.path.join(d, 'evidence.json')
         events = os.path.join(d, 'events.json')
         io.open(events, 'w').write(json.dumps({'events': [{'id': 'EVENT-001', 'classification': 'verified',
-            'evidenceId': 'SHOT-001', 'beforeState': 'idle', 'action': 'create', 'afterState': 'done', 'result': 'created'}]}))
+            'evidenceId': 'SHOT-001', 'beforeState': 'closed', 'action': 'view', 'afterState': 'open', 'result': 'fixed list visible'}]}))
         io.open(manifest, 'w').write(json.dumps({'evidence':[{'id':'SHOT-001','sourcePath':'shot.png','anchor':'功能A'}]}, ensure_ascii=False))
         ledger = os.path.join(d, 'ledger.md')
         io.open(ledger, 'w').write('## 功能分解词典\n| AF | 名称 |\n|---|---|\n| `AF-001` | 功能A |\n')
@@ -299,20 +301,23 @@ def self_test():
 主路径；失败/异常路径；重试恢复。
 ## 功能全景与逐功能正文
 ### 4.1.1 AF-001 功能A
-AF-001 的角色、入口与前置：编辑者从首页进入功能A，在账号已登录并有编辑权限时处理目标对象。
-对象、字段、默认值与校验规则均在此说明；用户执行一个创建动作，状态变化是空闲→完成，结果与反馈为成功提示。
-若发生失败或异常，用户可以重试、取消或回退恢复；这会形成 PRD、设计交互、技术和测试的下游输入。
-这一段继续解释边界、为什么拆到这里，以及相邻能力为何属于另一个独立功能，确保不是只有索引表格的空壳正文。<!-- evidence:SHOT-001 -->
+本合成夹具的角色、入口与前置：任何本地使用者从首页点击功能A，不需要账号或编辑权限。
+对象是随页面预置的固定条目，字段仅名称；规则是不接收输入、无可编辑默认值和校验。一个查看动作从列表关闭切换为打开，反馈为条目名称，数据不变。
+取消、失败与中断均不适用：此夹具没有请求、输入或异步任务，关闭只回到首页，不需要数据恢复。这些范围限制是 PRD、设计交互、技术和测试的下游输入，不能推断真实产品具备同样行为。<!-- evidence:SHOT-001 -->
 ![SHOT-001｜功能A成功态](<@./shot.png>)
 ## 最细功能正文索引
 | AF | 功能路径 | 用户目标 | 入口与前置 | 一个动作 | 规则/字段 | 状态与反馈 | 失败恢复 | 证据 | 正文小节 | PRD/设计/技术/测试输入 | 证据等级 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| `AF-001` | 工作/创建/功能A | 完成A | 首页且已登录 | 点击创建 | 名称必填 | 空闲→完成，显示成功 | 失败可重试 | EVENT-001 / SHOT-001 | AF-001 功能A | FR-1 / UI-1 / TECH-1 / TEST-1 | verified |
+| `AF-001` | 首页/查看/功能A | 阅读固定条目 | 首页且无账号要求 | 点击查看 | 固定只读名称，无输入 | 关闭→打开，展示名称 | 无请求，关闭回到首页 | EVENT-001 / SHOT-001 | AF-001 功能A | FR-1 / UI-1 / TECH-1 / TEST-1 | verified |
 ## 设计与交互
 ## 状态、异常与恢复
 ## 反向规格与下游输入
 ## 方法与来源
 '''
+        # Explicitly synthetic branch fixture, not a claim about a real product.
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tests'))
+        from writing_fixtures import behavior_table
+        good = good.replace('## 最细功能正文索引', behavior_table('AF-001') + '\n## 最细功能正文索引')
         report = os.path.join(d, 'good.md'); io.open(report, 'w').write(good)
         case('完整单品正文通过', main(report, 'teardown', ledger, manifest, events), 0)
         shallow = os.path.join(d, 'shallow.md'); io.open(shallow, 'w').write('\n'.join('# '+x[0] for x in TEARDOWN_REQUIRED) + '\n![SHOT-001](<@./shot.png>)')

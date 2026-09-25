@@ -27,11 +27,11 @@ from _workflow import load_active_run, gate_result_dir, required_rule_ids
 from _module_contract import issue_result
 
 class BindingTests(unittest.TestCase):
-    def activate(self, root, mode='only', research='full-research'):
+    def activate(self, root, mode='only', research='full-research', module='research'):
         opts = ['plan', '--root', str(root), '--mode', mode, '--run-id', 'BINDING',
                 '--research-mode', research, '--write']
-        if mode == 'only': opts += ['--modules', 'research']
-        if mode == 'from': opts += ['--from', 'research']
+        if mode == 'only': opts += ['--modules', module]
+        if mode == 'from': opts += ['--from', module]
         planner._plan(planner.parser().parse_args(opts))
         return load_active_run(str(root), required=True)[0]
 
@@ -84,6 +84,32 @@ class BindingTests(unittest.TestCase):
                     self.assertEqual(gate.run([str(S/'tech-research-gate.py'), '--post', str(root)], str(root)), 2)
                 self.assertEqual(self.verdict(root, 'tech-research-gate.py', 1), 'UNABLE')
 
+    def test_prd_quality_required_for_full_only_and_resume(self):
+        for mode in ('full', 'from', 'only'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as tmp:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    manifest = self.activate(Path(tmp), mode=mode, module='prd')
+                self.assertIn('prd-quality-gate.py', manifest['requiredGates'])
+                self.assertIn('R-S4B-CONSUMER', required_rule_ids(manifest, 'prd-quality-gate.py'))
+
+    def test_formal_review_rejects_diagnostic_and_phase_bypasses(self):
+        attacks = [
+            ['--phase', 'pre'], ['--phase=pre'], ['--self-test'], ['--help'],
+            ['--phase', 'final', '--phase', 'pre'],
+            ['--phase=final', '--phase=pre'], ['--pha', 'final'],
+        ]
+        for script, module in (('prd-quality-gate.py', 'prd'), ('research-quality-gate.py', 'research')):
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    self.activate(root, module=module)
+                    for args in attacks:
+                        with self.subTest(script=script, args=args), patch.object(gate, 'run_child') as child:
+                            with self.assertRaises(SystemExit) as exc:
+                                gate.run([str(S/script)] + args, str(root))
+                            self.assertEqual(exc.exception.code, 2)
+                            child.assert_not_called()
+
     def test_real_report_gate_rejects_missing_body_after_valid_receipt(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -100,5 +126,19 @@ class BindingTests(unittest.TestCase):
                 self.assertEqual(self.verdict(root, 'report-structure-gate.py', 2), 'INVALID-BINDING')
                 self.assertNotEqual(gate.run(args, str(root)), 0)
                 self.assertEqual(self.verdict(root, 'report-structure-gate.py', 3), 'FAIL')
+
+    def test_formal_traversal_cannot_omit_events_or_lower_coverage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.activate(root, research='teardown')
+                for args in ([], ['--events', 'events.json'],
+                             ['--events', 'events.json', '--evidence-manifest', 'evidence.json', '--threshold=1', '--threshold=0.9'],
+                             ['--events', 'events.json', '--evidence-manifest', 'evidence.json', '--threshold', '0.9']):
+                    with self.subTest(args=args), patch.object(gate, 'run_child') as child:
+                        with self.assertRaises(SystemExit) as exc:
+                            gate.run([str(S/'traversal-coverage-gate.py')] + args, str(root))
+                        self.assertEqual(exc.exception.code, 2)
+                        child.assert_not_called()
 
 if __name__ == '__main__': unittest.main()

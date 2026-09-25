@@ -502,7 +502,7 @@ def r_tpl_gate(root):
     #   类别与尾部 ID 列表之间是列对齐的连续空格 ⇒ 按「2+ 空格」切，保住完整类别名。
     got = {re.split(r'\s{2,}', ln.strip().lstrip('· ').strip())[0]
            for ln in r.stdout.splitlines() if ln.startswith('  · ')}
-    BASE = {"第四章缺整节",
+    BASE = {"第四章缺整节", "逐功能行为闭环",  # 附件 E 已有行为表；未填的模板本来就不能通过
             "附件 A 验收标准 未覆盖", "附件 D 字段规格 未覆盖",
             "附件 E 状态机边界 未覆盖", "附件 F 文案规格 未覆盖",
             "全局 NFR 缺类别",
@@ -1546,6 +1546,7 @@ GATE_TEMPLATE_PAIRS = (
 # 显式豁免表 —— 与配对表互补，**合起来必须覆盖每一道门禁**（规则 gate-pairing-declared）。
 # ⛔ 豁免不是「先欠着」，是「已经决定不配，理由在此」；空理由不算豁免。
 GATE_PAIRING_EXEMPT = {
+    'prd-quality-gate.py': '跨 PRD/上游范围/独立消费记录/原生平台回执验收；模板 prd-quality-review.md，tests/test_writing_contract.py 覆盖正例、假覆盖、过期批准与 final 不可被 pre 顶替',
     'tech-research-gate.py':   '验报告实例结构（scope.md 声明的编号/图/摘录/口径），不读模板骨架——模板 2.N 为占位形态不可判；自证内建正例+三类反例夹具',
     'research-quality-gate.py': '跨报告/图片/平台回执/三角色评审做版本对账；模板 research-quality-review.md，自证与 test-remediation-contracts.py 覆盖空评审和版本失效',
     'audience-gate.py':        '吃**任意交付文档**（竞品分析/PRD/设计稿/交互稿），不绑单一模板；'
