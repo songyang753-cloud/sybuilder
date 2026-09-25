@@ -56,6 +56,7 @@
       "skills/product-flow/references/evidence-first-writing.md",
       "skills/product-flow/scripts/_writing_contract.py",
       "skills/product-flow/scripts/reconcile-gate.py",
+      "skills/product-flow/scripts/platform-parity-gate.mjs",
       "skills/product-flow/scripts/_prd_parse.py",
       "skills/product-flow/scripts/product-structure-gate.py",
       "skills/product-flow/tests/fixtures/filled/product-structure.md",

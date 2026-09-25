@@ -600,12 +600,26 @@ async function selfTest() {
   }
   {
     // 🚨 读不到的样式表（远程 CDN）⇒ **没量到(2)**，不许当成「没有 safe-area」报红(1)。
+    // Use a local HTTP 404: the external stylesheet is still unreadable, but
+    // DNS/proxy delays must not block rendering before the criterion is reached.
+    const { createServer } = await import('node:http');
+    const server = createServer((_request, response) => {
+      response.writeHead(404); response.end();
+    });
+    await new Promise((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', resolve);
+    });
     const f = w('remote.html',
-      '<link rel="stylesheet" href="https://example.invalid/x.css">' +
+      '<link rel="stylesheet" href="http://127.0.0.1:' + server.address().port + '/x.css">' +
       OK.slice(OK.indexOf('</style>') + 8));
     let got;
     try { got = await run(f, ['#/'], { fpMax: 0.9, minForks: 3, declared: {} }, true); }
-    catch { got = 9; }
+    catch (error) { got = 9; console.error('CSS fixture execution failed: ' + error.message); }
+    finally {
+      server.closeAllConnections();
+      await new Promise(resolve => server.close(resolve));
+    }
     const g = got === 2; ok = ok && g;
     console.log(`  ${g ? '✅' : '❌'} ${'反例 样式表读不到 → 没量到(2) 不是缺陷(1)'.padEnd(38)} 期望 2 实得 ${got}`);
   }

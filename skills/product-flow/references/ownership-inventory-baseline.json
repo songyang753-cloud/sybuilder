@@ -38,7 +38,6 @@
     "skills/product-flow/scripts/intent-gate.py",
     "skills/product-flow/scripts/interaction-gate.py",
     "skills/product-flow/scripts/mock-seam-gate.mjs",
-    "skills/product-flow/scripts/platform-parity-gate.mjs",
     "skills/product-flow/scripts/requirements-quality-gate.py",
     "skills/product-flow/scripts/scenario-matrix-gate.mjs",
     "skills/product-flow/scripts/spec-sync-gate.py",

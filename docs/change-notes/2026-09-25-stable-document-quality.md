@@ -45,6 +45,8 @@
 
 第二次诊断性全量的两条失败保留：协作反例误用本批已授权共享的路径，已改回真正独占路径并通过全部 21 条自证；平台一致性检查的一条浏览器子进程测试发生异常，单独完整重跑通过，仍需冻结全量重跑确认，不能删去初次失败。
 
+冻结预跑再次复现样式表反例异常，正式入口复测得到 `CDP timeout: Runtime.evaluate`，并非预期的缺样式判断。该自证原本依赖 `example.invalid` 请求及时失败，改为本机临时 HTTP 服务明确返回 404；仍经真实浏览器执行、仍要求退出码 2，不改生产判据、不把异常 9 改算通过。服务在 finally 中关闭；异常保留真实原因。章节提示改名同时对齐模板缺口集合的两个旧标签，集合数量与意义不变。
+
 额外渲染旧业务流程 D2 示例时，SVG 校验报告连线与容器相交；用基线 `46d4d77` 原文件和同一渲染器复现相同失败。它不是本批数字标签改动导致，也未靠放宽校验处理；保留为既有示例兼容性问题。内置制图器的结构化输入及自身回归另行验证，不能与这张旧示例混称“所有图均通过”。
 
 ## 独立正向试写的实际观察
@@ -77,7 +79,7 @@
 - 教学切片 `templates/examples/report-writing/prd-slice.md`、`research-domain.md` 增加当前正式模板及记录格式指向，明确解释深度样章不等于完整阶段交付，防止旧简写格式误导执行者。
 - 下游回灌路由：`reconcile-gate.md`、`interaction-spec.md`、`product-structure.md`、`s7-figma.md`、`s5-s6-design.md` 及主入口/SOP 的现行指令，把旧 PRD 第四章、3.2 功能清单对齐到现模板第七章、6.2；不改历史事故记录或旧函数名。
 - 规格与目录：`s4-prd.json`、`_writing-contract.json`、`gen-docs.py`、`prd-structure.md`、`consistency-gate.py`、`design-quality-gates.md`、`iron-rules.md`、`substance-over-theater.md`、`business-process.example.d2`、`functional-architecture.example.d2`、`product-architecture.example.d2`，对齐新门禁及诊断口径，数字按实际测量同步。
-- 协作与保留：`path-ownership.json` 登记本次职责；`ownership-inventory-baseline.json` 仅减去本次已经认领的四个孤儿，不放宽上限；`no-loss-renames.md` 保留旧义务到新实现的直接映射，`no-loss-baseline.json` 未改。新认领的 `reconcile-gate.py` 仅修复标题解析复用与现行章节提示。
+- 协作与保留：`path-ownership.json` 登记本次职责；`ownership-inventory-baseline.json` 仅减去本次已经认领的五个孤儿，不放宽上限；`no-loss-renames.md` 保留旧义务到新实现的直接映射，`no-loss-baseline.json` 未改。新认领的 `reconcile-gate.py` 修复标题解析复用与现行章节提示；`platform-parity-gate.mjs` 仅使既有浏览器自证不依赖公网失败时序。
 - `references/.selftest-measured.json` 只由真实全量运行生成；随复跑更新，不手改失败、跳过或通过统计。
 - `coordination-gate.py` 的 A2 反例继续验证“不得修改对方独占路径”，目标从本次已授权共享的 PRD 检查改为仍独占的 `ci-unable-baseline.json`；不修改判据或允许未授权路径。
 

@@ -502,11 +502,11 @@ def r_tpl_gate(root):
     #   类别与尾部 ID 列表之间是列对齐的连续空格 ⇒ 按「2+ 空格」切，保住完整类别名。
     got = {re.split(r'\s{2,}', ln.strip().lstrip('· ').strip())[0]
            for ln in r.stdout.splitlines() if ln.startswith('  · ')}
-    BASE = {"第四章缺整节", "逐功能行为闭环",  # 附件 E 已有行为表；未填的模板本来就不能通过
+    BASE = {"第七章缺整节", "逐功能行为闭环",  # 附件 E 已有行为表；未填的模板本来就不能通过
             "附件 A 验收标准 未覆盖", "附件 D 字段规格 未覆盖",
             "附件 E 状态机边界 未覆盖", "附件 F 文案规格 未覆盖",
             "全局 NFR 缺类别",
-            "双端功能未在第四章回答三选一（两端同一套交互/降级版/只在一端存在）"}
+            "双端功能未在第七章回答三选一（两端同一套交互/降级版/只在一端存在）"}
     extra = sorted(x for x in got if x not in BASE)
     return (not extra), (["模板出现新的缺口类别（多半是门禁加了要求而模板没地方写）：" + ", ".join(extra)]
                          if extra else "模板缺口 %d 类，均在骨架基线内" % len(got))
