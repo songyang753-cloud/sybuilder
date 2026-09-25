@@ -102,14 +102,16 @@ Branch names start with a type, e.g. failure.network. A next step is END:reason,
 WAIT:monitor/cancel policy, or one or more F/AF#branch links. Unknown research
 branches stay unknown; they cannot establish a verified normal path.
 """
+    from _prd_parse import acceptance_records, appendix
+    # PRD behavior belongs to E. A table elsewhere cannot fill an empty E.
+    behavior_source = text if research else (appendix(text, '# 附件 E', '# 附件 F') or '')
     rows = []
-    for columns, values in tables(text):
+    for columns, values in tables(behavior_source):
         if '分支' in columns and '前态' in columns:
             if not set(BEHAVIOR_COLUMNS).issubset(columns):
                 return ['behavior-columns: ' + '/'.join(BEHAVIOR_COLUMNS)]
             rows.extend(values)
     issues, keys, kinds = [], set(), {fid: set() for fid in features}
-    from _prd_parse import acceptance_records
     acceptance = {} if research else acceptance_records(text)
     for row in rows:
         fid, branch = row['功能'], row['分支']

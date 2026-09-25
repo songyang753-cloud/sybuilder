@@ -3,6 +3,7 @@ import hashlib
 import json
 from pathlib import Path
 from _writing_contract import BEHAVIOR_COLUMNS, BRANCH_TYPES, QUESTIONS, section_exact
+from _section import _iter_headings
 
 
 def behavior_table(fid='F-01'):
@@ -15,9 +16,12 @@ def behavior_table(fid='F-01'):
 
 
 def text_fixture(fid='F-01'):
-    return ('# 测试文档\n| ID | 功能名称 |\n|---|---|\n| %s | 查看列表 |\n'
-            '## %s 查看列表\n用户从首页点击查看；展示固定列表，数据不变。关闭返回首页。\n' % (fid, fid)) + behavior_table(fid) + (
-                '# 附件 A\n## FR-001 所属 %s\n- AC-1 Given 列表关闭 When 点击查看 Then 显示固定条目，关闭返回首页，数据不变。\n' % fid)
+    body = ('# 测试文档\n| ID | 功能名称 |\n|---|---|\n| %s | 查看列表 |\n'
+            '## %s 查看列表\n用户从首页点击查看；展示固定列表，数据不变。关闭返回首页。\n' % (fid, fid))
+    acceptance = '# 附件 A\n## FR-001 所属 %s\n- AC-1 Given 列表关闭 When 点击查看 Then 显示固定条目，关闭返回首页，数据不变。\n' % fid
+    if fid.startswith('AF-'):
+        return body + behavior_table(fid) + acceptance
+    return body + acceptance + '# 附件 E\n' + behavior_table(fid)
 
 
 def record_fixture(root, text, fid='F-01', name='report.md'):
@@ -34,7 +38,7 @@ def record_fixture(root, text, fid='F-01', name='report.md'):
             'sessionId': 'synthetic-session-' + role, 'reviewedAt': '2026-09-25T10:00:00+08:00',
             'decision': 'APPROVED', 'rationale': 'Synthetic parser fixture only; no real approval.',
             'trace': {'path': trace.name, 'sha256': hashlib.sha256(trace.read_bytes()).hexdigest()},
-            'features': [fid], 'sections': ['测试文档', heading, '附件 A', 'FR-001 所属 ' + fid],
+            'features': [fid], 'sections': [title for _, _, title in _iter_headings(text)],
             'consumption': [{'feature': fid, 'question': question,
                 'answer': '此样本只读已有列表，关闭返回首页，不产生任何写入。',
                 'section': heading, 'quote': '用户从首页点击查看；展示固定列表，数据不变。关闭返回首页。',

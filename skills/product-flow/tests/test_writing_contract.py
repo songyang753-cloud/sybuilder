@@ -30,6 +30,9 @@ class WritingContractTests(unittest.TestCase):
 
     def test_missing_function_has_no_coverage(self):
         self.assertTrue(any('F-02' in i for i in behavior_issues(self.text, {'F-01', 'F-02'})))
+        # A table in another chapter must not fill an empty authoritative E.
+        misplaced = self.text.replace('# 附件 E', '# 附件 Z')
+        self.assertTrue(any('behavior-coverage' in i for i in behavior_issues(misplaced, {'F-01'})))
 
     def test_cycle_without_exit_is_not_closed(self):
         text = self.text.replace('END:关闭列表返回首页，不改变数据', 'F-01#normal')
