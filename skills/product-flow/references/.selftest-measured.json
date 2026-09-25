@@ -1,12 +1,10 @@
 {
-  "measuredAt": "2026-09-25T12:32:30",
+  "measuredAt": "2026-09-25T13:43:48",
   "scripts": 86,
   "cases": 1426,
   "failures": 0,
   "failedScripts": [],
-  "unableScripts": [
-    "consistency-gate.py"
-  ],
+  "unableScripts": [],
   "cachedScripts": [],
   "disagree": [],
   "shas": {
@@ -36,7 +34,7 @@
     "business-map-gate.py": "f4d7fea51a72722c7216a0d16780e84f40694649",
     "cdp-reuse-gate.py": "b212c3c0caf544e487c481ef01455ce6b3182242",
     "chain-gate.py": "ea93cbd7e2d9e71b97c2f5ef579af65c98f7fa4d",
-    "consistency-gate.py": "99024d8ca2eb55901f69609599f9fb3f576be0d8",
+    "consistency-gate.py": "9d83c319242ddeff0922d824a512d3b738feb03c",
     "converge.py": "4b26b86b641e04e019734fda571f3099f8a443e1",
     "coordination-gate.py": "f3adaec83537587bc0052c33166cb5946a897b76",
     "coverage_check.py": "02753ed94e3e033cb4612afbe2632ab07112c17f",
@@ -62,13 +60,13 @@
     "mock-seam-gate.mjs": "8e8bb7c263c2348ba8a10d6a1309a323efa2a54c",
     "mutation-sweep.py": "19f0afa13d893c3e403e40fd23481d3e0785f151",
     "no-loss-gate.py": "f5ceae630dc6f07d2bee08e513b256fee6edbf40",
-    "platform-parity-gate.mjs": "6c8ba4bade1b2c9d5a06bc299a8b15e23c49fed1",
+    "platform-parity-gate.mjs": "9f83ef7f3d59f52dcbabf0210b67ee9cd1db6114",
     "prd-quality-gate.py": "4fd540c20430d6355435834155078663a30f97ad",
-    "prd_completeness_check.py": "798a9b13b3f3781a72e6eac36ef466c09bb00606",
+    "prd_completeness_check.py": "8c536f22a9940783bd01dcb50563aede78d9acc4",
     "product-flow-run.py": "4407f223c48886ebd7fe0f576bdc7d4f5a1d9476",
     "product-structure-gate.py": "677338ff70d4b8099101018f4fce7f0f8acf93b8",
     "receipt-check.py": "f917524b1347b181ac0d4310a1cb3c3547af36ba",
-    "reconcile-gate.py": "a7f36853ce41b670e925831f3e6380400321fd34",
+    "reconcile-gate.py": "ac9ad555e78616ff2c8e89fc65a0056e41925df8",
     "report-structure-gate.py": "f35a3fe58595ff63866fef5a2c0681a31f6cf562",
     "requirements-quality-gate.py": "c5770cd37108a0ac8a9943b50681def3303f756e",
     "research-gate.py": "7643552ec1e98ebbb62cd92692ef031935058c0b",
@@ -532,6 +530,8 @@
   "negativesByExpectation": 545,
   "negativesByLabel": 747,
   "command": "python3 scripts/selftest-all.py",
-  "treeDiff": [],
-  "headAt": "435f219"
+  "treeDiff": [
+    "skills/product-flow/references/.selftest-measured.json"
+  ],
+  "headAt": "6519ad9"
 }
