@@ -17,6 +17,17 @@ def script(name):
 
 
 class DepthRegressions(unittest.TestCase):
+    def test_current_handoff_instructions_use_current_prd_chapters(self):
+        template = (ROOT / 'templates/prd-complete.md').read_text()
+        self.assertIn('## 七、详细设计', template)
+        self.assertIn('### 6.2', template)
+        for file in ('SKILL.md', 'references/stage-playbook.md', 'references/reconcile-gate.md',
+                     'references/s7-figma.md', 'references/s5-s6-design.md',
+                     'templates/interaction-spec.md', 'templates/product-structure.md'):
+            text = (ROOT / file).read_text()
+            for stale in ('PRD 第四章', '正文第四章', '第四章每功能', 'PRD 3.2 功能清单'):
+                self.assertNotIn(stale, text, file)
+
     def test_feature_body_keeps_children_but_not_next_feature(self):
         gate = script('prd_completeness_check.py')
         text = '## F-01 查看\n开头\n### 字段\n字段正文\n## F-02 导出\n导出正文\n# 附件 A\n## F-01 不属于功能正文\n'
@@ -24,6 +35,14 @@ class DepthRegressions(unittest.TestCase):
         self.assertIn('字段正文', sections['F-01'][2])
         self.assertNotIn('导出正文', sections['F-01'][2])
         self.assertEqual(set(sections), {'F-01', 'F-02'})
+
+    def test_reconciliation_consumes_the_same_feature_headings(self):
+        gate = script('reconcile-gate.py')
+        for heading in ('### M: 素材 / F-01: 导入', '### M：素材 / F-01：导入',
+                        '## F-01 导入', '#### F-01：导入'):
+            text = gate['PRD_OK'].replace('### M: 素材 / F-01: 导入', heading)
+            text += '\n## F-99 附件说明不是功能正文\n'
+            self.assertEqual(set(gate['ch4'](text)), {'F-01'})
 
     def test_fr_ownership_without_ac_is_not_acceptance(self):
         text = '# 附件 A\n## FR-001 所属 F-01 MUST\n相关规则。\n# 附件 B'

@@ -39,6 +39,8 @@
 
 状态图复核还禁止下一步跳到 N/A/UNKNOWN 分支，防止同一行存在合法出口就掩盖另一条不可执行路径；只读与受管理等待的合法正例保持通过。
 
+下游复核发现 G1 与完备度检查对中文冒号、合法标题层级的解析不一致：新增正向回归先复现拒绝，再让 G1 复用现有正文解析，并排除附件中的同名标题。当前提示及回灌路径统一指向第七章，历史案例和兼容函数名保留。脚本总数按已跟踪文件重新核实为 102，不采用工作树临时文件数。
+
 全量冻结复跑：待本批最终运行后填入真实结果；本行不代表通过。
 
 第二次诊断性全量的两条失败保留：协作反例误用本批已授权共享的路径，已改回真正独占路径并通过全部 21 条自证；平台一致性检查的一条浏览器子进程测试发生异常，单独完整重跑通过，仍需冻结全量重跑确认，不能删去初次失败。
@@ -73,8 +75,9 @@
 - 检查与回归：`_prd_parse.py`、`_workflow.py`、`chain-gate.py`、`prd_completeness_check.py`、`product-structure-gate.py`、`report-structure-gate.py`、`research-quality-gate.py`、`gate-run.py`、`product-flow-run.py`、`test-gate-binding.py`、`test-remediation-contracts.py`、`verify-suite.sh`，补实质覆盖、闭环和拒绝绕过；既有用例不删除。
 - 模板与示例：`prd-complete.md`、`research-report.md`、`competitor-teardown-report.md`、`research-quality-review.md`、`tests/fixtures/filled/PRD.md`、`product-structure.md`、`tests/s2-golden/report.md`、`readback.xml`，保持正文/模板/检查兼容；后两者为离线测试材料，不冒充线上回读。
 - 教学切片 `templates/examples/report-writing/prd-slice.md`、`research-domain.md` 增加当前正式模板及记录格式指向，明确解释深度样章不等于完整阶段交付，防止旧简写格式误导执行者。
+- 下游回灌路由：`reconcile-gate.md`、`interaction-spec.md`、`product-structure.md`、`s7-figma.md`、`s5-s6-design.md` 及主入口/SOP 的现行指令，把旧 PRD 第四章、3.2 功能清单对齐到现模板第七章、6.2；不改历史事故记录或旧函数名。
 - 规格与目录：`s4-prd.json`、`_writing-contract.json`、`gen-docs.py`、`prd-structure.md`、`consistency-gate.py`、`design-quality-gates.md`、`iron-rules.md`、`substance-over-theater.md`、`business-process.example.d2`、`functional-architecture.example.d2`、`product-architecture.example.d2`，对齐新门禁及诊断口径，数字按实际测量同步。
-- 协作与保留：`path-ownership.json` 登记本次职责；`ownership-inventory-baseline.json` 仅减去本次已经认领的两个孤儿，不放宽上限；`no-loss-renames.md` 保留旧义务到新实现的直接映射，`no-loss-baseline.json` 未改。
+- 协作与保留：`path-ownership.json` 登记本次职责；`ownership-inventory-baseline.json` 仅减去本次已经认领的四个孤儿，不放宽上限；`no-loss-renames.md` 保留旧义务到新实现的直接映射，`no-loss-baseline.json` 未改。新认领的 `reconcile-gate.py` 仅修复标题解析复用与现行章节提示。
 - `references/.selftest-measured.json` 只由真实全量运行生成；随复跑更新，不手改失败、跳过或通过统计。
 - `coordination-gate.py` 的 A2 反例继续验证“不得修改对方独占路径”，目标从本次已授权共享的 PRD 检查改为仍独占的 `ci-unable-baseline.json`；不修改判据或允许未授权路径。
 

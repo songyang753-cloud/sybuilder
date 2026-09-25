@@ -1,6 +1,6 @@
 # 交互规格书 Interaction Specification
 
-> S5.2 产出（中间产物，核心内容提炼到 PRD 第四章「逻辑」列和附件 E 状态机表中）。
+> S5.2 产出（中间产物，核心内容提炼到 PRD 第七章「逻辑」列和附件 E 状态机表中）。
 > 分全局卷和逐页卷。动效规格写定于此，为下游唯一权威源。
 > 参考输入：`references/interaction-patterns.md`
 

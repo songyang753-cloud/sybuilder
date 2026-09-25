@@ -1,5 +1,4 @@
 """Positive/negative contract tests, including actual CLI verdicts."""
-import copy
 from pathlib import Path
 import runpy
 import subprocess

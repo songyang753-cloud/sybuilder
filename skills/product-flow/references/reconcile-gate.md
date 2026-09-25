@@ -23,7 +23,7 @@ python3 scripts/coverage_check.py handoff/testcases/requirements.md handoff/test
 ⚠️ **锚点契约是硬约束**（产物必须照此产出，否则门禁报「跑不了(2)」而不是「通过」）：
 | 产物 | 锚点 |
 |---|---|
-| PRD 第四章 | `### M: <模块> / F-xx: <名>` |
+| PRD 第七章 | `### M: <模块> / F-xx: <名>` |
 | PRD 附件 A | `## FR-### 所属 F-xx` |
 | demo | `<section data-scene="f01-pc-empty" data-fr="FR-011,AC-1">`；不演示的写 `<!--不演示 FR-012 理由:…-->` |
 | Figma 回灌 | `F-01 \| pc \| empty \| <链接#node-id>`　⛔ **状态段用英文 slug，不用「空态」** |
@@ -55,7 +55,7 @@ python3 scripts/coverage_check.py handoff/testcases/requirements.md handoff/test
 
 - 正向：附件 A 每个 `FR/AC` 有 demo 场景，或显式标注「不演示·理由」？
 - 反向：demo 每个场景能反查到 `FR/AC`？
-- 附加：`FR` 与正文第四章双向 ID 绑定完好？
+- 附加：`FR` 与正文第七章双向 ID 绑定完好？
 
 ### G3 · S6→S7（demo → 设计稿）
 

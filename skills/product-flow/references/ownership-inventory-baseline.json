@@ -39,7 +39,6 @@
     "skills/product-flow/scripts/interaction-gate.py",
     "skills/product-flow/scripts/mock-seam-gate.mjs",
     "skills/product-flow/scripts/platform-parity-gate.mjs",
-    "skills/product-flow/scripts/reconcile-gate.py",
     "skills/product-flow/scripts/requirements-quality-gate.py",
     "skills/product-flow/scripts/scenario-matrix-gate.mjs",
     "skills/product-flow/scripts/spec-sync-gate.py",
@@ -55,7 +54,6 @@
     "skills/product-flow/templates/design-md.md",
     "skills/product-flow/templates/intent.md",
     "skills/product-flow/templates/prd-backfill.md",
-    "skills/product-flow/templates/product-structure.md",
     "skills/product-flow/templates/slice-registry.md",
     "skills/product-flow/templates/triad-reconciliation.md"
   ]

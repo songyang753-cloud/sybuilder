@@ -19,7 +19,7 @@ PRD 完备度门禁 —— 验「填没填」，不验「填得对不对」。
   判据：一条规则如果对「正确实现」和「错误实现」给出同样的结果，它对该对象就是 N/A，不是 PASS。
   ⚠️ 通过率的分母只算 PASS+FAIL。
 
-⚠️ 这道门禁只回答「每个 F-xx 在各附件里有没有对应内容、第四章够不够细」。
+⚠️ 这道门禁只回答「每个 F-xx 在各附件里有没有对应内容、第七章够不够细」。
    它**不能**判断内容是否正确、是否可实现 —— 那是评审的事。
    报覆盖率时必须连这句话一起报，只贴百分比等同谎报。
 
@@ -79,7 +79,7 @@ def col_of(cols, *names):
     return None
 
 
-# ---------------------------------------------------------------- 第四章
+# ---------------------------------------------------------------- 第七章（保留兼容函数名 ch4_sections）
 def ch4_sections(s):
     """逐功能正文（含下级小节）；数量仅用于诊断，不代替行为闭环。"""
     out = {}
@@ -259,13 +259,13 @@ def check(path, min_rows=4, min_bullets=12, stage=None):
             r["na"].append("设计稿列全空 —— S%s 合法，但**本 PRD 不可直接交研发**，"
                            "报告里必须写明「设计稿列未回灌」" % st)
 
-    # 1 · 第四章颗粒度
+    # 1 · 第七章颗粒度
     ch4 = ch4_sections(s)
     thin = [f for f in feats if ch4.get(f, (0, 0, ''))[0] < min_rows or ch4.get(f, (0, 0, ''))[1] < min_bullets]
     missing4 = [f for f in feats if f not in ch4]
     thin = [f for f in thin if f not in missing4]
     r["stats"]["ch4_ok"] = len(feats) - len(set(thin) | set(missing4))
-    if missing4: r["gaps"].append(("第四章缺整节", missing4))
+    if missing4: r["gaps"].append(("第七章缺整节", missing4))
     if thin:
         r['na'].append('篇幅提示（不作质量判据）：%s；行为闭环和独立消费评审仍必跑' % ', '.join(thin))
     from _writing_contract import behavior_issues
@@ -413,7 +413,7 @@ def check(path, min_rows=4, min_bullets=12, stage=None):
             no3 = [f for f in both
                    if not any(k in strip_md(ch4.get(f, (0, 0, ''))[2]) for k in THREE_WAY)]
             if no3:
-                r["gaps"].append(("双端功能未在第四章回答三选一（两端同一套交互/降级版/只在一端存在）", no3))
+                r["gaps"].append(("双端功能未在第七章回答三选一（两端同一套交互/降级版/只在一端存在）", no3))
 
     # 11 · 成本/规模列（S3/S4 拍板的依据，此前整条流水线没有承载位）
     cost = col_of(cols, '成本', '规模')

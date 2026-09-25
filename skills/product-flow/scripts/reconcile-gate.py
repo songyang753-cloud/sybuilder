@@ -20,7 +20,7 @@
 退出码: 0=双向通过 1=有漏 2=跑不了（输入缺失/解析不出，绝不折叠成 0）
 
 ═══ 产物必须遵守的锚点契约（本 skill 是 SOP，下游产物照此执行）═══
-  PRD    第四章小节标题：`### M: <模块> / F-xx: <名>`
+  PRD    第七章小节标题：`### M: <模块> / F-xx: <名>`（与完备度检查共用标题解析）
          附件 A 每条：`## FR-### 所属 F-xx`
   demo   每个场景一个容器：<section data-scene="f01-empty" data-fr="FR-011,AC-1">
          不演示的：在 <!--不演示 FR-012 理由:纯后端计时--> 或 --exempt 清单里显式登记
@@ -56,7 +56,8 @@ def feats(prd):
     return out
 
 def ch4(prd):
-    return dict((m.group(1), m.group(0)) for m in re.finditer(r'(?m)^### M: .*?/ (F-\d+): .*$', prd))
+    from prd_completeness_check import ch4_sections
+    return ch4_sections(prd)
 
 def frs(prd):
     """附件 A 的 FR/NFR → 所属 F-xx；顺带收 AC 编号。
@@ -95,11 +96,11 @@ def emit(title, fwd, rev, extra=None):
 def g1(prd_path):
     prd = read(prd_path); F = feats(prd); C = ch4(prd); FR, _ = frs(prd)
     if not F: print("UNABLE: 解析不出功能清单表", file=sys.stderr); sys.exit(2)
-    if not C: print("UNABLE: 解析不出第四章小节（契约：### M: <模块> / F-xx: <名>）", file=sys.stderr); sys.exit(2)
+    if not C: print("UNABLE: 解析不出第七章小节（契约：### M: <模块> / F-xx: <名>）", file=sys.stderr); sys.exit(2)
     owned = {v for v in FR.values() if v}
-    fwd  = ["%s 无第四章小节" % f for f in F if f not in C]
+    fwd  = ["%s 无第七章小节" % f for f in F if f not in C]
     fwd += ["%s 无附件 A 验收标准（下游生成不出用例）" % f for f in F if f not in owned]
-    rev  = ["第四章有 %s，功能清单里没有" % f for f in C if f not in F]
+    rev  = ["第七章有 %s，功能清单里没有" % f for f in C if f not in F]
     rev += ["附件 A 的 %s 所属 %s，功能清单里没有" % (k, v) for k, v in FR.items() if v and v not in F and v != '全局']
     return emit("G1 · S4→S5（功能 → 交互/验收）", fwd, rev)
 
