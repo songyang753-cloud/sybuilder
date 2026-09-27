@@ -22,7 +22,7 @@
   它要么是自证在回显被测场景的输出（该加「│ 」归属前缀，见 gate-run/mutation-sweep），
   要么是真 landmine（判定与退出码脱钩）。两种都必须被看见，不许静默折叠成任何一边。
 """
-import hashlib, json, os, re, subprocess, sys, tempfile, time
+import argparse, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time
 
 SCRIPTS = os.path.dirname(os.path.abspath(__file__))
 # ⚠️ **量具本身错了**（2026-09-06 当场抓到）：第一版只认 `✅/❌`，
@@ -202,10 +202,13 @@ def sweep_dir(scripts_dir, prog_path, out_path, fresh):
     #     「错误诊断比漏报贵」：照着它去改文档，会把 clone 口径的正确数字改成错的。
     #   ⇒ 落盘时把**总体**一起记下来：测量发生在与 HEAD 有哪些差异的树上。
     #   ⛔ 只记录、不改判决：树脏不是豁免（那会让真的文档漂移躲在脏树后面）。
-    _root_for_git = os.path.dirname(os.path.dirname(os.path.abspath(out_path)))
+    _root_for_git = os.path.dirname(os.path.abspath(scripts_dir))
     data_tree = _tree_diff(_root_for_git)
     data_head = _head_sha(_root_for_git)
     data = {
+        'snapshotSchema': 2,
+        'distribution': 'complete-sybuilder-suite',
+        'runtime': {'python': platform.python_version(), 'os': platform.system()},
         'measuredAt': time.strftime('%Y-%m-%dT%H:%M:%S'),
         'scripts': len(results),
         'cases': sum(r['cases'] for r in results),
@@ -226,7 +229,7 @@ def sweep_dir(scripts_dir, prog_path, out_path, fresh):
                                 'negLabel': r['negLabel']} for r in results},
         'negativesByExpectation': sum(r['negNumeric'] for r in results),
         'negativesByLabel': sum(r['negLabel'] for r in results),
-        'command': 'python3 scripts/selftest-all.py',
+        'command': 'python3 scripts/selftest-all.py' + (' --fresh' if fresh else ''),
         'treeDiff': data_tree,   # None＝问不到 git；[]＝与 HEAD 一致
         'headAt': data_head,     # 上面那个 diff 是**跟这个 commit** 比的
     }
@@ -237,9 +240,18 @@ def sweep_dir(scripts_dir, prog_path, out_path, fresh):
 
 
 def main():
-    fresh = '--fresh' in sys.argv
+    parser = argparse.ArgumentParser(description='Run self-tests; local results do not silently overwrite the published snapshot.')
+    parser.add_argument('--fresh', action='store_true')
+    parser.add_argument('--publish-snapshot', action='store_true', help='maintainer action: update tracked snapshot only after a complete fresh passing run')
+    args = parser.parse_args()
+    if args.publish_snapshot and not args.fresh:
+        parser.error('--publish-snapshot requires --fresh')
+    fresh = args.fresh
     prog_path = os.path.join(os.path.dirname(SCRIPTS), 'references', '.selftest-progress.jsonl')
-    out_path = os.path.join(os.path.dirname(SCRIPTS), 'references', '.selftest-measured.json')
+    runtime_dir = (tempfile.mkdtemp(prefix='sybuilder-selftest-publish-') if args.publish_snapshot
+                   else os.path.join(os.path.dirname(SCRIPTS), '.product-flow', 'selftest'))
+    os.makedirs(runtime_dir, mode=0o700, exist_ok=True)
+    out_path = os.path.join(runtime_dir, 'measured.json')
     data = sweep_dir(SCRIPTS, prog_path, out_path, fresh)
     print('\n脚本 %d 个 · 用例 %d 个 · 失败 %d 个' % (data['scripts'], data['cases'], data['failures']))
     print('反例：按期望非零 %d 个 / 按标题带「反例」 %d 个%s'
@@ -255,7 +267,10 @@ def main():
     _cached = data.get('cachedScripts') or []
     print('本轮真跑 %d / 缓存复用 %d（发布证据要求全 fresh：--fresh）'
           % (data['scripts'] - len(_cached), len(_cached)))
-    print('已写入 references/.selftest-measured.json')
+    print('已写入 %s（本地运行态，不是已发布验收）' % out_path)
+    if args.publish_snapshot and not data['failedScripts'] and not data['unableScripts']:
+        shutil.copyfile(out_path, os.path.join(os.path.dirname(SCRIPTS), 'references', '.selftest-measured.json'))
+        print('已按显式 --publish-snapshot 更新发布快照；提交前须核验完整套件/运行环境及 diff')
     # 失败 → 1；只有环境性 UNABLE → 2（不许显示成全绿）；全过 → 0
     return 1 if data['failedScripts'] else (2 if data['unableScripts'] else 0)
 

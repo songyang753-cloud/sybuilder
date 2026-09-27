@@ -1,8 +1,8 @@
 # 已验证的 Web 应用架构蓝图（Proven Web Architecture）
 
-一套在真实社区产品（22000+ 用户、44 后端模块、多轮总监级审计 + 100+ E2E）打磨过的
+通用 Web 架构参考，不以任何私人项目的用户数、模块数或测试数量作为保证。采用
 **API-First 模块化单体**架构。模式栈无关；参考实现以 **Go(Gin+GORM) + Nuxt3(Vue3 SSR)** 为例，
-换成 NestJS/Spring/Django + Next/Nuxt 同样适用。新 Web 项目可直接以此为起点。
+换成 NestJS/Spring/Django + Next/Nuxt 也可作为起点，但容量、测试覆盖与上线效果须在目标项目重新验证。
 
 > 用法：在阶段 4（固化成熟度）把本蓝图的相关原则填进项目 `docs/ENGINEERING_STANDARDS.md`，
 > 按实际栈替换参考实现。**先采用，再按需裁剪**——不要无脑全搬，但每条偏离都该有理由。

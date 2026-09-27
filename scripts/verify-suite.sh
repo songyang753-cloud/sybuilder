@@ -11,11 +11,14 @@ case "${MODE}" in
 esac
 
 if [ "${MODE}" = "--full" ]; then
-  # Full selftest refreshes measured state consumed by consistency-gate.
+  # Full verification measures every self-test from scratch but does not rewrite
+  # the tracked release snapshot. Maintainers publish that snapshot explicitly,
+  # then commit it before the two frozen-tree verification passes.
   python3 "${ROOT}/skills/product-flow/scripts/selftest-all.py" --fresh
 fi
 
 python3 "${ROOT}/skills/product-flow/scripts/gen-docs.py" --check
+python3 "${ROOT}/scripts/verify-local-links.py" "${ROOT}"
 python3 "${ROOT}/skills/product-flow/scripts/no-loss-gate.py"
 python3 "${ROOT}/skills/product-flow/scripts/consistency-gate.py"
 FOUR_NODE_SKILL="${ROOT}/skills/four-node-review/SKILL.md" \
@@ -30,8 +33,12 @@ python3 "${ROOT}/skills/product-flow/scripts/_feishu.py" --self-test
 python3 "${ROOT}/skills/product-flow/scripts/dingtalk-delivery-gate.py" --self-test
 python3 "${ROOT}/skills/product-flow/scripts/doc-sync-guard.py" --self-test
 python3 "${ROOT}/scripts/test-release-regressions.py"
+python3 "${ROOT}/scripts/test-review-followup.py"
 python3 "${ROOT}/scripts/test-remediation-contracts.py"
 node "${ROOT}/scripts/test-crawler-regressions.cjs"
+if [ "${MODE}" = "--full" ]; then
+  node "${ROOT}/scripts/test-capture-ui.mjs"
+fi
 python3 "${ROOT}/scripts/test-w5.py"
 python3 "${ROOT}/scripts/test-w5-boundaries.py"
 python3 "${ROOT}/scripts/test-gate-binding.py"

@@ -22,7 +22,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 S = ROOT / 'skills/product-flow/scripts'
 sys.path.insert(0, str(S))
-from _document_sync import preflight, source_hash
+from _document_sync import preflight, source_hash, validate_evidence_paths
 from _mutation_state import recover, save_journal, state_path, locked_targets
 from _workflow import resolve_plan, suite_script, WorkflowError
 
@@ -111,6 +111,23 @@ class Boundaries(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError,'隐私'):
                     adapter._write_and_verify('Synthetic approval test only',str(source),evidence_manifest=str(path))
                 api.assert_not_called()
+
+    def test_readback_indirect_refs_cannot_escape_evidence_root(self):
+        manifest=self.root/'manifest.json';manifest.write_text('{}')
+        outside=self.root.parent/'synthetic-outside-upload.json'
+        outside.write_text('{}');self.addCleanup(lambda:outside.unlink(missing_ok=True))
+        (self.root/'escape.json').symlink_to(outside)
+        for ref in ('../synthetic-outside-upload.json',str(outside),'escape.json'):
+            for payload in ({'delivery':{'uploadEvidenceRef':ref}}, {'evidence':[{'eventsRef':ref}]}):
+                with self.assertRaisesRegex(RuntimeError,'越界'):
+                    validate_evidence_paths(manifest,payload)
+
+    def test_evidence_manifest_requires_object_shapes(self):
+        manifest = self.root / 'manifest.json'; manifest.write_text('{}')
+        for payload in ([], {'evidence': {}}, {'evidence': [None]}, {'delivery': []}):
+            with self.subTest(payload=payload):
+                with self.assertRaisesRegex(RuntimeError, 'UNABLE'):
+                    validate_evidence_paths(manifest, payload)
 
     def test_recovery_binding_and_user_changes_never_overwritten(self):
         for mutation in ('target', 'originalHash', 'user-edit', 'symlink'):
@@ -215,6 +232,7 @@ class Boundaries(unittest.TestCase):
         scope = self.root / 'scope.md'
         original = scope.read_text()
         source = (self.root / 'report.md').read_text()
+        (self.root / 'evidence-manifest.json').write_text('{"evidence": []}')
         for platform in ('feishu', 'dingtalk'):
             scope.write_text(original + '\ndocumentPlatform: '+platform+'\ndelivery_doc: synthetic-doc\n')
             adapter = __import__('_' + platform)

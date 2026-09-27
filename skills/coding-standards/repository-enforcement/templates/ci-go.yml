@@ -6,12 +6,17 @@
   backend:
     name: 后端 (Go)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.job }}-${{ github.ref }}
+      cancel-in-progress: true
     defaults:
       run:
         working-directory: backend        # 单仓多包时按实际目录改/删
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, verified 2026-09-27
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5, verified 2026-09-27
         with:
           go-version: '1.26'               # 与 go.mod 一致
           cache-dependency-path: backend/go.sum

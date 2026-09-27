@@ -2,7 +2,7 @@
 //
 // ═══ 为什么它必须是代码而不是文档 ═══
 // `references/competitive-research.md:503` 早就一字不差写着「⛔ 别取 /json/list 的 t[0]」,
-// 连 QClaw 的 #/sandbox-guard-bar 都点名了。2026-09-17 我重写遍历器时**照样踩进去**。
+// 连某 Electron 应用的 #/sandbox-guard-bar 都点名了；重写遍历器时仍可能选错。
 // 不是不够认真——写代码时我读的是任务和记忆,不会去检索一份 1300 行文档的第 503 行。
 // ⭐ 同一次实测里,我抄 grab.sh 的部分(启动/挪虚拟屏/pkill)**一次通过**,
 //    凭记忆重写的部分(WebSocket 处理/target 选择)**全踩坑**。
@@ -10,6 +10,13 @@
 //
 // 用法: const {connect, enumerate, shot, KILL_HINT} = require('_cdp.js')
 'use strict';
+const {randomBytes,createHmac}=require('node:crypto');
+const metadataSalt=randomBytes(32);
+// Ephemeral state keys preserve route/title-only transitions without exporting identifiers.
+function privatePageMetadata(url,title) {
+  const key=value=>createHmac('sha256',metadataSalt).update(String(value||'')).digest('hex');
+  return {url:'[url-state:'+key(url)+']',title:'[title-state:'+key(title)+']'};
+}
 
 // 可点击元素枚举 —— **唯一正本**。probe 与真实枚举必须用它,⛔ 不许另写选择器：
 // 实测用别的选择器探活会「probe 绿而枚举为 0」(loading 页有 3 个 [tabindex] 元素).
@@ -22,8 +29,8 @@ const ELEMENT_JS = `function __element(e) {
   const label=(e.getAttribute('aria-label')||e.getAttribute('placeholder')||'');
   const raw=(input?label:(e.innerText||label)).trim().replace(/\\s+/g,' ');
   const txt=inHistory?'[user-content]':raw.slice(0,40);
-  const sig=[e.tagName,e.id||'',txt,inHistory?'':label,
-    typeof e.className==='string'?e.className.split(' ')[0]:''].join('|');
+  const sig=[e.tagName,inHistory?'':(e.id||''),txt,inHistory?'':label,
+    !inHistory&&typeof e.className==='string'?e.className.split(' ')[0]:''].join('|');
   const role=e.getAttribute('role')||'';
   const href=e.getAttribute('href')||'';
   return {sig,txt,tag:e.tagName,role,userContent:inHistory,disabled:!!e.disabled,
@@ -36,7 +43,7 @@ const ENUM_JS = `(()=>{${ELEMENT_JS}
   const out=[],seen=new Set();
   for(const e of document.querySelectorAll(sel)){
     // 🚨 会话历史/文档列表/收件箱**长得像导航项**，抓进来就是把用户的私人内容落盘。
-    //    实测：WorkBuddy 侧栏 42 个「导航项」里有 30 个是用户真实对话标题。
+    //    实测：某桌面应用的侧栏多数「导航项」其实是用户会话标题。
     //    ⇒ 在**取文本之前**就判定容器，落在历史/列表容器里的一律记为 [user-content]。
     const meta=__element(e); if(!meta) continue;
     const {sig}=meta;
@@ -45,8 +52,37 @@ const ENUM_JS = `(()=>{${ELEMENT_JS}
     //    算进导航分母会让覆盖率被用户数据稀释（实测 42 个里 30 个是对话标题）。
     out.push(meta);
   }
+  // URL/title are transient input for state comparison and exact scoped approvals.
+  // Never serialize this raw probe: both crawlers apply privatePageMetadata at export.
   return {url:location.href,title:document.title,n:out.length,els:out};
 })()`;
+
+// Only genuinely visible, viewport-intersecting dialogs block capture.
+const VISIBLE_DIALOG_JS = `Array.from(document.querySelectorAll('[role=dialog],.modal,.privacy-modal,.onboarding')).some(e=>{
+  const r=e.getBoundingClientRect();
+  if(r.width<=0||r.height<=0||r.right<=0||r.bottom<=0||r.left>=innerWidth||r.top>=innerHeight)return false;
+  for(let p=e;p;p=p.parentElement){const c=getComputedStyle(p);if(c.display==='none'||c.visibility==='hidden'||c.visibility==='collapse'||parseFloat(c.opacity)===0)return false;}
+  const left=Math.max(0,r.left),top=Math.max(0,r.top),width=Math.min(innerWidth,r.right)-left,height=Math.min(innerHeight,r.bottom)-top;
+  return [[.5,.5],[.1,.1],[.9,.1],[.1,.9],[.9,.9]].some(([x,y])=>{
+    const hit=document.elementFromPoint(left+width*x,top+height*y);return !!hit&&(hit===e||e.contains(hit));
+  });
+})`;
+
+function clickSelectorExpression(selector, policy = []) {
+  return `(()=>{${ELEMENT_JS};const actionBlockReason=${actionBlockReason.toString()};const DESTRUCTIVE=${DESTRUCTIVE.toString()};
+    const hits=[...document.querySelectorAll(${JSON.stringify(selector)})];
+    if(!hits.length)return {status:'ABSENT',reason:'selector-no-match'};
+    if(hits.length!==1)return {status:'BLOCKED',reason:'ambiguous-selector'};
+    const e=hits[0],meta=__element(e),reason=actionBlockReason(meta,location.href,${JSON.stringify(policy)});
+    if(reason)return {status:'BLOCKED',reason};
+    e.scrollIntoView({block:'center'});e.click();return {status:'CLICKED'};
+  })()`;
+}
+
+// Design metadata must use the same user-content classifier as traversal.
+const PRIVATE_NAV_JS = `(()=>{${ELEMENT_JS};return Array.from(document.querySelectorAll('.nav-item')).map(e=>{
+  const m=__element(e);return {text:m?.txt||'[unavailable]',userContent:!!m?.userContent,tag:e.tagName};
+});})()`;
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -98,28 +134,41 @@ function rpc(getWs) {
  *  ⛔ 不按形态选(type==='page' / t[0])——那会选中守卫栏/加载页 overlay,
  *     枚举出 0 个元素,而脚本正常退出 0 ⇒ 得出「这个产品界面是空的」这个**错误结论**。
  *  ✅ 按能力选：能枚举到 ≥ minEls 个可点击控件的才算主窗口。轮询到超时就报 UNABLE。
- *  ⚠️ Electron 应用启动有路由序列(实测 QClaw: #/sandbox-guard-bar → #/init-loading → 主界面),
+ *  ⚠️ Electron 应用启动有路由序列（如 #/sandbox-guard-bar → #/init-loading → 主界面），
  *     所以必须**轮询**,不是连上第一个就用。 */
-async function connect(port, { pick = '', minEls = 3, tries = 25, waitMs = 1500 } = {}) {
+async function connect(port, { pick = '', minEls = 3, tries = 25, waitMs = 1500, timeoutMs = 60000 } = {}) {
   let ws = null, target = null, send = rpc(() => ws), n = 0;
+  if(!Number.isFinite(timeoutMs)||timeoutMs<=0)throw new Error('UNABLE: invalid connection deadline');
+  const deadline=Date.now()+timeoutMs;
+  const pause=()=>sleep(Math.max(0,Math.min(waitMs,deadline-Date.now())));
   const evalJS = async x => (await send('Runtime.evaluate',
     { expression: x, returnByValue: true, awaitPromise: true })).result.value;
-  while (!target && n++ < tries) {
+  while (!target && n++ < tries && Date.now()<deadline) {
     let list = [];
-    try { list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json(); } catch (e) { await sleep(waitMs); continue; }
+    try { list = await (await fetch(`http://127.0.0.1:${port}/json/list`, {signal: AbortSignal.timeout(Math.max(1,Math.min(1200,deadline-Date.now())))})).json(); } catch (e) { await pause(); continue; }
+    if(!Array.isArray(list)){await pause();continue;}
     for (const c of list) {
       if (!c.webSocketDebuggerUrl) continue;
       if (pick && !((c.url || '').includes(pick) || (c.title || '').includes(pick))) continue;
+      let w=null;
+      const timer=setTimeout(()=>{try{w?.close();}catch{}},Math.max(1,deadline-Date.now()));
       try {
-        const w = new WebSocket(c.webSocketDebuggerUrl);
-        await new Promise((r, j) => { w.addEventListener('open', r); w.addEventListener('error', j); setTimeout(() => j(new Error('open timeout')), 3000); });
+        w = new WebSocket(c.webSocketDebuggerUrl);
+        await new Promise((r, j) => {
+          const finish=err=>{clearTimeout(openTimer);w.removeEventListener('open',opened);w.removeEventListener('error',failed);w.removeEventListener('close',failed);err?j(err):r();};
+          const opened=()=>finish(),failed=()=>finish(new Error('CDP handshake failed'));
+          const openTimer=setTimeout(()=>finish(new Error('CDP handshake timeout')),Math.min(3000,Math.max(1,deadline-Date.now())));
+          w.addEventListener('open',opened);w.addEventListener('error',failed);w.addEventListener('close',failed);
+        });
         ws = w; await send('Runtime.enable');
         const probe = await evalJS(ENUM_JS);          // ⭐ 与真实枚举同源
-        if (probe && probe.n >= minEls) { target = c; await send('Page.enable'); break; }
+        if (probe && probe.n >= minEls) { await send('Page.enable'); target = c; break; }
         w.close(); ws = null;
-      } catch (e) { ws = null; }
+      } catch (e) { try{w?.close();}catch{} ws = null; }
+      finally {clearTimeout(timer);}
+      if(Date.now()>=deadline)break;
     }
-    if (!target) await sleep(waitMs);
+    if (!target) await pause();
   }
   if (!target) {
     const e = new Error(`UNABLE: ${tries} 次轮询未找到能枚举到 ≥${minEls} 个控件的 target —— 这是「没能测」,不是「测出来是空的」`);
@@ -133,7 +182,7 @@ async function connect(port, { pick = '', minEls = 3, tries = 25, waitMs = 1500 
 }
 
 /** 从 Info.plist 读**真实**可执行名。⛔ 不许拿 .app 的名字当二进制名。
- *  🚨 2026-09-17 实测：WorkBuddy 的 CFBundleExecutable 是 **`Electron`**，不是 `WorkBuddy`。
+ *  🚨 实测：桌面应用的 CFBundleExecutable 可能是 **`Electron`**，不是产品展示名。
  *  拿应用名去起 ⇒ 起的是不存在的路径或 stub ⇒ `--remote-debugging-port` **没传给主进程**
  *  ⇒ 端口从没开过 ⇒ 连不上。而错误现象看起来像「这家竞品把调试端口关了」。 */
 function resolveBinary(appName) {
@@ -151,7 +200,7 @@ function resolveBinary(appName) {
 }
 
 /** 按 **pid** 回收，⛔ 不按名字模式。
- *  两个理由：① `pkill -f WorkBuddy` 杀不掉真名叫 `Electron` 的进程；
+ *  两个理由：① 按产品展示名执行 `pkill -f` 杀不掉真名叫 `Electron` 的进程；
  *  ② `pkill -f Electron` 会**误杀用户正在用的所有 Electron 应用**。
  *  🚨 并且：验证「端口关了」之前必须先确认**端口开过**——
  *     端口从没开过时 curl 同样失败，会被读成「已回收」这个**假绿**。 */
@@ -206,5 +255,5 @@ function clickExpression(sig, policy = []) {
   })()`;
 }
 
-module.exports = { ENUM_JS, ELEMENT_JS, clickExpression, actionBlockReason, loadActionPolicy,
+module.exports = { ENUM_JS, ELEMENT_JS, VISIBLE_DIALOG_JS, PRIVATE_NAV_JS, privatePageMetadata, clickSelectorExpression, clickExpression, actionBlockReason, loadActionPolicy,
   connect, rpc, sleep, assertVirtualScreen, resolveBinary, reclaim, KILL_HINT, DESTRUCTIVE, NOISE };

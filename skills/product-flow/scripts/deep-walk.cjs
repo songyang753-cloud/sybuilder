@@ -9,7 +9,7 @@
  * 用法: node deep-walk.cjs <port> <outdir> [--depth 6] [--max 200] [--pick <s>] [--actions policy.json]
  */
 const fs = require('fs');
-const { connect, clickExpression, actionBlockReason, loadActionPolicy } = require('./_cdp.js');
+const { connect, clickExpression, actionBlockReason, loadActionPolicy, privatePageMetadata } = require('./_cdp.js');
 
 const PORT = parseInt(process.argv[2]);
 const OUT = process.argv[3];
@@ -82,7 +82,7 @@ async function visitPage(path) {
   const depth = path.length + 1;
   const lastTxt = path.length ? path[path.length - 1].txt : 'home';
   const shot = await capture(depth, lastTxt, path.map(p => p.txt));
-  nodes.push({ depth, path: path.map(p => p.sig), pathTxt: path.map(p => p.txt), url: snap.url, title: snap.title,
+  nodes.push({ depth, path: path.map(p => p.sig), pathTxt: path.map(p => p.txt), ...privatePageMetadata(snap.url,snap.title),
     shot, els: snap.els.map(e => ({ sig: e.sig, txt: e.txt, nav: e.nav, userContent: e.userContent })) });
   let baseState = pageState(snap);
   const inPageHops = path.filter(p => !p.nav).length;

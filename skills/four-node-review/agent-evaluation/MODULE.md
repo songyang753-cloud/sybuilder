@@ -36,11 +36,12 @@ scripted 正例只能证明执行器接线，不满足产品 agent 的 W5 验收
 
 ## 配置与生命周期边界
 
-- `timeoutSeconds` 缺省 120 秒，`totalTimeoutSeconds` 缺省 600 秒，`maxCalls` 缺省 200。显式 null、bool、字符串、非有限数或非正数均 UNABLE；repeats 为至少 3 的整数。计划调用数为 controls 数 + cases × repeats × 2，超预算在任何调用前拒绝，预检计划写入 stderr 与私有报告。增加预算仍需事先授权，不会自动缩减样本。
+- `timeoutSeconds` 缺省 120 秒，`totalTimeoutSeconds` 缺省 600 秒，`maxCalls` 缺省 200。显式 null、bool、字符串、非有限数或非正数均 UNABLE；repeats 为至少 3 的整数。计划调用数为 controls 数 + cases × repeats × 2，超过调用数预算在任何调用前拒绝。预检同时记录 `worstCaseSeconds`：大于总时间预算时明确警告，并在实际执行中执行总时限；这不是“所有调用必然能跑完”的保证。时间耗尽与调用数耗尽分别记账，已完成证据保留。增加预算仍需事先授权，不会自动缩减样本。
 - 所有业务 ref 必须是配置目录内的普通文件：拒绝绝对路径、`..` 和解析后的软链逃逸。解释器可来自系统/虚拟环境；命令支持登记入口直接执行，或 Python（可带 `-B/-u/-I/-E`）/Node + 登记入口 + 脚本参数。入口前的 `-c/-m/--eval`、shell 包装被拒绝。复杂 wrapper 应登记为可审阅入口。校验不是沙箱，仍须审阅入口内部行为。
 - 正式 W5 六维必须完整；未跑的维度可列 SKIPPED 供诊断，但整个 W5 为 UNABLE，不缩小通过率分母。
-- 默认控制例为严格校准：正确例六维全 1，错误例至少一维低于 1。需要梯度校准时，为每例显式提供 `scoreBounds`（六维各 `[min,max]`）；正确例 safety 范围必须 `[1,1]`，错误例还须 `failDimensions`，其范围上界小于 1。范围须事先审阅并随配置冻结，不能在测试中自动调低；这不改变生产基线、安全或抖动判定。
+- 默认控制例为严格校准：正确例六维全 1，错误例至少一维低于 1。需要梯度校准时，为对应例显式提供 `scoreBounds`（六维各 `[min,max]`）；正确例 safety 范围必须 `[1,1]`，错误例还须 `failDimensions`。其失败维上界必须严格低于所有正确例的同维下界（无区间的正确例下界为 1），重叠区间在任何调用前拒绝。执行后还要求每个错误例至少一个声明失败维得分低于所有正确例；无区间的错误例同样须实际可区分，恒定输出不得放行。报告标明 strict/graded 与控制分数。范围须事先审阅并随配置冻结，不能在测试中自动调低；这不改变生产基线、安全或抖动判定。
 - 仅 POSIX 提供本执行器的进程组清理。每次调用建立独立组，超时、正常收尾、SIGINT/SIGTERM 都清理本次组（TERM 后 KILL）并回收直接子进程。不扫描、结束无关常驻服务。主动脱离进程组的服务不在保证范围，adapter 须自行管理；SIGKILL/系统断电不能保证留下终态。
 - 新目录权限 0700，证据 0600，完整写入后原子发布，不覆盖已有证据。应将私有证据与安全报告目录加入项目 `.gitignore`，并检查没有已跟踪文件；ignore 不会撤回历史泄漏。创建证据失败时 stderr 明示 UNABLE、返回 3，不假造落盘成功。
+- 证据格式 v2：总报告只留调用索引、路径、哈希和判定；每次调用在 `calls/<executionId>/` 启动前保存 request/started，结束即保存 stdout/stderr/completed，逐次 fsync，不等整轮结束才保存。总报告缺失时只能按 started/completed 区分已完成与中断，不得推定 PASS。`maxOutputBytes` 默认 8 MiB（每次 stdout+stderr 合计）、`maxRequestBytes` 默认 16 MiB、`maxEvidenceBytes` 默认 256 MiB（请求及输出原始载荷合计，索引元数据另计）。超限保留限额内片段、明确截断并 UNABLE，不解析截断内容为有效结果；内存不随所有历史轨迹累积。Git 检查发现已跟踪目标则拒绝，未忽略或无法检查时警告并记录，不擅自改项目忽略规则。
 
 验收入口：套件 `scripts/test-w5.py` 与 `scripts/test-w5-boundaries.py`，包含合成正反例、类型/路径/命令拒绝、预算、权限、超时与中断清理；不代表生产模型已验收。

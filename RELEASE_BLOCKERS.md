@@ -12,6 +12,7 @@ is unchecked**. No stable tag or production-readiness claim should be made yet.
 ## P0 — required before a stable release
 
 - [ ] Verify the exact final stable artifact from a clean clone: clean installation, rendered-image review and two fresh full verifications. Previous successful runs are historical evidence only.
+- [ ] Complete the separately authorized Git-history privacy response. Current files no longer reproduce the previously tracked user-content labels, but older public Git objects remain reachable; ordinary commits cannot remove copies, forks or cached objects. Do not claim historical erasure without a coordinated rewrite and host-side follow-up.
 - [ ] Validate W5 using an explicitly authorized production project adapter, judge and baseline. Missing production evidence remains UNABLE; installation grants no model or private-project access.
 - [ ] Validate native Feishu and DingTalk delivery with authorized test accounts: text, tables, real images, per-image identity/section placement, raw readback, conflict behavior and delivery receipts. Offline fixtures are not native compatibility evidence.
 - [ ] Compare representative research/PRD/design/interactive deliverables under the same brief and runtime. Rule preservation and unit tests alone do not establish quality or performance equivalence.

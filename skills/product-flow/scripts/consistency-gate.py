@@ -35,7 +35,9 @@
 import io, os, re, sys, json, shutil, tempfile, subprocess, glob
 
 def read(p):
-    try: return io.open(p, encoding='utf-8').read()
+    try:
+        with io.open(p, encoding='utf-8') as stream:
+            return stream.read()
     except Exception: return None
 
 def md_files(root):
@@ -1001,9 +1003,9 @@ def r_gate_has_negative(root):
     #   ⇒ 改读 `.selftest-measured.json` 的 perGate —— 那份是全部跑完之后**一次性写完**的。
     mf = os.path.join(root, 'references', '.selftest-measured.json')
     if not os.path.exists(mf):
-        # 与 selftest-count-measured 同一裁决：gitignore 的运行生成物，新 clone 上本来就没有。
+        # 发布快照须与完整套件一起提供；残缺分发不是门禁通过。
         # ⛔ 不折成通过，也不冒充内容失败。
-        return None, ("没有 references/.selftest-measured.json（gitignore 的运行生成物）—— "
+        return None, ("没有 references/.selftest-measured.json（发布快照缺失）—— "
                       "本条**没验**：跑 `python3 scripts/selftest-all.py` 后它才有依据。"
                       "⛔ 不是「通过」也不是「不合格」")
     try:
@@ -1083,8 +1085,8 @@ def r_selftest_count(root):
         #   ⭐ 更糟的是它让**变异测试的基线在干净 clone 上永远不绿**（见 self_test 的
         #   绿基线断言），三发变异因此全部空转。
         #   ⇒ 改 UNABLE：说清缺什么、怎么补，⛔ 不折成通过、也不冒充内容失败。
-        return None, ("没有实测文件 references/.selftest-measured.json（gitignore 的运行生成物，"
-                      "新 clone 上本来就没有）—— 本条**没验**：跑 `python3 scripts/selftest-all.py` "
+        return None, ("没有实测文件 references/.selftest-measured.json（发布快照缺失，"
+                      "不能引用别的布局的测量）—— 本条**没验**：维护者跑 `python3 scripts/selftest-all.py --fresh --publish-snapshot` "
                       "后它才有依据。⛔ 不是「通过」也不是「不合格」")
     try:
         d = _json.load(open(mf, encoding='utf-8'))
@@ -2579,7 +2581,7 @@ def r_single_source(root):
 # --------------------------------------------------------------- 执行
 # ═══════════════════════════════════════════════════════════════════
 # 项目模式：查**交付物**（不是本 skill）里的「声称≠实际」
-# 三条规则各自对应 2026-08-31 在 验证项目 上实测到的一个真缺陷。
+# 三条规则各自对应 2026-08-31 在 某验证项目上实测到的一个真缺陷。
 # ═══════════════════════════════════════════════════════════════════
 PROJECT_RULES = []
 SKIP_DIRS = {'.git', 'node_modules', 'dist', 'build', '.venv', 'venv',
@@ -2633,7 +2635,7 @@ def walk_text(root, exts=None):
 # 这个字段**只在另一份文件里**。查证指针指向的文件里没有被查证的东西 ——
 # 而 M2「每个事实标出处」正是靠这个标记落地的，它一旦悬空，出处就是装饰。
 # ⚠️ 判据必须照**真实形态**造，不能照想象造。首版假设标记是「路径 + 关键词」，
-#    实测 验证项目 的 146 个标记里主流是 `[查证·inspector.test.js·2026-08-30]`
+#    实测 某验证项目的 146 个标记里主流是 `[查证·inspector.test.js·2026-08-30]`
 #    （来源 + 日期，用 `·` 分段），于是日期段被当成路径 → 一次报出上百条假阳性。
 #    真实并存的四种：
 #      [查证·kernel/main.js·<日期>]        路径 + 日期
@@ -2948,7 +2950,7 @@ def p_sot(root):
                 continue
             n += 1
             # ⚠️ `~` 必须先展开:os.path.join(root, '~/x') 会拼成 <root>/~/x,
-            # 于是**任何用 ~ 写的正本路径都会被误报为不存在**(2026-09-02 在 验证项目 实测)。
+            # 于是**任何用 ~ 写的正本路径都会被误报为不存在**(2026-09-02 在 某验证项目实测)。
             # 绝对路径同理 —— join 会直接丢掉 root,但仍需按绝对路径判存在。
             probe = os.path.expanduser(target)
             probe = probe if os.path.isabs(probe) else os.path.join(root, probe)
@@ -3289,7 +3291,7 @@ def self_test(root):
     ok = True
     _skipped = []
     for rid, rel, mut in MUTATIONS:
-        if rid in base_bad:
+        if rid in base_bad and rid not in {'selftest-count-measured', 'gate-has-negative'}:
             # ⛔ 这一发证明不了任何事：目标规则在基线上就红，变异后照样红。
             # 🚨 2026-09-12 查清的一桩悬案：这里原本用 ✗，而 selftest-all 把 ✗ 当**失败**记号
             #   ⇒ 「基线红所以跳过」被数成 4 个失败。⭐ 一个记号两个含义、严重性相反
@@ -3305,7 +3307,8 @@ def self_test(root):
         # 🚨 2026-09-09：`selftest-count-measured` 的判据**依赖**实测文件；干净 clone 上
         #   它不存在 ⇒ 规则返回 N/A ⇒ 针对它的三发变异全部空转（绿基线断言一上线就暴露了）。
         #   ⭐ 变异要测的是**规则本身**，不是这台机器有没有跑过 selftest。
-        #   ⇒ 副本里先补一个最小实测文件，让判据有依据可判；本机已有则原样用。
+        #   ⇒ 这两条规则始终在明确的合成副本中测试，不依赖待更新的发布快照。
+        #   每发先断言该副本的目标规则为绿，再注入缺陷；绝不改写真实发布快照。
         # ⚠️ 与上面同理：本规则的判据依赖实测生成物。副本里合成一份「全部达标」的记录，
         #   让这份环境本身是绿的 —— ⛔ 基线红的话这发变异证明不了任何事（本会话已犯过一次）。
         if rid == 'gate-has-negative':
@@ -3315,38 +3318,32 @@ def self_test(root):
                 ensure_ascii=False))
         if rid == 'selftest-count-measured':
             _mf = os.path.join(dst, 'references', '.selftest-measured.json')
-            if not os.path.exists(_mf):
-                _doc = read(os.path.join(dst, 'references', 'design-quality-gates.md')) or ''
-                _m1 = re.search(r'(\d+)\s*个用例', _doc)
-                _m2 = re.search(r'按「?期望非零(?:退出码)?」?\s*(\d+)\s*个', _doc)
-                _m3 = re.search(r'按标题带「反例」\s*(\d+)\s*个', _doc)
-                # 🚨 2026-09-09 第三轮独立复核揪出：合成靶的 `shas` 此前只放一个假键，
-                #   于是**全部脚本的 sha 都对不上，规则在变异之前就已经 FAIL** ——
-                #   这 4 发变异全部空转，而 harness 判它们「被杀死」。
-                #   ⭐ 批①的绿基线断言只打在**顶层**基线上，没打在它自己新造的
-                #   **逐发环境**里 —— 同一个缺陷在同一个修复里原样复发。
-                #   ⇒ 合成靶必须用**真实 sha**（照 selftest-all 的算法逐个算），
-                #     让这份环境本身是绿的，变异才有意义。
-                import hashlib as _hl
-                _shas = {}
-                for _d in ('scripts',):
-                    for _n in sorted(os.listdir(os.path.join(dst, _d))):
-                        if not _n.endswith(('.py', '.mjs')):
-                            continue
-                        _p2 = os.path.join(dst, _d, _n)
-                        if b'--self-test' not in io.open(_p2, 'rb').read():
-                            continue
-                        _shas[_n] = _hl.sha1(io.open(_p2, 'rb').read()).hexdigest()
-                io.open(_mf, 'w', encoding='utf-8').write(json.dumps({
-                    "measuredAt": "2026-01-01T00:00:00", "scripts": len(_shas),
-                    "cases": int(_m1.group(1)) if _m1 else 1,
-                    "negativesByExpectation": int(_m2.group(1)) if _m2 else 0,
-                    "negativesByLabel": int(_m3.group(1)) if _m3 else 0,
-                    "failures": 0, "failedScripts": [], "unableScripts": [],
-                    "cachedScripts": [], "disagree": [],
-                    # ⚠️ 真实 sha（见上）：既让环境本身绿，也保证另一发变异
-                    #   （靶就是本文件、要替换掉一个 40 位 sha）不是 no-op。
-                    "shas": _shas}, ensure_ascii=False))
+            _doc = read(os.path.join(dst, 'references', 'design-quality-gates.md')) or ''
+            _m1 = re.search(r'(\d+)\s*个用例', _doc)
+            _m2 = re.search(r'按「?期望非零(?:退出码)?」?\s*(\d+)\s*个', _doc)
+            _m3 = re.search(r'按标题带「反例」\s*(\d+)\s*个', _doc)
+            import hashlib as _hl
+            _shas = {}
+            for _n in sorted(os.listdir(os.path.join(dst, 'scripts'))):
+                if not _n.endswith(('.py', '.mjs')):
+                    continue
+                _p2 = os.path.join(dst, 'scripts', _n)
+                _bytes = io.open(_p2, 'rb').read()
+                if b'--self-test' in _bytes:
+                    _shas[_n] = _hl.sha1(_bytes).hexdigest()
+            io.open(_mf, 'w', encoding='utf-8').write(json.dumps({
+                "fixtureOnly": True, "measuredAt": "synthetic-not-a-measurement",
+                "scripts": len(_shas),
+                "cases": int(_m1.group(1)) if _m1 else 1,
+                "negativesByExpectation": int(_m2.group(1)) if _m2 else 0,
+                "negativesByLabel": int(_m3.group(1)) if _m3 else 0,
+                "failures": 0, "failedScripts": [], "unableScripts": [],
+                "cachedScripts": [], "disagree": [], "shas": _shas}, ensure_ascii=False))
+        if rid in {'selftest-count-measured', 'gate-has-negative'} and rid in run_silent(dst, ids=True):
+            print("  ❌ %-20s 合成副本基线未通过，不能声称变异被杀死" % rid)
+            ok = False
+            shutil.rmtree(tmp, True)
+            continue
         p = os.path.join(dst, rel)
         s = read(p)
         if s is None and rel.endswith('.selftest-measured.json'):
@@ -3640,7 +3637,7 @@ def run_silent(root, ids=False):
 def project_self_test():
     """项目模式的变异自证：三条规则各造一个**真实形态**的反例，必须被对应那条抓到。
 
-    ⚠️ 反例都取自 2026-08-31 在 验证项目 上的实测缺陷，不是编的：
+    ⚠️ 反例都取自 2026-08-31 在 某验证项目上的实测缺陷，不是编的：
       · 查证指针指向的文件里没有那个字段
       · demo 自称「自动生成」而没有任何脚本会写它
       · 文档声称的正本路径已被删除
@@ -3681,13 +3678,13 @@ def project_self_test():
     case("正例：三条都成立", GOOD, [])
 
     bad1 = dict(GOOD); bad1['design/tokens.json'] = '{"other": 1}'
-    case("反例1 查证指针指向的文件里没有那个关键词（验证项目 实测）", bad1, ["verify-marker"])
+    case("反例1 查证指针指向的文件里没有那个关键词（某验证项目实测）", bad1, ["verify-marker"])
 
     bad1b = dict(GOOD); del bad1b['design/tokens.json']
     case("反例1b 查证指向的文件根本不存在", bad1b, ["verify-marker", "source-of-truth-exists"])
 
     bad2 = dict(GOOD); del bad2['gen.py']
-    case("反例2 自称「自动生成」却没有任何脚本会写它（验证项目 实测）", bad2,
+    case("反例2 自称「自动生成」却没有任何脚本会写它（某验证项目实测）", bad2,
          ["generated-has-generator"])
 
     bad2b = dict(GOOD)

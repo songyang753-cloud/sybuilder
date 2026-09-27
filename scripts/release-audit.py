@@ -6,6 +6,7 @@ import argparse
 import json
 import pathlib
 import re
+import subprocess
 import sys
 
 
@@ -18,6 +19,19 @@ FORBIDDEN_PARTS = {".DS_Store", "__pycache__", ".four-node-review"}
 SENSITIVE_NAMES = re.compile(r"(?i)(?:\.env(?:\..*)?|id_rsa|oauth|credential|token\.json)$")
 OLD_FEISHU_COMMAND = re.compile(r"(?m)^\s*feishu\s+(?:docx|fetch|wiki|drive)\b")
 TEXT_SUFFIXES = {".md", ".json", ".py", ".mjs", ".js", ".sh", ".yaml", ".yml", ".tsv"}
+
+
+def candidate_paths(root: pathlib.Path) -> list[pathlib.Path]:
+    """Audit files that an ordinary Git archive/add would publish, not ignored runtimes."""
+    try:
+        proc = subprocess.run(
+            ['git', '-C', str(root), 'ls-files', '-z', '--cached', '--others', '--exclude-standard'],
+            capture_output=True, timeout=10, check=False)
+        if proc.returncode == 0:
+            return sorted(root / item.decode('utf-8') for item in proc.stdout.split(b'\0') if item)
+    except (OSError, subprocess.TimeoutExpired, UnicodeError):
+        pass
+    return sorted(root.rglob('*'))
 
 
 def publication_errors(root: pathlib.Path) -> list[str]:
@@ -64,12 +78,13 @@ def main() -> int:
     root = pathlib.Path(args.root).resolve()
     errors: list[str] = []
 
-    skills = {str(path.relative_to(root)) for path in root.rglob("SKILL.md")}
+    paths = candidate_paths(root)
+    skills = {str(path.relative_to(root)) for path in paths if path.name == 'SKILL.md' and path.is_file()}
     if skills != ALLOWED_SKILLS:
         errors.append("discoverable Skills differ: expected %s, found %s" %
                       (sorted(ALLOWED_SKILLS), sorted(skills)))
 
-    for path in root.rglob("*"):
+    for path in paths:
         rel = path.relative_to(root)
         if ".git" in rel.parts:
             continue

@@ -140,7 +140,7 @@ def self_test():
         p = os.path.join(t, name)
         io.open(p, 'w', encoding='utf-8').write(s); return p
 
-    clean = ("# 竞品分析\n\n## 市场格局\n\nWorkBuddy 功能面最宽，16/20 个功能有实现。\n"
+    clean = ("# 竞品分析\n\n## 市场格局\n\n某目标产品功能面最宽，16/20 个功能有实现。\n"
              "它把工作空间放在输入框正下方。\n\n## 附件 A 字段规格\n\n见 `c02.md#功能清单` 的 CAF-001。\n")
     case("正例 正文干净、内部路径只在附件里", check(w('a.md', clean)), 0)
 

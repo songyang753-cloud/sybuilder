@@ -19,8 +19,11 @@ for adapter in lark dingtalk figma browser; do
     echo "Incomplete suite: missing adapter ${adapter}" >&2; exit 1;
   }
 done
-for required in LICENSE NOTICE THIRD_PARTY.md shared/module-registry.json skills/product-flow/modules/diagramming/LICENSE skills/product-flow/scripts/_documents.py skills/product-flow/modules/prototyping/scripts/bundle.mjs; do
+for required in LICENSE NOTICE THIRD_PARTY.md licenses/sources.json shared/module-registry.json scripts/verify-suite.sh scripts/verify-portability.py scripts/test-w5.py scripts/test-w5-boundaries.py skills/four-node-review/references/iron-rules.md skills/product-flow/modules/diagramming/LICENSE skills/product-flow/scripts/_documents.py skills/product-flow/modules/prototyping/scripts/bundle.mjs; do
   test -f "${ROOT}/${required}" || { echo "Incomplete suite: ${required}" >&2; exit 1; }
+done
+for license in google--eng-practices.txt OWASP--API-Security.txt; do
+  test -s "${ROOT}/licenses/${license}" || { echo "Incomplete suite: missing license ${license}" >&2; exit 1; }
 done
 mkdir -p "${TARGET}"
 

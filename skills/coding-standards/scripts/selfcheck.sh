@@ -17,7 +17,7 @@
 #   3 = 有 UNABLE 无 FAIL（没能测 —— 不是合格，也不是不合格）
 #   4 = 门禁自身内部错误（如断言函数收到多余实参）
 #   （2 保留给「用法错误 / 参数不对」，本脚本目前不产生）
-# ⚠️ 本行由 [9] 自核：声明的码值集合必须等于脚本里实际用到的 exit 码集合。
+# ⚠️ 本行由 [8] 自核：声明的码值集合必须等于脚本里实际用到的 exit 码集合。
 
 set -u
 
@@ -34,6 +34,17 @@ R_M="${SKILL_DIR}/references/rules-delivery.md"
 R_F="${SKILL_DIR}/references/foundation.md"
 R_Z="${SKILL_DIR}/references/authority.md"
 SRC="${FOUR_NODE_SKILL:-${SKILL_DIR}/../four-node-review/SKILL.md}"
+# Read the explicitly routed normative companion without losing source anchors.
+if [ -r "${SRC}" ] && /usr/bin/grep -qF '<!-- FNR-RULES: references/iron-rules.md -->' "${SRC}"; then
+  RULE_SOURCE="$(dirname "${SRC}")/references/iron-rules.md"
+  if [ ! -r "${RULE_SOURCE}" ]; then
+    echo 'UNABLE: four-node-review 规则引用缺失；请安装完整套件'; exit 3
+  fi
+  SOURCE_BUNDLE="$(mktemp)" || exit 4
+  trap 'rm -f "${SOURCE_BUNDLE}"' EXIT
+  cat "${SRC}" "${RULE_SOURCE}" > "${SOURCE_BUNDLE}" || exit 3
+  SRC="${SOURCE_BUNDLE}"
+fi
 REPO_ENFORCEMENT="${ENG_STD_SKILL:-${SKILL_DIR}/repository-enforcement/PLAYBOOK.md}"
 GREP=${GREP:-/usr/bin/grep}   # 与 reverse-test.sh 的写法统一（此前两个脚本对同一件事不一致）
 
@@ -142,6 +153,8 @@ if [ "${n_anchor:-0}" -lt 10 ]; then
   unable "只解析到 ${n_anchor:-0} 个锚点，低于下限 10 —— 是解析坏了，不是没问题"
 elif [ "${SRC_OK}" != 1 ]; then
   unable "解析到 ${n_anchor} 个锚点，但源不可读，一个都没能校验"
+elif ! command -v python3 >/dev/null 2>&1; then
+  unable "缺少 python3，源锚点未能校验"
 else
   # ⚡ 一次 python 读完，替代「90 个锚点 × 90 次 grep 进程」（2026-09-05）：
   #    那 90 次 fork+exec 占了本门禁约一半的墙钟时间。语义完全等价 ——
@@ -163,7 +176,9 @@ PYANCHOR
 )"
   miss="${_mout%%	*}"; misslist=" ${_mout#*	}"
   [ "${miss}" = 0 ] && misslist=""
-  if [ "${miss}" -eq 0 ]; then
+  if ! printf '%s' "${miss}" | ${GREP} -qE '^[0-9]+$'; then
+    unable "源锚点判据未返回有效计数，真因见 stderr"
+  elif [ "${miss}" -eq 0 ]; then
     pass "${n_anchor}/${n_anchor} 个锚点在源文件中命中"
   else
     fail "${miss}/${n_anchor} 个锚点在源文件中找不到（源文件改了措辞，或推导写错了）:${misslist}"
@@ -550,7 +565,7 @@ else
 fi
 echo
 
-# ---------- 9. 门禁自述与自身实际对账（D23：累计量的判据必须跑在累计完成之后 —— 本条必须是最后一条）（H10：写规则的人正在犯它，交给机器守）----------
+# ---------- 8b. 门禁自述与自身实际对账（H10：写规则的人正在犯它，交给机器守；退出码汇总仍在末尾 [9]）----------
 echo "[8b] 条款→判据夹具对（行为夹具，非源码正则）"
 _fx="$(dirname "${BASH_SOURCE[0]}")/rule-fixtures.sh"
 if [ ! -r "${_fx}" ]; then
@@ -685,7 +700,7 @@ for f,s in texts.items():
     body=s
     for r in SKIP:
         body2=r.sub(lambda m:'\n'*m.group(0).count('\n'), body)   # 用等量空行占位，保住行号
-        n_skip+=body.count('\n')-body2.count('\n')+sum(1 for _ in r.finditer(body))*0
+        n_skip+=sum(len(m.group(0).splitlines()) for m in r.finditer(body))
         body=body2
     for n,line in enumerate(body.split('\n'),1):
         for m in pat.finditer(line):
@@ -694,7 +709,7 @@ n_lines=sum(t.count('\n')+1 for t in texts.values())
 if bad:
     print('FAIL 引用了不存在的条款：'+'; '.join('%s(%d次,例 %s)'%(k,len(v),v[0]) for k,v in sorted(bad.items())))
 else:
-    print('PASS 交叉引用闭世界：%d 个条款号，扫过 %d 行（两处历史留痕豁免段已挖空，行号未移位），含裸写形态，全部指得到'%(len(exist),n_lines))
+    print('PASS 交叉引用闭世界：%d 个条款号，枚举 %d 行，豁免 %d 行（行号未移位），含裸写形态，全部指得到'%(len(exist),n_lines,n_skip))
 PYEOF
 )"
 case "${_xref}" in
@@ -963,7 +978,7 @@ fi
 # SYBuilder 把旧的外部仓库规范融合成内置 repository-enforcement 模块。
 # 因此闭环检查直接读取随 coding-standards 一起发布的 PLAYBOOK；反向测试通过
 # ENG_STD_SKILL 显式覆盖为临时副本，既能造反例，也不会改真实工作区。
-_sib="${REPO_ENFORCEMENT}"; _sib_src="内置仓库执法模块"
+_sib="${REPO_ENFORCEMENT}"
 # ⚠️ 三档是**三个独立缺陷**，不许串成 elif（2026-09-05 自查发现，改前正是 elif 链）：
 #    串起来只会报排在最前的那一档，另外两档被完全吞掉 —— 而上一行注释明明写着
 #    「每档报不同的诊断」。**设计写对了，实现没守住**（同 A19 / A20）。
@@ -1003,7 +1018,6 @@ else
     pass "闭环契约四档齐（有链接 · 定了权 · 实然段在场 · 未接通清单与实测一致）"
   fi
 fi
-[ -n "${_sib_head:-}" ] && rm -f "${_sib_head}"
 
 # 10m 本 skill 自己的脚本必须遵守 A14/A16（累加器要追得到 exit；门的结论不许被分号旁路）
 # ⭐ 它的**正向基线**就是 tests/fixtures 里的 violating 样本 —— 那三处必须被扫出来，
@@ -1163,22 +1177,21 @@ echo "[11] 变异套件的活性（它太慢不进门禁 ⇒ 它坏了没有任�
 # ⚠️ 这道判据在**变异套件运行期间无意义**：那时被测文件正被故意改坏，
 #    别的条目的锚点当然找不到。若照报 FAIL，会把两条期望 rc=3（UNABLE）的用例
 #    打成 rc=1 —— 判据收紧后把**正确用法**一起挡在外面（**B16**）。
-#    定义域用 reverse-test 的锁来表达：锁在 = 有变异在跑 = 此时不可判（**A19**：没能测≠不合格）。
+#    仅当前唯一副本在基线通过后的变异阶段跳过；真实树不受其他运行影响。
 # @ENG 锚点直接检查内置仓库执法模块；反向测试会显式覆盖为临时副本。
-_claim="$(GATE_SELF="${BASH_SOURCE[0]}" SRCFILE="${SRC}" ENGFILE="${REPO_ENFORCEMENT}" RTLOCK="${TMPDIR:-/tmp}/coding-standards-revtest.lock" TSV="${SKILL_DIR}/tests/gate-mutations.tsv" python3 - <<'PYEOF2'
+_claim="$(GATE_SELF="${BASH_SOURCE[0]}" SRCFILE="${SRC}" ENGFILE="${REPO_ENFORCEMENT}" TSV="${SKILL_DIR}/tests/gate-mutations.tsv" python3 - <<'PYEOF2'
 import io,os,re,sys
 tsv=os.environ['TSV']
-if os.path.isdir(os.environ.get('RTLOCK','')):
+if os.environ.get('CS_MUTATION_COPY') and os.path.realpath(os.environ['CS_MUTATION_COPY']) == os.path.realpath(os.path.dirname(os.path.dirname(os.environ['GATE_SELF']))):
     print('UNABLE 变异套件正在运行（被测文件此刻是变异态）—— 锚点活性此时不可判，不是不合格'); raise SystemExit
 if not os.path.exists(tsv): print('UNABLE 找不到变异表 '+tsv); raise SystemExit
 raw=[l.rstrip('\n') for l in io.open(tsv,encoding='utf-8')]
 rows=[l.split('\t') for l in raw if l.strip() and not l.startswith('#')]
-p=[]
+p=[]; unavailable=[]
 bad=[str(i+1) for i,r in enumerate(rows) if len(r)!=6]
 if bad: print('FAIL 变异表有 %d 行字段数不是 6（行 %s）—— 会被静默当成别的东西跑掉'%(len(bad),','.join(bad[:5]))); raise SystemExit
 # A3 下限要盖两个数：①读到几行 ②筛完还剩几行（后者更容易漏）
 if len(rows)<10: print('UNABLE 只读到 %d 条变异（下限 10）—— 是表坏了，不是判据都验过了'%len(rows)); raise SystemExit
-d=os.path.dirname(tsv.rstrip('/').rsplit('/tests/',1)[0]+'/x') or '.'
 base=tsv.rsplit('/tests/',1)[0]
 alive=0
 for i,(f,old,new,want,msg,gate) in enumerate(rows):
@@ -1187,7 +1200,9 @@ for i,(f,old,new,want,msg,gate) in enumerate(rows):
     if f=='@SRC': fp = os.environ.get('SRCFILE','')
     elif f=='@ENG': fp = os.environ.get('ENGFILE','')
     else: fp = os.path.join(base,f)
-    if not fp or not os.path.exists(fp): p.append('第%d条指向不存在的文件 %s'%(i+1,f)); continue
+    if not fp or not os.path.isfile(fp) or not os.access(fp, os.R_OK):
+        (unavailable if f in ('@SRC','@ENG') else p).append('第%d条输入文件不可读 %s'%(i+1,f))
+        continue
     txt=io.open(fp,encoding='utf-8').read()
     if '%d' in old:   # 占位锚点：按 (\d+) 匹配，数字自己跟随，不随条款增减失效
         n=len(re.compile(r'(\d+)'.join(re.escape(x) for x in old.split('%d'))).findall(txt))
@@ -1199,8 +1214,9 @@ for i,(f,old,new,want,msg,gate) in enumerate(rows):
 gates=set(re.findall(r'^echo "\[([0-9a-z]+)\]', io.open(os.environ['GATE_SELF'],encoding='utf-8').read(), re.M))
 ghost=sorted({r[5] for r in rows} - gates)
 if ghost: p.append('组标号指向不存在的判据组：'+','.join(ghost))
-if alive==0: print('UNABLE 一条锚点都没验成（%d 条全被跳过）—— 不是全过了'%len(rows)); raise SystemExit
 if p: print('FAIL '+'; '.join(p[:4])); raise SystemExit
+if unavailable: print('UNABLE '+'; '.join(unavailable[:4])); raise SystemExit
+if alive==0: print('UNABLE 一条锚点都没验成（%d 条全被跳过）—— 不是全过了'%len(rows)); raise SystemExit
 print('PASS 变异表 %d 条锚点全部唯一命中，覆盖 %d/%d 个判据组'%(len(rows),len({r[5] for r in rows}),len(gates)))
 PYEOF2
 )"
@@ -1211,7 +1227,6 @@ case "${_claim}" in
   FAIL*) fail "${_claim#FAIL }" ;;
   *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：${_claim}" ;;
 esac
-[ -n "${_eng_head_11:-}" ] && rm -f "${_eng_head_11}"
 
 # 覆盖度自述对账：此前 SKILL.md 手写「34 道判据里 24 道被机器验过（27 条变异）」，
 # 三个数字全过期 —— 因为它们在任何地方都不可推导，只能手写（E7）。

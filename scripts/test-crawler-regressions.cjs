@@ -71,6 +71,42 @@ function cdpFor(els) {
       assert.equal(result.els[0].txt, 'Field');
     }
   });
+  await test('policy denial is distinct from selector absence', () => {
+    const e=element('Search',{role:'button'});
+    const ctx=dom([e]);
+    assert.equal(vm.runInNewContext(core.clickSelectorExpression('.nav-item'),ctx).reason,'unclassified-action-needs-approval');
+    assert.equal(vm.runInNewContext(core.clickSelectorExpression('.missing'),dom([])).status,'ABSENT');
+    const sig=snap([e]).els[0].sig;
+    const policy=[{url:ctx.location.href,sig,kind:'navigation',authorizationRef:'synthetic-approval'}];
+    assert.equal(vm.runInNewContext(core.clickSelectorExpression('.nav-item',policy),ctx).status,'CLICKED');
+  });
+  await test('navigation metadata and page titles withhold private content', () => {
+    const e=element('SYNTHETIC_PRIVATE_TITLE',{history:true});e.id='SYNTHETIC_PRIVATE_ID';
+    const context=dom([e]);context.document.title='SYNTHETIC_PRIVATE_PAGE';
+    assert(!JSON.stringify(vm.runInNewContext(core.PRIVATE_NAV_JS,context)).includes('SYNTHETIC_PRIVATE'));
+    const probe=vm.runInNewContext(core.ENUM_JS,context);
+    const exported={...probe,...core.privatePageMetadata('https://example.test/?q=SYNTHETIC_PRIVATE_URL',probe.title)};
+    assert(!JSON.stringify(exported).includes('SYNTHETIC_PRIVATE'));
+    assert.notEqual(core.privatePageMetadata('same','Title A').title,core.privatePageMetadata('same','Title B').title);
+  });
+  await test('CDP discovery fetch is bounded even when the server never responds', async () => {
+    const http=require('node:http');const server=http.createServer(()=>{});
+    await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+    try {
+      const start=Date.now();
+      await assert.rejects(core.connect(server.address().port,{tries:1,waitMs:1}));
+      assert(Date.now()-start<4000,'individual fetch requires an abort deadline');
+    } finally {server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+  });
+  await test('CDP discovery response body shares the total deadline', async () => {
+    const http=require('node:http');const server=http.createServer((_req,res)=>{res.writeHead(200);res.write('[');});
+    await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+    try {
+      const start=Date.now();
+      await assert.rejects(core.connect(server.address().port,{tries:25,waitMs:1500,timeoutMs:250}));
+      assert(Date.now()-start<2000,'body must not outlive total connection deadline');
+    } finally {server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+  });
   await test('route-only navigation is captured even when controls are unchanged', async () => {
     let route = '/';
     const els = ['Overview', 'Details', 'About'].map(t => element(t, {click: () => {route = '/' + t;}}));
@@ -83,7 +119,8 @@ function cdpFor(els) {
     };
     const result = await run('deep-walk.cjs', cdp);
     assert(result.record.transitions.length >= 3);
-    assert(result.record.nodes.some(n => n.url.endsWith('/Details')));
+    assert(new Set(result.record.nodes.map(n=>n.url)).size>=3);
+    assert(!JSON.stringify(result.record).includes('https://example.test'));
   });
   await test('deep walk never clicks unapproved side effects', async () => {
     const clicks = [];
@@ -260,7 +297,7 @@ function cdpFor(els) {
               const e=msg.params.expression;
               assert(!e.includes('.remove()'),'capture must not remove permission overlays');
               result={result:{value:e.includes('querySelectorAll(\'[role=dialog]') ? fault==='dialog'
-                : e.includes('const SPEC') ? '{}' : e.includes('return e ?') ? null : '{}'}};
+                : e.includes("status:'ABSENT'") ? {status:'ABSENT',reason:'selector-no-match'} : '{}'}};
             }
             this.emit('message',JSON.stringify({id:msg.id,result}));
           });
@@ -283,7 +320,10 @@ function cdpFor(els) {
       assert.deepEqual(removed,['/synthetic-private-profile']);
       assert.deepEqual(killed,[[-424243,'SIGTERM'],[-424243,'SIGKILL']]);
       assert.equal(owner.listenerCount('SIGTERM'),0); assert.equal(owner.listenerCount('SIGINT'),0);
-      if (fault!=='none') assert.equal(files.size,0,'blocked capture must not manufacture evidence');
+      if (fault!=='none') {
+        assert.equal(files.size,1,'failed capture may retain diagnostics, never fabricated screenshots');
+        assert.equal(JSON.parse(files.get('/synthetic-output/capture-result.json')).status,'UNABLE');
+      }
       else assert(files.has('/synthetic-output/01-library.png'));
       if (fault==='dialog') assert(!commands.some(c=>c.method==='Page.captureScreenshot'));
     });

@@ -33,6 +33,14 @@ if [ -n "${MODULE_SKILLS}" ]; then
   exit 1
 fi
 python3 "${ROOT}/scripts/verify-modules.py"
+python3 - "${TARGET}/product-flow/scripts" <<'PY'
+import pathlib,sys
+sys.path.insert(0,sys.argv[1])
+from _workflow import suite_script
+for name in ('test-w5.py','test-w5-boundaries.py','verify-portability.py'):
+    assert suite_script(name).is_file()
+PY
+python3 "${TARGET}/product-flow/scripts/_research_package.py" --self-test
 
 COLLISION="${TMP_ROOT}/collision"
 mkdir -p "${COLLISION}/four-node-review"

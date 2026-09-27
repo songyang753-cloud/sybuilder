@@ -272,7 +272,7 @@ def check(d):
         add("competitive-landscape", "competitor-landscape.md 有竞争关系 × 样本角色双轴", False,
             "缺 competitor-landscape.md")
     else:
-        # ⚠️ 只量**表格行**：双轴是登记表的属性。正文里「OpenClaw（COMP-13）是上游而非同层」
+        # ⚠️ 只量**表格行**：双轴是登记表的属性。正文里「样本 A（COMP-13）是上游而非同层」
         # 这类解释句引用编号完全正当，拿它去查双轴是**量错了对象** —— 判据会逼正文不许提编号。
         # ⛔ 收窄的是量程对象，不是标准：表里每一行照旧逐行查，且一行都没有仍判红（fail-closed）。
         comp_rows = [ln for ln in landscape.splitlines()
@@ -339,10 +339,8 @@ def check(d):
                               and re.search(r'品类头部|直接对手|越级参照|反面样本', ln)
                               for m in [re.search(r'(?<![A-Z])COMP-\d+(?!\d)', ln)] if m})
 
-    dict_headers, dict_rows = _table_in_section(
-        atomic, '功能分解词典',
-        (r'^af$', r'功能路径', r'层级深度', r'父节点', r'^l0', r'^l1', r'^l2', r'角色', r'场景|入口|触发', r'对象|输入',
-         r'前置|规则', r'单一动作', r'状态变化', r'可观察结果|完成定义', r'独立验收|拆分说明'))
+    from _section import atomic_dictionary_table, atomic_dictionary_ids
+    dict_headers, dict_rows = atomic_dictionary_table(atomic)
     dict_cols = {
         'af': _col(dict_headers, r'^af$'), 'path': _col(dict_headers, r'功能路径'),
         'depth': _col(dict_headers, r'层级深度'), 'parent': _col(dict_headers, r'父节点'),
@@ -355,22 +353,18 @@ def check(d):
         'split': _col(dict_headers, r'独立验收', r'拆分说明'),
     }
     dict_missing_cols = [k for k, v in dict_cols.items() if v is None]
-    bad_dict, af_ids = [], []
+    af_ids, bad_dict = atomic_dictionary_ids(dict_headers, dict_rows)
     if dict_headers and not dict_missing_cols:
         for cells in dict_rows:
             m_af = re.fullmatch(r'`?AF-\d+`?', cells[dict_cols['af']].strip(), re.I)
             if not m_af:
                 continue
             af = re.search(r'AF-\d+', cells[dict_cols['af']], re.I).group(0).upper()
-            af_ids.append(af)
             missing = [k for k, idx in dict_cols.items() if _atomic_blank(cells[idx])]
             if missing:
                 bad_dict.append('%s 缺 %s' % (af, '/'.join(missing)))
             if not re.search(r'→|->', cells[dict_cols['transition']]):
                 bad_dict.append('%s 状态变化缺 from→to' % af)
-    dup_af = sorted({x for x in af_ids if af_ids.count(x) > 1})
-    if dup_af:
-        bad_dict.append('AF 重复：%s' % '、'.join(dup_af))
     add('atomic-dictionary', 'atomic-feature-ledger 有原子词典；每个 AF 的角色/触发/对象/规则/单一动作/状态变化/结果/拆分说明齐备',
         bool(atomic) and bool(af_ids) and not dict_missing_cols and not bad_dict,
         ((['缺表头列：%s' % '、'.join(dict_missing_cols)] if dict_missing_cols else [])
@@ -1230,7 +1224,31 @@ def check(d):
 
     # ⑧-c 隐私红线（3.3）：读已登录竞品，读到的是**用户自己的数据**
     #   风险不在"看到了"，在它会顺着 报告→飞书→git 一路外流，而此前这条链上一道门都没有。
-    _priv, _bad10c = _all_md, []
+    _priv, _bad10c, _privacy_unable = _all_md, [], None
+    # Scan the complete derived-asset tree (including spec/raw JSON), not top-level prose only.
+    # Full-suite distribution keeps this release/export scanner as the single implementation.
+    import importlib.util as _privacy_import
+    from pathlib import Path as _PrivacyPath
+    _scanner_path = _PrivacyPath(__file__).resolve().parents[3] / 'scripts/verify-portability.py'
+    if _scanner_path.is_file():
+        _scan_spec = _privacy_import.spec_from_file_location('research_export_privacy', _scanner_path)
+        _scanner = _privacy_import.module_from_spec(_scan_spec)
+        _scan_spec.loader.exec_module(_scanner)
+        _private_terms = []
+        _denylist = os.environ.get('SYBUILDER_PRIVATE_DENYLIST')
+        if _denylist:
+            try:
+                _private_path = _PrivacyPath(_denylist).resolve()
+                if (_private_path.is_relative_to(_PrivacyPath(d).resolve())
+                        or _private_path.is_relative_to(_scanner_path.parent.parent)):
+                    raise ValueError('private terms must remain outside exported research')
+                _private_terms = [line.strip() for line in _private_path.read_text(encoding='utf-8').splitlines()
+                                  if line.strip() and not line.startswith('#')]
+            except (OSError, ValueError):
+                _privacy_unable = '个人词表不可读取或位于待发布目录内；隐私检查未完成'
+        _bad10c.extend(_scanner.scan(_PrivacyPath(d).resolve(), _private_terms))
+    else:
+        _privacy_unable = '缺完整套件的隐私扫描器；本检查未能完成，不得宣称隐私验收通过'
     # ⚠️ 自证当场抓到：夹具里的「不改**真实账号**」是一句**承诺不碰**，被我读成了「读了真实账号」——
     #   本仓母题「判据被它要守的那段文本喂饱」。⇒ ① 去掉 `真实账号`（边界声明的常用词，信噪比太低）；
     #   ② 命中前先看前面 8 个字有没有否定词，「⛔ 不读已登录界面」不算取证。
@@ -1306,9 +1324,13 @@ def check(d):
         '诚实缺口只装「不可能取得」且点名阻断者；⛔ 无整份产物打折话术（9.1）',
         not _bad10d, _bad10d[:3] or '未发现把「没做」写成「如实披露」的用法')
 
+    _privacy_verdict = not _bad10c
+    if not _bad10c and _privacy_unable:
+        _privacy_verdict = UNABLE
     add('no-private-content',
         '读已登录竞品有隐私清场声明；语料无高信号私人标识（⚠️ 拦不住"这段是不是真人写的"，须人审）',
-        not _bad10c, _bad10c[:3] or '无隐私红线命中')
+        _privacy_verdict,
+        _bad10c[:3] or _privacy_unable or '无隐私红线命中')
 
     # ⑧b 截图目检 —— 文本判据扫不了图里的人名。
     # 🚨 2026-09-17 实测：6 张竞品截图里 **3 张带真实身份信息**（头像/真名/账号名），

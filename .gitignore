@@ -4,6 +4,8 @@ __pycache__/
 .codex/
 .claude/
 .sybuilder/
+.product-flow/
+**/.product-flow/
 *.lock
 skills/**/.proposals/
 skills/**/.four-node-review/

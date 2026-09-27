@@ -286,6 +286,61 @@ class Contracts(unittest.TestCase):
         issues=check_package(report,path,gate.check_teardown)
         self.assertTrue(any('package-stale' in why for _,why in issues))
 
+    def test_research_dictionary_cross_reference_does_not_expand_denominator(self):
+        from _research_package import check_package
+        gate=load('dictionary_note_report',S/'report-structure-gate.py')
+        path,report=self.package()
+        ledger=self.root/'ledger.md'
+        ledger.write_text(ledger.read_text()+'\n说明：拆分判断曾参考 AF-999，但该编号不是本产品功能。\n')
+        data=json.loads(path.read_text());data['competitors'][0]['ledger']['sha256']=source_hash(ledger)
+        path.write_text(json.dumps(data))
+        self.assertEqual(check_package(report,path,gate.check_teardown),[])
+
+    def test_diagram_all_entry_points_reject_xml_and_oversize(self):
+        chrome=load('safety_chrome',S.parent/'modules/diagramming/scripts/chrome-svg-to-png.py')
+        renderer=load('safety_render',S.parent/'modules/diagramming/scripts/render-svg.py')
+        svg=self.root/'input.svg'
+        for text in ('<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg"/>',
+                     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1000000000"/>',
+                     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 NaN 1"/>'):
+            svg.write_text(text)
+            with self.assertRaises(ValueError):chrome.dimensions(svg,1920)
+            with self.assertRaises(ValueError):renderer.render(svg,self.root/'out.png')
+        svg.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 9"/>')
+        self.assertEqual(chrome.dimensions(svg,1920),(1920,1080))
+
+    def test_research_dictionary_structural_errors_are_not_missing_mappings(self):
+        from _section import atomic_dictionary_table, atomic_dictionary_ids
+        from _research_package import check_package
+        gate=load('dictionary_structure',S/'report-structure-gate.py')
+        path,report=self.package()
+        ledger=self.root/'ledger.md';original=ledger.read_text()
+        for body in ('## 功能分解词典\n| AF | 说明 |\n|---|---|\n| AF-001 | 引用 AF-999 |\n\n| AF-002 | 真叶子 |',
+                     '## 功能分解词典\n| AF | 说明 |\n|---|---|\n| AF-001 | 真叶子 |\n\n| 备注 | 内容 |\n|---|---|\n| AF-999 | 不是词典叶子 |',
+                     '## 功能分解词典\n| AF | 说明 |\n|---|---|\n| AF-001 | A |\n| AF-001 | B |',
+                     '## 功能分解词典\n| AF | 说明 |\n|---|---|\n| invalid | C |'):
+            ids,errors=atomic_dictionary_ids(*atomic_dictionary_table(body))
+            if '引用 AF-999' in body:
+                self.assertEqual(ids,['AF-001','AF-002']);self.assertEqual(errors,[])
+            elif '不是词典叶子' in body:
+                self.assertEqual(ids,['AF-001']);self.assertEqual(errors,[])
+            else:self.assertTrue(errors)
+        ledger.write_text(original.replace('功能分解词典','缺失的章节'))
+        data=json.loads(path.read_text());data['competitors'][0]['ledger']['sha256']=source_hash(ledger)
+        path.write_text(json.dumps(data))
+        issues=check_package(report,path,gate.check_teardown)
+        self.assertTrue(any(k=='package-native-dictionary' for k,_ in issues))
+        self.assertFalse(any(k=='package-native-denominator' for k,_ in issues))
+
+    def test_tech_research_refs_cannot_escape_before_platform_access(self):
+        gate=load('tech_refs',S/'tech-research-gate.py')
+        outside=self.root.parent/(self.root.name+'-outside.txt')
+        outside.write_text('synthetic secret');self.addCleanup(lambda:outside.unlink(missing_ok=True))
+        (self.root/'escape').symlink_to(outside)
+        for ref in ('../'+outside.name,str(outside),'escape'):
+            with self.assertRaises(ValueError):gate.research_file(self.root,ref)
+        self.assertEqual(gate.research_file(self.root,'report.md'),self.root.resolve()/'report.md')
+
     def test_comparison_cannot_omit_native_leaf_from_denominator(self):
         from _research_package import check_package
         gate = load('denominator_report', S/'report-structure-gate.py')

@@ -274,7 +274,7 @@ python3 scripts/gate-run.py --status
 ```
 
 ⛔ **「一道门从来没跑过」与「跑过且通过」在项目里长得一模一样** ——
-实测：验证项目 的 `.product-flow/reconcile/` 是空目录，而那份 PRD 有 431 条 AC，
+实测：某验证项目的 `.product-flow/reconcile/` 是空目录，而那份 PRD 有 431 条 AC，
 G2/G3 从未产出过任何结论，无人察觉。
 ⭐ `gate-run.py` 不改任何门禁，只是让它的结论留下来。
 ⚠️ `--status` 只呈现，**不替你判断哪些「该跑」** ——「没跑过」不等于「不适用」。

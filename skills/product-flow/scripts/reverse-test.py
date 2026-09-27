@@ -56,10 +56,6 @@ def _run(cmd, **kw):
 #   ⭐ 上一轮我把「日志与锁同粒度」当成了修复，那只保证两者一起分叉，
 #     **并不保证目标安全**。⇒ 锁的粒度必须由**目标**决定。
 #   ⛔ 这也意味着 LOCK 不能是模块级常量了（它依赖运行时的 target）。
-def _lock_path(target):
-    return str(state_path('target', target))
-
-
 def _journal_path(target):
     return str(state_path('journal', target))
 

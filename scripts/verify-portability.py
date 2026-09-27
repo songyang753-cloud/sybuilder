@@ -5,6 +5,8 @@ from __future__ import annotations
 import pathlib
 import re
 import argparse
+import json
+import subprocess
 
 PATTERNS = {
     "phone-like-personal-data": re.compile(r'(?<![0-9A-Za-z_])(?:\+86[ -]?)?1[3-9](?:[ -]?\d){9}(?![0-9A-Za-z_])'),
@@ -13,6 +15,19 @@ PATTERNS = {
     "credential-assignment": re.compile(r'''(?i)(?:app_secret|client_secret|api[_-]?key)\s*[:=]\s*["']([A-Za-z0-9_+/-]{16,})["']'''),
     "private-key": re.compile('-----BEGIN ' + r'(?:RSA |EC |OPENSSH )?PRIVATE KEY-----'),
 }
+
+
+def private_structured_content(value):
+    """Known user-content containers may retain shape/counts, never labels or IDs."""
+    if isinstance(value, dict):
+        if value.get('userContent') is True:
+            for key in ('text', 'txt', 'title', 'label', 'id', 'plugin', 'view'):
+                if value.get(key) not in (None, '', '[user-content]', '[unavailable]'):
+                    return True
+        return any(private_structured_content(v) for v in value.values())
+    if isinstance(value, list):
+        return any(private_structured_content(v) for v in value)
+    return False
 
 
 def scan(root, terms=()):
@@ -36,10 +51,13 @@ def scan_files(root, paths, terms=()):
             continue
         # Scan extensionless and binary files too; no scanner-file exemption.
         text = path.read_bytes().decode('utf-8', errors='replace')
-        if path.suffix.lower() == '.json':
-            import json
+        if path.suffix.lower() in ('.json', '.jsonl'):
             try:
-                text = json.dumps(json.loads(text), ensure_ascii=False)
+                data = ([json.loads(line) for line in text.splitlines() if line.strip()]
+                        if path.suffix.lower() == '.jsonl' else json.loads(text))
+                if private_structured_content(data):
+                    findings.append(f'{rel}: user-content-not-withheld')
+                text = json.dumps(data, ensure_ascii=False)
             except ValueError:
                 findings.append(f'{rel}: invalid-json-export')
         for line_no, line in enumerate(text.splitlines(), 1):
@@ -55,6 +73,19 @@ def scan_files(root, paths, terms=()):
                         continue
                     findings.append(f"{rel}:{line_no}: {name}")
     return findings
+
+
+def publish_paths(root):
+    """Return the actual Git export set; a copied candidate falls back to all files."""
+    try:
+        proc = subprocess.run(
+            ['git', '-C', str(root), 'ls-files', '-z', '--cached', '--others', '--exclude-standard'],
+            capture_output=True, timeout=10, check=False)
+        if proc.returncode == 0:
+            return sorted(root / item.decode('utf-8') for item in proc.stdout.split(b'\0') if item)
+    except (OSError, subprocess.TimeoutExpired, UnicodeError):
+        pass
+    return sorted(root.rglob('*'))
 
 
 def main() -> int:
@@ -73,7 +104,7 @@ def main() -> int:
                  if s.strip() and not s.startswith('#')]
         if not terms:
             parser.error('the private denylist is empty')
-    findings = scan(root, terms)
+    findings = scan_files(root, publish_paths(root), terms)
     if findings:
         print("FAIL: release portability scan found private or non-portable content:")
         print("\n".join(findings))

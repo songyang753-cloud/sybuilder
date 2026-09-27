@@ -26,7 +26,11 @@ has(){ printf '%s' "$1" | /usr/bin/grep -qF -- "$2"; }
 pre(){ printf '%s' "$1" | /usr/bin/grep -q "^$2"; }
 
 echo "== 条款 → 判据 夹具对 =="; echo
-for r in A1 A3 A14 A16 D22; do
+count=0
+for fixture in "${D}"/*/; do
+  [ -d "${fixture}" ] || continue
+  r=$(basename "${fixture}")
+  count=$((count+1))
   if [ ! -r "${D}/${r}/violating.sh" ] || [ ! -r "${D}/${r}/compliant.sh" ]; then
     skip "${r}" "夹具缺失，本条没能验"; continue; fi
   b=0
@@ -80,8 +84,10 @@ for r in A1 A3 A14 A16 D22; do
     b=0; if has "${c}" "✗" && [ "${cr}" != 0 ]; then b=1; fi
     ok D22 "遵守样本：条件为假时判失败 → rc=${cr}" "${b}"
     ;;
+  *) skip "${r}" "夹具目录未登记执行语义，不能静默跳过" ;;
   esac
 done
+[ "${count}" -gt 0 ] || skip ALL "未枚举到任何夹具目录"
 echo
 printf 'PASS=%d  FAIL=%d  UNABLE=%d\n' "${np}" "${nf}" "${nu}"
 if   [ "${nf}" -gt 0 ]; then echo "结论：FAIL"; exit 1

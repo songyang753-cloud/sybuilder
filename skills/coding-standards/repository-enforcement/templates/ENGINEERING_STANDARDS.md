@@ -14,16 +14,16 @@
 | <静态分析> | <staticcheck / eslint ...> | 强制 |
 | <测试(含竞态)> | <go test -race / vitest ...> | 强制 |
 | <类型> | <tsc / vue-tsc / mypy> | 强制 或 咨询(棘轮) |
-| <漏洞扫描> | <govulncheck / npm audit / pip-audit> | 强制 或 咨询 |
+| <漏洞扫描> | <govulncheck / npm audit / pip-audit> | 强制 |
 | <依赖一致性> | <go mod tidy 无 diff / lockfile> | 强制 |
-| <密钥扫描> | gitleaks | 咨询(棘轮) |
+| <密钥扫描> | gitleaks | 强制 |
 | <契约> | <redocly / schema lint> | 强制（如有对外 API） |
 
 **棘轮原则**：新检查存量多先设咨询门禁，清零后转强制，只紧不松。
 
 ## 1. 架构原则（固化已有，禁止回退）
 
-> 📐 **推荐默认架构见 [`references/proven-web-architecture.md`](../references/proven-web-architecture.md)**
+> 📐 **推荐默认架构来源：SYBuilder 的 coding-standards / repository-enforcement / proven-web-architecture**。下方已内联核心原则，复制到项目 `docs/` 不依赖仓外相对链接。
 > ——一套生产验证过的 **API-First 模块化单体**蓝图（分层/横切层/事件总线+队列/数据治理/
 > 配置即数据/安全模型/可观测/发布工程/前端 SSR）。新 Web 项目建议直接采用并按栈裁剪。
 

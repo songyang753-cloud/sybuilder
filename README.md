@@ -93,7 +93,8 @@ four-node-review 独立证伪并裁决能否交付
 这些能力不能因单元测试通过就宣称完成；缺证据仍按 `UNABLE` 处理。
 
 源码公开检查见 [`PUBLICATION_CHECKLIST.md`](PUBLICATION_CHECKLIST.md)，稳定版待办见
-[`RELEASE_BLOCKERS.md`](RELEASE_BLOCKERS.md)。公开检查不会把稳定版待办自动勾选为完成。
+[`RELEASE_BLOCKERS.md`](RELEASE_BLOCKERS.md)。本轮第三方评审逐项处理见
+[`docs/review-remediation-2026-09-27.md`](docs/review-remediation-2026-09-27.md)。公开检查不会把稳定版待办自动勾选为完成。
 
 ## 许可证与归属
 

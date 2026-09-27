@@ -29,6 +29,54 @@
 """
 import re
 
+
+def atomic_dictionary_table(md):
+    """Single source for the dictionary denominator: AF column, never notes/cross refs.
+
+    Blank lines do not discard later same-width rows. Repeated headers are allowed;
+    incompatible tables do not inherit the prior AF column.
+    """
+    section = section_at(md, '功能分解词典')
+    if section is None:
+        return [], []
+    headers, rows, active = [], [], False
+    lines = _blank_fenced(section).splitlines()
+    separator = re.compile(r'\s*\|[\s\-:|]+\|\s*')
+    for index, line in enumerate(lines):
+        if not line.strip().startswith('|'):
+            continue
+        if separator.fullmatch(line):
+            continue
+        cells = [c.strip() for c in line.strip().strip('|').split('|')]
+        normalized = [re.sub(r'[`*\s]', '', c).lower() for c in cells]
+        is_header = index + 1 < len(lines) and separator.fullmatch(lines[index + 1])
+        if is_header:
+            if not headers:
+                headers = normalized if 'af' in normalized else []
+            active = bool(headers) and normalized == headers
+            continue
+        if active and len(cells) == len(headers):
+            rows.append(cells)
+    return headers, rows
+
+def atomic_dictionary_ids(headers, rows):
+    """Return native leaf IDs and structural errors, shared by both research gates."""
+    if 'af' not in headers:
+        return [], ['缺功能分解词典或 AF 表头']
+    ids, errors = [], []
+    for row_number, row in enumerate(rows, 1):
+        value = row[headers.index('af')].strip('`').upper()
+        if not re.fullmatch(r'AF-\d+', value):
+            errors.append('词典第 %d 行 AF 非法' % row_number)
+        else:
+            ids.append(value)
+    if not ids:
+        errors.append('功能分解词典无有效 AF')
+    duplicates = sorted({value for value in ids if ids.count(value) > 1})
+    if duplicates:
+        errors.append('AF 重复：' + '、'.join(duplicates))
+    return ids, errors
+
 # 🚨 2026-09-10 codex 评审 #9：上一版 `^(#{1,6})[ \t]*(.*)$` 与 CommonMark 有三处出入：
 #   ①**最多 3 个前导空格**仍是合法 ATX 标题（`   ## 目标节`）—— 上一版返回 None；
 #   ②`##前缀目标节`（`#` 后**没有空格**）**不是**标题 —— 上一版当成了标题；

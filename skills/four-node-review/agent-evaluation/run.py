@@ -12,6 +12,7 @@ import math
 import os
 from pathlib import Path
 import re
+import selectors
 import shutil
 import signal
 import subprocess
@@ -20,6 +21,7 @@ import time
 import uuid
 
 DIMENSIONS = ('task_success', 'tool_use', 'trajectory', 'safety', 'robustness', 'rubric')
+INTERRUPTED = False
 
 
 class Unable(ValueError):
@@ -73,7 +75,8 @@ def validate_command(root, command, entry):
         raise Unable('runner/judge must be nonempty argv arrays')
     if (root / command[0]).resolve() == entry:
         return [str(entry)] + command[1:]
-    executable = shutil.which(command[0])
+    launcher = str(root / command[0]) if '/' in command[0] and not Path(command[0]).is_absolute() else command[0]
+    executable = shutil.which(launcher)
     if not executable or not re.fullmatch(r'python(?:3(?:\.\d+)?)?|node(?:js)?', Path(command[0]).name):
         raise Unable('command must directly invoke registered entry or Python/Node interpreter')
     index = 1
@@ -82,7 +85,8 @@ def validate_command(root, command, entry):
         index += 1
     if index >= len(command) or command[index].startswith('-') or (root / command[index]).resolve() != entry:
         raise Unable('interpreter must invoke registered entry, not eval/module/shell commands')
-    return [str(Path(executable).resolve())] + command[1:index] + [str(entry)] + command[index + 1:]
+    # Preserve the venv launcher path: resolving its symlink changes sys.prefix.
+    return [os.path.abspath(executable)] + command[1:index] + [str(entry)] + command[index + 1:]
 
 
 def positive_number(cfg, key, default, integer=False):
@@ -116,11 +120,27 @@ def validate_controls(controls):
             if not isinstance(failed, list) or not failed or any(
                     d not in DIMENSIONS or bounds[d][1] >= 1 for d in failed):
                 raise Unable('negative calibration must identify known failing dimensions')
+    positives = [c.get('scoreBounds', {d: [1, 1] for d in DIMENSIONS})
+                 for c in controls if c['expected'] == 'PASS']
+    for control in controls:
+        if control['expected'] == 'FAIL' and 'scoreBounds' in control:
+            for d in control['failDimensions']:
+                if control['scoreBounds'][d][1] >= min(p[d][0] for p in positives):
+                    raise Unable('calibration ranges overlap on failing dimension: ' + d)
+
+
+def read_json(path, label):
+    try:
+        return json.loads(path.read_text(encoding='utf-8'))
+    except json.JSONDecodeError as exc:
+        raise Unable(f'{label} ({path.name}): invalid JSON at line {exc.lineno}, column {exc.colno}') from exc
+    except (OSError, UnicodeError) as exc:
+        raise Unable(f'{label} ({path.name}): cannot read UTF-8 input ({type(exc).__name__})') from exc
 
 
 def load_and_check_config(config_path):
     root = config_path.parent
-    cfg = json.loads(config_path.read_text())
+    cfg = read_json(config_path, 'configuration')
     if not isinstance(cfg, dict):
         raise Unable('configuration must be a JSON object')
     repeats = cfg.get('repeats', 3)
@@ -137,8 +157,8 @@ def load_and_check_config(config_path):
     baseline_path = confined_file(root, cfg.get('baselineRef'))
     required = [config_path, suite, baseline_path] + list(paths.values())
     fingerprints = {str(p.resolve()): digest(p) for p in required}
-    suite_data = json.loads(suite.read_text())
-    baseline = json.loads(baseline_path.read_text())
+    suite_data = read_json(suite, 'suite')
+    baseline = read_json(baseline_path, 'baseline')
     cases = suite_data.get('cases') if isinstance(suite_data, dict) else None
     if not isinstance(cases, list) or not all(isinstance(c, dict) for c in cases) or not isinstance(baseline, dict):
         raise Unable('suite cases and baseline must be structured objects')
@@ -159,37 +179,126 @@ def load_and_check_config(config_path):
             'plannedCalls': len(cfg['judgeControls']) + len(cases) * repeats * 2,
             'maxCalls': positive_number(cfg, 'maxCalls', 200, integer=True),
             'timeoutSeconds': positive_number(cfg, 'timeoutSeconds', 120),
-            'totalTimeoutSeconds': positive_number(cfg, 'totalTimeoutSeconds', 600)}
+            'totalTimeoutSeconds': positive_number(cfg, 'totalTimeoutSeconds', 600),
+            'maxOutputBytes': positive_number(cfg, 'maxOutputBytes', 8 * 1024 * 1024, integer=True),
+            'maxRequestBytes': positive_number(cfg, 'maxRequestBytes', 16 * 1024 * 1024, integer=True),
+            'maxEvidenceBytes': positive_number(cfg, 'maxEvidenceBytes', 256 * 1024 * 1024, integer=True)}
     if plan['plannedCalls'] > plan['maxCalls']:
         raise Unable('planned calls exceed maxCalls; revise and authorize budget before execution')
+    plan['worstCaseSeconds'] = plan['plannedCalls'] * plan['timeoutSeconds']
+    plan['timeBudgetMayInterrupt'] = plan['worstCaseSeconds'] > plan['totalTimeoutSeconds']
     return cfg, cases, baseline, fingerprints, commands, plan
 
 
-def run_owned(command, root, request, timeout):
+def write_private_json(path, value):
+    with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'w') as stream:
+        json.dump(value, stream, ensure_ascii=False, indent=2)
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
+def git_evidence_check(output):
+    """Do not alter repository settings or publish evidence as part of a run."""
+    try:
+        repo = subprocess.run(['git', '-C', str(output.parent), 'rev-parse', '--show-toplevel'],
+                              capture_output=True, text=True, timeout=3)
+        if repo.returncode:
+            if 'not a git repository' in repo.stderr.lower():
+                return 'outside-git'
+            print('WARNING: could not establish whether evidence is in Git.', file=sys.stderr)
+            return 'check-unavailable'
+        root = Path(repo.stdout.strip()).resolve()
+        rel = output.resolve().relative_to(root).as_posix()
+        tracked = subprocess.run(['git', '-C', str(root), 'ls-files', '--', rel],
+                                 capture_output=True, text=True, timeout=3)
+        if tracked.stdout.strip():
+            raise Unable('evidence destination is tracked by Git; choose a private directory')
+        ignored = subprocess.run(['git', '-C', str(root), 'check-ignore', '-q', '--', rel + '/result.json'], timeout=3)
+        if ignored.returncode:
+            print('WARNING: evidence is NOT Git-ignored; do not add/commit this directory.', file=sys.stderr)
+            return 'unignored-warning'
+        return 'ignored'
+    except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
+        if isinstance(exc, Unable):
+            raise
+        print('WARNING: could not check Git evidence protection.', file=sys.stderr)
+        return 'check-unavailable'
+
+
+def run_owned(command, root, request_bytes, timeout, folder, max_output, budget):
     if os.name != 'posix':
         raise Unable('owned process-tree cleanup is supported on POSIX only')
-    child = subprocess.Popen(command, cwd=root, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE, text=True, start_new_session=True)
+    child = None
+    selector = selectors.DefaultSelector()
+    files = {}
+    received = 0
+    deadline = time.monotonic() + timeout
     try:
-        stdout, stderr = child.communicate(json.dumps(request), timeout=timeout)
-        return subprocess.CompletedProcess(command, child.returncode, stdout, stderr)
+        if INTERRUPTED:
+            raise Unable('interrupted before process launch')
+        for name in ('stdout', 'stderr'):
+            files[name] = os.fdopen(os.open(folder / (name + '.txt'), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'wb')
+        # main() uses a cancellation flag, not an exception between Popen and assignment.
+        child = subprocess.Popen(command, cwd=root, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE, start_new_session=True)
+        write_private_json(folder / 'process.json', {'pid': child.pid, 'ownedProcessGroup': child.pid})
+        for stream, event, name in ((child.stdin, selectors.EVENT_WRITE, 'stdin'),
+                                    (child.stdout, selectors.EVENT_READ, 'stdout'),
+                                    (child.stderr, selectors.EVENT_READ, 'stderr')):
+            os.set_blocking(stream.fileno(), False)
+            selector.register(stream, event, name)
+        sent = 0
+        while selector.get_map() or child.poll() is None:
+            if INTERRUPTED:
+                raise Unable('interrupted; owned process group cleaned')
+            if time.monotonic() >= deadline:
+                raise Unable('call time budget exhausted')
+            for key, _ in selector.select(min(0.05, max(0, deadline - time.monotonic()))):
+                if key.data == 'stdin':
+                    try:
+                        sent += os.write(key.fd, request_bytes[sent:sent + 65536])
+                    except BrokenPipeError:
+                        sent = len(request_bytes)
+                    if sent == len(request_bytes):
+                        selector.unregister(key.fileobj)
+                        key.fileobj.close()
+                else:
+                    chunk = os.read(key.fd, 65536)
+                    if not chunk:
+                        selector.unregister(key.fileobj)
+                        continue
+                    room = min(max_output - received, budget['remaining'])
+                    kept = chunk[:max(0, room)]
+                    files[key.data].write(kept)
+                    files[key.data].flush()
+                    received += len(kept)
+                    budget['remaining'] -= len(kept)
+                    if len(kept) != len(chunk):
+                        raise Unable('output/evidence byte budget exhausted; output truncated, not valid evidence for PASS')
+        return child.returncode
     finally:
+        selector.close()
         # Only this newly created group; never enumerate/kill unrelated services.
+        # Reap before flushing: disk/fsync errors must not bypass process cleanup.
+        if child is not None:
+            for sig in (signal.SIGTERM, signal.SIGKILL):
+                try:
+                    os.killpg(child.pid, sig)
+                except ProcessLookupError:
+                    pass
+                try:
+                    child.wait(timeout=0.2 if sig == signal.SIGTERM else 3)
+                except subprocess.TimeoutExpired:
+                    pass
+            for stream in (child.stdin, child.stdout, child.stderr):
+                if stream:
+                    stream.close()
         try:
-            os.killpg(child.pid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
-        try:
-            child.wait(timeout=0.2)
-        except subprocess.TimeoutExpired:
-            pass
-        try:
-            os.killpg(child.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        child.wait()
-        for stream in (child.stdin, child.stdout, child.stderr):
-            if stream:
+            for stream in files.values():
+                stream.flush()
+                os.fsync(stream.fileno())
+        finally:
+            for stream in files.values():
                 stream.close()
 
 
@@ -200,38 +309,67 @@ def execute(config_path, output):
     finally:
         os.umask(previous)
     records = []
-    report = {'runId': uuid.uuid4().hex, 'status': 'UNABLE', 'cases': {}, 'records': records}
+    report = {'evidenceVersion': 2, 'runId': uuid.uuid4().hex, 'status': 'UNABLE', 'cases': {}, 'records': records}
     deadline = None
     def invoke(kind, request):
         remaining = deadline - time.monotonic()
-        if remaining <= 0 or len(records) >= plan['maxCalls']:
-            raise Unable('global execution budget exhausted')
+        if remaining <= 0:
+            raise Unable('total time budget exhausted; completed call evidence retained')
+        if len(records) >= plan['maxCalls']:
+            raise Unable('call count budget exhausted')
         execution_id = uuid.uuid4().hex
         request = dict(request, executionId=execution_id, targetVersion=cfg['targetVersion'],
                        productionContract=cfg['productionContract'])
         start = time.monotonic()
-        try:
-            result = run_owned(commands[kind], root, request, min(plan['timeoutSeconds'], remaining))
-        except (OSError, subprocess.TimeoutExpired) as exc:
-            records.append({'executionId': execution_id, 'kind': kind, 'status': 'UNABLE', 'reason': type(exc).__name__})
-            raise Unable(kind + ' unavailable or timed out') from exc
         record = {'executionId': execution_id, 'kind': kind, 'command': commands[kind],
-                  'observedAt': datetime.now(timezone.utc).isoformat(), 'exitCode': result.returncode,
-                  'elapsedSeconds': time.monotonic() - start, 'request': request,
-                  'stdout': result.stdout, 'stderr': result.stderr}
+                  'observedAt': datetime.now(timezone.utc).isoformat(), 'status': 'STARTED',
+                  'evidenceRef': 'calls/' + execution_id}
         records.append(record)
-        if result.returncode != 0: raise Unable(kind + ' did not complete: rc=' + str(result.returncode))
-        response = json.loads(result.stdout)
-        if not isinstance(response, dict) or response.get('executionId') != execution_id or response.get('status') != 'OK':
-            raise Unable(kind + ' missing matching execution ID or OK status')
-        return response
+        folder = output / record['evidenceRef']
+        folder.mkdir(mode=0o700)
+        write_private_json(folder / 'started.json', record)
+        request_bytes = json.dumps(request).encode('utf-8')
+        try:
+            if len(request_bytes) > min(plan['maxRequestBytes'], budget['remaining']):
+                raise Unable('request/evidence byte budget exhausted before call')
+            with os.fdopen(os.open(folder / 'request.json', os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'wb') as stream:
+                stream.write(request_bytes)
+                stream.flush()
+                os.fsync(stream.fileno())
+            budget['remaining'] -= len(request_bytes)
+            rc = run_owned(commands[kind], root, request_bytes, min(plan['timeoutSeconds'], remaining),
+                           folder, plan['maxOutputBytes'], budget)
+            record['exitCode'] = rc
+            if rc != 0:
+                raise Unable(kind + ' did not complete: rc=' + str(rc))
+            response = read_json(folder / 'stdout.txt', kind + ' response')
+            if not isinstance(response, dict) or response.get('executionId') != execution_id or response.get('status') != 'OK':
+                raise Unable(kind + ' missing matching execution ID or OK status')
+            record['status'] = 'OK'
+            return response
+        except (Exception, KeyboardInterrupt) as exc:
+            record.update(status='UNABLE', reason=str(exc) if isinstance(exc, Unable) else type(exc).__name__)
+            raise
+        finally:
+            record['elapsedSeconds'] = time.monotonic() - start
+            record['files'] = {p.name: {'sha256': digest(p), 'bytes': p.stat().st_size}
+                               for p in folder.iterdir() if p.is_file()}
+            write_private_json(folder / 'completed.json', record)
     try:
         config_path = config_path.resolve()
         root = config_path.parent
         cfg, cases, baseline, fingerprints, commands, plan = load_and_check_config(config_path)
         report.update(mode=cfg['mode'], targetVersion=cfg['targetVersion'], fingerprints=fingerprints, plan=plan)
+        report['gitProtection'] = git_evidence_check(output)
+        report['calibration'] = 'graded' if any('scoreBounds' in c for c in cfg['judgeControls']) else 'strict'
+        (output / 'calls').mkdir(mode=0o700)
+        budget = {'remaining': plan['maxEvidenceBytes']}
+        write_private_json(output / 'started.json', report)
         print(json.dumps({'plan': plan}), file=sys.stderr)
+        if plan['timeBudgetMayInterrupt']:
+            print('WARNING: worst-case call time exceeds total budget; actual deadline is enforced, evidence is retained, samples are never reduced.', file=sys.stderr)
         deadline = time.monotonic() + plan['totalTimeoutSeconds']
+        control_scores = []
         for control in cfg['judgeControls']:
             value = scores(invoke('judge', control['input']))
             if 'scoreBounds' in control:
@@ -240,6 +378,14 @@ def execute(config_path, output):
                 correct = all(v == 1 for v in value.values()) == (control['expected'] == 'PASS')
             if not correct:
                 raise Unable('judge control failed: cannot trust its findings')
+            control_scores.append(value)
+        positive_floor = {d: min(value[d] for c, value in zip(cfg['judgeControls'], control_scores)
+                                if c['expected'] == 'PASS') for d in DIMENSIONS}
+        for control, value in zip(cfg['judgeControls'], control_scores):
+            if control['expected'] == 'FAIL' and not any(
+                    value[d] < positive_floor[d] for d in control.get('failDimensions', DIMENSIONS)):
+                raise Unable('judge cannot distinguish positive and negative controls')
+        report['controlScores'] = control_scores
         for case in cases:
             samples = []
             for index in range(plan['repeats']):
@@ -250,6 +396,8 @@ def execute(config_path, output):
             report['cases'][case['id']] = compare(samples, baseline['cases'][case['id']])
         if any(digest(p) != h for p, h in fingerprints.items()):
             raise Unable('input/rule/baseline changed during measurement')
+        if INTERRUPTED:
+            raise Unable('interrupted; completed evidence retained, evaluation incomplete')
         failed = any(item['issues'] for item in report['cases'].values())
         report['status'] = 'FAIL' if failed else ('PASS' if cfg['mode'] == 'production' else 'SCRIPTED_ONLY')
         # Scripted execution does not satisfy a production W5 lens.
@@ -281,8 +429,10 @@ def main():
         return 3
     try:
         def interrupted(_signum, _frame):
-            raise KeyboardInterrupt()
+            global INTERRUPTED
+            INTERRUPTED = True
         signal.signal(signal.SIGTERM, interrupted)
+        signal.signal(signal.SIGINT, interrupted)
         return execute(args.config, args.output)
     except (Exception, KeyboardInterrupt) as exc:
         print('UNABLE: evidence could not be created; ' + type(exc).__name__, file=sys.stderr)

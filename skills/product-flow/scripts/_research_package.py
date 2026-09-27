@@ -47,7 +47,7 @@ def check_package(report, path, check_teardown):
     except (ValueError, OSError) as exc:
         return [('package-input', str(exc))]
     bad, all_af, records = [], set(), {}
-    from _section import table_rows_at, section_at
+    from _section import table_rows_at, section_at, atomic_dictionary_table, atomic_dictionary_ids
     competitors = {c['id'] for c in data['competitors']}
     for comp in data['competitors']:
         records[comp['id']] = comp
@@ -59,9 +59,12 @@ def check_package(report, path, check_teardown):
         ledger = Path(comp['ledgerPath']).read_text(encoding='utf-8')
         # Use the same full dictionary denominator as the single-product gate.
         # A blank line can split a Markdown table; it must not hide later leaves.
-        native_ids = set(re.findall(r'(?<!\w)AF-\d+(?!\d)', section_at(ledger, '功能分解词典') or ''))
+        headers, rows = atomic_dictionary_table(ledger)
+        native, dictionary_errors = atomic_dictionary_ids(headers, rows)
+        bad.extend(('package-native-dictionary', comp['id'] + ' ' + error) for error in dictionary_errors)
+        native_ids = set(native)
         mapped_ids = {n for values in mapping.values() if isinstance(values, list) for n in values if isinstance(n, str)}
-        if not native_ids or mapped_ids != native_ids:
+        if not dictionary_errors and mapped_ids != native_ids:
             bad.append(('package-native-denominator', comp['id'] + ' 原生最细功能全集未完整映射；范围变化须先更新并重新验收单品账本，不能在横比中删叶子'))
         comp['eventRecords'] = {e.get('id'): e for e in json.loads(Path(comp['eventsPath']).read_text()).get('events', [])}
         comp['shotIds'] = {e.get('id') for e in json.loads(Path(comp['evidencePath']).read_text()).get('evidence', [])}

@@ -156,7 +156,7 @@ def self_test():
     GOOD = '<section data-scene="f01-empty" data-fr="FR-011">x</section>'
     PRD = "# 附件 A\n### FR-011　所属 F-01　MUST\n# 附件 B"
     run("正例：锚点齐全", GOOD, [])
-    run("反例1 一个锚点都没有（验证项目 实测就是这种）", '<section>x</section>', ["has-anchor"])
+    run("反例1 一个锚点都没有（某验证项目实测就是这种）", '<section>x</section>', ["has-anchor"])
     run("反例2 场景 ID 不合 fNN-… 命名", '<section data-scene="empty" data-fr="FR-011">x</section>',
         ["id-format"])
     run("反例3 data-fr 为空（画面反查不到需求）", '<section data-scene="f01-empty" data-fr="">x</section>',

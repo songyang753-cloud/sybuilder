@@ -8,8 +8,7 @@
 #    收益：即使外层工具 SIGKILL 把本进程杀在变异态，被杀的也只是临时副本，
 #    真实工作区不可能留在变异态（旧版靠 trap 还原真实文件，D27 明说 trap 是异常安全
 #    不是信号安全，SIGKILL 兜不住 —— 那个窗口现在从根上不存在了）。
-#    兄弟 skill（four-node-review / product-flow）是**只读依赖**，
-#    在副本根用软链接回真实位置，让 selfcheck 里的 `../兄弟` 相对路径成立（软链只读不写）。
+#    兄弟 skill 也复制到独立临时目录；不把可写软链接回真实工作区。
 #
 # 为什么需要它（本文自身实录，2026-09-05 一天三次）：
 #   手写反向测试时，注入用 `bash -c` + python 内联，反引号被命令替换吃掉、
@@ -32,25 +31,17 @@ WANT_GATE="${6:-}"  # 可选：期望红的**组标号**（如 3a2 / 10 / 8b）�
                     # 关键字能被别的组说出同样的话；组标号把「红的是它自己」钉死在位置上。
                     # 不给则只验关键字，并在 PASS 行里报出实际命中的组，供填表（不靠手猜）。
 
-# 互斥锁：锁名**不可更改** —— selfcheck [11] 用这个锁路径判断「此刻是否有变异在跑」，
-# 从而在变异运行期把锚点活性判成 UNABLE 而非 FAIL（A19：没能测≠不合格）。改锁名会让那道判据失效。
-# mkdir 是原子的，用它当锁；拿不到锁就直接退，绝不「先跑了再说」。
-LOCK="${TMPDIR:-/tmp}/coding-standards-revtest.lock"
-if ! mkdir "${LOCK}" 2>/dev/null; then
-  echo "内部错误：另一个反向测试正在运行（锁 ${LOCK}）—— 并发会互相污染被测物，本次不跑"
-  exit 4
-fi
-
-# ---- 副本模式：整份 skill 复制到临时目录，兄弟 skill 软链只读（2026-09-09 codex P0-3）----
-WORKROOT="$(mktemp -d "${TMPDIR:-/tmp}/cs-revtest.XXXXXX")" || { rmdir "${LOCK}" 2>/dev/null; exit 4; }
+# 每次只写唯一副本，不再需要跨副本全局锁；残留目录不得关闭真实树的 [11]。
+command -v python3 >/dev/null 2>&1 || { echo '内部错误：缺少 python3'; exit 4; }
+WORKROOT="$(mktemp -d "${TMPDIR:-/tmp}/cs-revtest.XXXXXX")" || exit 4
 GOUT=""; PRE=""
-# trap 只清理临时副本 + 锁 + 临时文件 —— 真实工作区没被写，没有「还原真实文件」这一步。
-# 顺序：先删副本（体积最大、最要紧），再删锁与临时文件。SIGKILL 仍跑不到 trap，
+# trap 只清理本次独占的临时目录 —— 真实工作区没被写，没有「还原真实文件」这一步。
+# SIGKILL 仍跑不到 trap，
 # 但那时被留下的只是 /tmp 里的副本，真实工作区不受影响 —— 这正是本次改造要消掉的窗口。
 # ⚠️ 2026-09-10（codex P1-26，我上一批漏了这一个文件）：`EXIT INT TERM` 写在一起时，
 #    收到信号只是跑一遍 handler 然后**继续往下执行**，最后还可能 rc=0 —— 被打断的反向测试会报成 PASS。
 #    信号必须自己退出，EXIT 只管清理。
-trap 'rm -rf "${WORKROOT}" 2>/dev/null; rmdir "${LOCK}" 2>/dev/null; rm -f "${GOUT:-}" "${PRE:-}" 2>/dev/null' EXIT
+trap 'rm -rf "${WORKROOT}" 2>/dev/null' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 mkdir -p "${WORKROOT}/skills" || exit 4
@@ -62,14 +53,14 @@ for _asset in THIRD_PARTY.md licenses; do
   [ -e "${SUITE_ROOT}/${_asset}" ] && cp -R "${SUITE_ROOT}/${_asset}" "${WORKROOT}/" ||
     { echo "内部错误：无法复制套件来源文件 ${_asset}"; exit 4; }
 done
+[ ! -d "${SUITE_ROOT}/docs" ] || cp -R "${SUITE_ROOT}/docs" "${WORKROOT}/" || exit 4
 for _sib in four-node-review product-flow; do
   _real="${DIR}/../${_sib}"
-  [ -d "${_real}" ] && ln -s "$(cd "${_real}" && pwd -P)" "${WORKROOT}/skills/${_sib}" 2>/dev/null
+  [ -d "${_real}" ] && cp -R "$(cd "${_real}" && pwd -P)" "${WORKROOT}/skills/${_sib}" || true
 done
 GATE="${COPY}/scripts/selfcheck.sh"
 GOUT="$(mktemp "${WORKROOT}/gate.XXXXXX")" || exit 4
-# 此时副本尚未变异。用副本私有 TMPDIR 检查干净基线，不让本进程的变异锁
-# 把锚点检查提前标成 UNABLE；正式变异检查仍使用原 TMPDIR 和原互斥锁。
+# 此时副本尚未变异，必须完整检查干净基线，不能提前跳过锚点检查。
 TMPDIR="${WORKROOT}" bash "${GATE}" > "${GOUT}" 2>&1
 if [ "$?" -ne 0 ]; then
   echo "内部错误：副本的干净基线未通过，不能把既有失败当成变异被拦截"
@@ -85,6 +76,17 @@ if [ "${IN}" = "@SRC" ]; then
   [ -r "${COPY_SRC}" ] || { echo "内部错误：读不到反推源 ${COPY_SRC}"; exit 4; }
   F="${WORKROOT}/fnr-src.md"
   cp "${COPY_SRC}" "${F}" || { echo "内部错误：复制反推源失败"; exit 4; }
+  if /usr/bin/grep -qF '<!-- FNR-RULES: references/iron-rules.md -->' "${COPY_SRC}"; then
+    # Flatten the routed source only in this private copy so @SRC anchors remain mutable.
+    python3 - "${F}" "$(dirname "${COPY_SRC}")/references/iron-rules.md" <<'PYSOURCE'
+from pathlib import Path
+import sys
+source, rules = map(Path, sys.argv[1:])
+source.write_text(source.read_text().replace('<!-- FNR-RULES: references/iron-rules.md -->',
+                                          rules.read_text()), encoding='utf-8')
+PYSOURCE
+    [ "$?" -eq 0 ] || exit 4
+  fi
   export FOUR_NODE_SKILL="${F}"
 elif [ "${IN}" = "@ENG" ]; then
   # @ENG = 内置仓库执法模块；整份 coding-standards 已复制到临时目录，
@@ -93,12 +95,34 @@ elif [ "${IN}" = "@ENG" ]; then
   [ -s "${F}" ] || { echo "内部错误：副本里找不到 repository-enforcement/PLAYBOOK.md"; exit 4; }
   export ENG_STD_SKILL="${F}"
 else
-  # 调用方按契约传真实绝对路径 ${DIR}/…；映射到副本内同名文件。
-  case "${IN}" in
-    "${DIR}/"*) F="${COPY}/${IN#"${DIR}/"}" ;;
-    *) echo "内部错误：被测文件 ${IN} 不在 skill 目录下（副本模式只能测本 skill 内的文件，或用 @SRC）"; exit 4 ;;
-  esac
+  F="$(python3 - "${DIR}" "${COPY}" "${IN}" <<'PYPATH'
+from pathlib import Path
+import sys
+root, copy, source = map(Path, sys.argv[1:])
+try:
+    if '..' in source.parts:
+        raise ValueError('parent traversal')
+    rel = source.resolve(strict=True).relative_to(root.resolve())
+    target = (copy / rel).resolve(strict=True)
+    target.relative_to(copy.resolve())
+    if not target.is_file():
+        raise ValueError('not a file')
+    print(target)
+except (ValueError, OSError):
+    raise SystemExit(4)
+PYPATH
+)" || { echo '内部错误：被测路径越出 skill/副本，或不是可读取文件'; exit 4; }
 fi
+# @SRC/@ENG 也必须封闭在本次副本中（包括链接解析后）。
+python3 - "${WORKROOT}" "${F}" <<'PYCONFINED'
+from pathlib import Path
+import sys
+try:
+    Path(sys.argv[2]).resolve(strict=True).relative_to(Path(sys.argv[1]).resolve())
+except (ValueError, OSError):
+    raise SystemExit(4)
+PYCONFINED
+[ "$?" -eq 0 ] || { echo '内部错误：副本目标逃逸'; exit 4; }
 [ -f "${F}" ] || { echo "内部错误：副本里找不到被测文件 ${F}"; exit 4; }
 
 # ---- 锚点里的数字用 %d 占位（2026-09-05 加）----
@@ -158,7 +182,8 @@ if [ "$ok" != yes ]; then
   exit 4
 fi
 
-bash "$GATE" > "${GOUT}" 2>&1; rc=$?
+# 只向当前已验绿的副本传递变异上下文，不用全局目录存在性推断。
+CS_MUTATION_COPY="${COPY}" bash "$GATE" > "${GOUT}" 2>&1; rc=$?
 
 # ⚠️ 要在**全部** FAIL/UNABLE 行里找，不能只看第一行：
 # 一次变异可能同时触发多道判据，只看第一行会把「红的不是那道」这个结论下错 —— 最贵的误读方向。

@@ -57,7 +57,7 @@
 
 **高精度 ＝ 尺寸、颜色、字号、间距都取自真实来源**，不是目测近似：
 - 有已上线的程序 → **先从真实程序取规格**（CDP 抓 `getComputedStyle` + `getBoundingClientRect`），再按这份规格在 Figma 里重建。
-  现成工具：**`scripts/capture-live-ui.js`**（启 Electron + CDP → 关引导弹窗 → 导出 `spec-*.json` 规格与截图）
+  现成工具：**`scripts/capture-live-ui.js`**（启 Electron + CDP → 遇引导/授权弹窗停止，由用户处理后重采 → 导出 `spec-*.json` 规格与截图）
 - 没有程序 → 按 `DESIGN.md` 令牌值搭
 - ⚠️ **只信 DOM 规格会翻车**：规格可能显示一切正常，画面其实被首启弹窗/遮罩盖住。**必须同时截图肉眼确认**
 

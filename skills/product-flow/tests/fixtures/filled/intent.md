@@ -1,6 +1,6 @@
 # 意图 · 门禁看板
 ## Problem（问题）
-- 门禁结论散在终端，关窗即失忆（来源：亲历，验证项目 reconcile 空目录事故）
+- 门禁结论散在终端，关窗即失忆（来源：亲历，某验证项目 reconcile 空目录事故）
 ## Proposed outcome（想要的结果）
 - 任何时刻能答「哪些门跑过/哪些从来没跑过」
 ## Affected users & systems（谁与什么会被影响）

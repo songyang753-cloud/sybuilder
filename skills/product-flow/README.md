@@ -1,5 +1,9 @@
 # product-flow
 
+Distribution: this component requires the **complete SYBuilder suite**, including sibling
+Skills, shared scripts, tests and license notices. Use the [suite installer](../../README.md);
+a bare copy of this directory is not a supported independent package.
+
 > A spec-driven, gated pipeline that turns a one-line product direction into a shippable
 > product **plus** hand-off-ready engineering material — without losing information,
 > fabricating facts, or faking convergence.
@@ -35,7 +39,7 @@ translated — help wanted.
 
 The system is deliberately layered so that "change one thing → what else moves?" has a
 clear answer. See **[references/architecture.md](references/architecture.md)** — the
-boundary map:
+boundary map (English overview: [architecture.en.md](architecture.en.md)):
 
 - **L0 `SKILL.md`** — the map: stage table, cross-cutting mechanisms, routing table, rules.
 - **L1 single source** (machine-readable, not loaded into context) — `spec/*.json`,

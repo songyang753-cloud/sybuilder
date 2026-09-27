@@ -42,7 +42,8 @@ if (!fs.existsSync(path.join(ROOT, 'package.json'))) {
 }
 const OUT = arg('out', 'CAPTURE_OUT', path.join(ROOT, 'capture'));
 const PORT = 0; // OS-assigned, private profile; never attach to an arbitrary fixed listener.
-const { ELEMENT_JS, clickExpression, loadActionPolicy } = require('./_cdp.js');
+const { ELEMENT_JS, VISIBLE_DIALOG_JS, PRIVATE_NAV_JS, clickSelectorExpression, loadActionPolicy } = require('./_cdp.js');
+const capture = {schemaVersion:1,status:'UNABLE',privacyReview:'REQUIRED_BEFORE_EXPORT',views:[]};
 let WebSocket, policy;
 try {
   WebSocket = require(path.join(path.resolve(ROOT), 'node_modules', 'ws'));
@@ -113,12 +114,13 @@ const ev = (ws, sid, e) => cmd(ws, 'Runtime.evaluate', { expression: e, returnBy
   await sleep(7000); // 首屏 + 插件 + 照片加载
 
   // Preserve real UI. Login, permission, policy and onboarding walls require user action.
-  const blocked = await ev(ws, sid, `Array.from(document.querySelectorAll('[role=dialog],.modal,.privacy-modal,.onboarding')).some(e=>e.getBoundingClientRect().width>0)`);
-  if (blocked) throw new Error('UNABLE: visible dialog; user must resolve authorization/onboarding before capture');
+  const blocked = await ev(ws, sid, VISIBLE_DIALOG_JS);
+  if (blocked) throw new Error('UNABLE: visible interactive dialog (type unclassified); user must inspect it before capture, no automatic dismissal');
   await sleep(2500);
 
   // ---- 提取设计规格（供 Figma 重建）----
   const SPEC = `(function(){
+    ${ELEMENT_JS}
     const cs = el => el ? getComputedStyle(el) : null;
     const box = el => { if(!el) return null; const r = el.getBoundingClientRect(); return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}; };
     const pick = el => { const c = cs(el); if(!c) return null; return {
@@ -130,11 +132,11 @@ const ev = (ws, sid, e) => cmd(ws, 'Runtime.evaluate', { expression: e, returnBy
       regions:{}, samples:{} };
     const R = {sidebar:'.sidebar,#sidebar,nav.sidebar', header:'.titlebar,.header,header', content:'.content,#content,main,.grid-container', grid:'.photo-grid,.grid,#grid'};
     for (const [k,sel] of Object.entries(R)) { const el=q(sel); if(el){ out.regions[k]={box:box(el),style:pick(el)}; } }
-    const navs = Array.from(document.querySelectorAll('.nav-item')).slice(0,14).map(e=>({text:(e.textContent||'').trim().slice(0,20), box:box(e), style:pick(e), plugin:e.dataset.plugin||e.dataset.view||''}));
+    const navs = Array.from(document.querySelectorAll('.nav-item')).map(e=>({text:__element(e)?.txt||'[unavailable]', userContent:!!__element(e)?.userContent, box:box(e), style:pick(e)}));
     out.nav = navs;
     const cards = Array.from(document.querySelectorAll('.photo-card,.grid img,.thumb,.photo-item')).slice(0,6).map(e=>({tag:e.tagName, box:box(e), style:pick(e)}));
     out.cards = cards;
-    out.title = document.title;
+    out.title = '[page-title-withheld]';
     out.counts = { photos: document.querySelectorAll('.photo-card,.grid img,.thumb,.photo-item').length, navItems: document.querySelectorAll('.nav-item').length };
     return JSON.stringify(out);
   })()`;
@@ -150,18 +152,30 @@ const ev = (ws, sid, e) => cmd(ws, 'Runtime.evaluate', { expression: e, returnBy
   await shot('01-library');
 
   // 切到几个核心视图
-  const click = async sel => {
-    const sig = await ev(ws, sid, `(()=>{${ELEMENT_JS}; const e=document.querySelector(${JSON.stringify(sel)}); return e ? __element(e)?.sig : null;})()`);
-    return sig ? ev(ws, sid, clickExpression(sig, policy)) : 0;
-  };
+  const click = sel => ev(ws, sid, clickSelectorExpression(sel, policy));
   const views = [['.nav-item[data-view="library"]','01b-library'],['.nav-item[data-plugin="search"]','02-search'],['.nav-item[data-plugin="discover"]','03-discover']];
-  for (const [sel,name] of views) { const ok = await click(sel); if (ok) { await sleep(2500); await shot(name); } else console.log('  跳过(无此项):', sel); }
+  for (const [sel,name] of views) {
+    const result = await click(sel);
+    if(!result || !['ABSENT','BLOCKED','CLICKED'].includes(result.status)) throw new Error('invalid navigation result');
+    capture.views.push({selector:sel,name,...result});
+    if (result.status === 'CLICKED') {
+      await sleep(2500);
+      if (await ev(ws,sid,VISIBLE_DIALOG_JS)) throw new Error('visible dialog after navigation; user action required');
+      await shot(name);
+    } else console.log('  '+result.status+':', result.reason, sel);
+  }
 
-  const navList = await ev(ws, sid, `JSON.stringify(Array.from(document.querySelectorAll('.nav-item')).map(e=>({t:(e.textContent||'').trim().slice(0,16),p:e.dataset.plugin||'',v:e.dataset.view||''})))`);
-  fs.writeFileSync(path.join(OUT, 'navlist.json'), navList || '[]');
+  const navList = await ev(ws, sid, PRIVATE_NAV_JS);
+  fs.writeFileSync(path.join(OUT, 'navlist.json'), JSON.stringify(navList));
   console.log('Navigation evidence saved privately; review before any upload.');
 
-  console.log('DONE ->', OUT);
+  if(capture.views.some(v=>v.status==='BLOCKED')) throw new Error('capture incomplete: navigation blocked; inspect capture-result.json and obtain scoped action approval');
+  capture.status='CAPTURED';
+  capture.scope='Declared core selectors only; not proof of complete product coverage. ABSENT is selector absence, not feature absence.';
+  console.log('CAPTURED (privacy/coverage review pending) ->', OUT);
+  } catch(error) {
+    capture.reason=error.message;
+    throw error;
   } finally {
     clearTimeout(deadline); process.off('SIGTERM', stop); process.off('SIGINT', stop);
     try { ws?.close(); } catch {}
@@ -171,5 +185,6 @@ const ev = (ws, sid, e) => cmd(ws, 'Runtime.evaluate', { expression: e, returnBy
       try { process.platform === 'win32' ? proc.kill('SIGKILL') : process.kill(-proc.pid, 'SIGKILL'); } catch {}
     }
     fs.rmSync(ud, { recursive: true, force: true });
+    fs.writeFileSync(path.join(OUT,'capture-result.json'),JSON.stringify(capture,null,2),{mode:0o600});
   }
 })().catch(e => { console.error('UNABLE:', e.message); process.exit(2); });

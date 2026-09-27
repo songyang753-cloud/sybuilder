@@ -14,20 +14,10 @@ RT="${DIR}/scripts/reverse-test.sh"
 [ -r "${TSV}" ] || { echo "内部错误：找不到 ${TSV}"; exit 4; }
 [ -x "${RT}" ] || { echo "内部错误：找不到 ${RT}"; exit 4; }
 
-# ⚠️ 套件层也要互斥（2026-09-05 实测）：锁原本只在 reverse-test.sh 里，
-#    于是**两个套件实例可以同时跑** —— 它们在单条变异上串行，却整体交错，
-#    一个实例的「还原」可能盖掉另一个实例开跑前的备份。实测撞到过一次
-#    （我用 `&` 丢到后台一个没跑完，转头又启了一个）。
-SUITE_LOCK="${TMPDIR:-/tmp}/coding-standards-mutations.lock"
-if ! mkdir "${SUITE_LOCK}" 2>/dev/null; then
-  echo "内部错误：已有一个变异套件在运行（锁 ${SUITE_LOCK}）—— 两个实例会互相污染被测物，本次不跑"
-  echo "         若确认没有在跑，删掉该目录再试：rmdir '${SUITE_LOCK}'"
-  exit 4
-fi
+# 每条变异使用唯一副本，无共享写目标，不保留可失效的全局目录锁。
 # ⚠️ 2026-09-10（codex P1-26，本机实测确认）：写成 `trap ... EXIT INT TERM` 时，
 #    收到 TERM 后只是**跑一遍 handler 然后继续往下执行**，最后还 rc=0 ——
 #    被打断的套件会报成「全部通过」。信号必须自己退出，EXIT 单独管清理。
-trap 'rmdir "${SUITE_LOCK}" 2>/dev/null' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 

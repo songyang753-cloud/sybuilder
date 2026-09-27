@@ -17,9 +17,9 @@
 判据正本:references/s2-tech-approach-runbook.md(本脚本只机检 ★ 项,不判内容对错)。
 """
 from __future__ import annotations
-import argparse, os, re, subprocess, sys, tempfile
+import argparse, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
-from _document_sync import media_sources, verify_media_delivery
+from _document_sync import media_sources, verify_media_delivery, validate_evidence_paths
 
 OBJ_HEAD_RE = re.compile(r'^#{2,3} +2\.(\d+) ', re.M)
 EXCERPT_RE = re.compile(r'\w[\w./-]*\.\w{1,4}:\d+')          # file:line 形状
@@ -53,6 +53,16 @@ def png_height(path):
         return None
 
 
+def research_file(rdir, ref):
+    root = Path(rdir).resolve()
+    if not isinstance(ref, str) or not ref or Path(ref).is_absolute() or '..' in Path(ref).parts:
+        raise ValueError('research file must be a relative path without parent traversal')
+    path = (root / ref).resolve()
+    if not path.is_relative_to(root):
+        raise ValueError('research file escapes directory')
+    return path
+
+
 def check_pre(rdir):
     errs = []
     scope = parse_scope(os.path.join(rdir, "scope.md"))
@@ -63,7 +73,12 @@ def check_pre(rdir):
     if not isinstance(n, int) or n < 1:
         errs.append("scope.md 未声明合法 object_count")
         n = 0
-    report = os.path.join(rdir, str(scope.get("report_file", "report.md")))
+    try:
+        report = research_file(rdir, scope.get('report_file', 'report.md'))
+        research_file(rdir, scope.get('evidence_manifest', 'evidence-manifest.json'))
+    except ValueError:
+        print('FAIL: report_file/evidence_manifest 路径非法或越出研究目录')
+        return 1
     if not os.path.isfile(report):
         print(f"UNABLE: 报告文件不存在 {report}", file=sys.stderr)
         return 2
@@ -100,7 +115,8 @@ def check_pre(rdir):
     for m in COUNT_RE.finditer(text):
         v = int(m.group(1))
         if v not in allowed:
-            errs.append(f"口径疑残留: 「{m.group(0)}」不在声明值{n}∪豁免{sorted(allowed - {n})}中")
+            line = text[:m.start()].count('\n') + 1
+            errs.append(f"口径疑残留: 第 {line} 行计数不在声明与豁免集合中（不回显原文）")
 
     # 4) 图文件存在 + 高度红线
     max_h = int(scope.get("max_fig_height", 2600))
@@ -141,9 +157,14 @@ def check_post(rdir):
     if platform not in ("feishu", "dingtalk") or not doc:
         print("UNABLE: 需 scope 声明 documentPlatform: feishu/dingtalk 与 delivery_doc", file=sys.stderr)
         return 2
-    source = Path(rdir) / str(scope.get('report_file', 'report.md'))
-    manifest = Path(rdir) / str(scope.get('evidence_manifest', 'evidence-manifest.json'))
+    source = research_file(rdir, scope.get('report_file', 'report.md'))
+    manifest = research_file(rdir, scope.get('evidence_manifest', 'evidence-manifest.json'))
+    if not manifest.is_file():
+        print('UNABLE --post: 缺证据清单', file=sys.stderr)
+        return 2
     try:
+        # Check all indirect refs before any platform access or hashing their content.
+        validate_evidence_paths(manifest, json.loads(manifest.read_text(encoding='utf-8')))
         from _feishu import _find_value, verify_readback
         if platform == 'feishu':
             import _feishu as adapter

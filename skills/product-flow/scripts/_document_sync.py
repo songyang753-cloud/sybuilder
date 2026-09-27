@@ -98,6 +98,35 @@ def source_hash(source):
     return hashlib.sha256(Path(source).read_bytes()).hexdigest()
 
 
+def confined_asset(base, ref):
+    if not isinstance(ref, str) or not ref:
+        raise RuntimeError('UNABLE: 证据引用必须是非空相对路径')
+    relative = Path(ref)
+    path = (Path(base) / relative).resolve()
+    if (relative.is_absolute() or '..' in relative.parts
+            or not path.is_relative_to(Path(base).resolve()) or not path.is_file()):
+        raise RuntimeError('UNABLE: 证据引用越界或不可读取')
+    return path
+
+
+def validate_evidence_paths(manifest, payload):
+    if not isinstance(payload, dict):
+        raise RuntimeError('UNABLE: 证据清单顶层必须是对象')
+    base = Path(manifest).parent
+    evidence = payload.get('evidence', [])
+    delivery = payload.get('delivery', {})
+    if not isinstance(evidence, list) or not all(isinstance(item, dict) for item in evidence):
+        raise RuntimeError('UNABLE: 证据清单 evidence 必须是对象数组')
+    if not isinstance(delivery, dict):
+        raise RuntimeError('UNABLE: 证据清单 delivery 必须是对象')
+    for item in evidence:
+        for key in ('sourcePath', 'eventsRef', 'sourceRef', 'svgRef', 'renderReceiptRef'):
+            if item.get(key):
+                confined_asset(base, item[key])
+    if delivery.get('uploadEvidenceRef'):
+        confined_asset(base, delivery['uploadEvidenceRef'])
+
+
 def verify_media_delivery(source, manifest, native, document, revision, record=True):
     """Bind each local image to a same-version native image in its actual section.
 
@@ -109,10 +138,11 @@ def verify_media_delivery(source, manifest, native, document, revision, record=T
     if not images:
         return
     payload = json.loads(Path(manifest).read_text(encoding='utf-8'))
+    validate_evidence_paths(manifest, payload)
     delivery = payload.get('delivery') or {}
     if delivery.get('document') != document or str(delivery.get('nativeVersion')) != str(revision):
         raise RuntimeError('UNABLE: 缺同一文档/原生版本的逐图上传映射')
-    upload = Path(manifest).parent / delivery.get('uploadEvidenceRef', '')
+    upload = confined_asset(Path(manifest).parent, delivery.get('uploadEvidenceRef', ''))
     if not upload.is_file() or source_hash(upload) != delivery.get('uploadEvidenceHash'):
         raise RuntimeError('UNABLE: 逐图上传原始证据缺失或已变化')
     raw_upload = json.loads(upload.read_text(encoding='utf-8'))
@@ -164,7 +194,7 @@ def verify_media_delivery(source, manifest, native, document, revision, record=T
     evidence = payload.get('evidence') or []
     expected_remote = []
     for (_, path, anchor), item in zip(images, mappings):
-        digest = source_hash(Path(source).parent / path)
+        digest = source_hash(confined_asset(Path(source).parent, path))
         matches = [e for e in evidence if e.get('id') == item.get('evidenceId') and
                    (Path(manifest).parent / e.get('sourcePath', '')).resolve() == (Path(source).parent / path).resolve()]
         if len(matches) != 1 or (digest, item.get('mediaId')) not in pairs or item.get('sourceHash') != digest:
@@ -253,12 +283,14 @@ def preflight(source, manifest, for_write=True, destination=None):
     if images:
         if not manifest or not Path(manifest).is_file():
             raise RuntimeError('UNABLE: 有图片的交付必须提供可读取的证据清单；未执行远端写入')
-        evidence = json.loads(Path(manifest).read_text(encoding='utf-8')).get('evidence')
+        payload = json.loads(Path(manifest).read_text(encoding='utf-8'))
+        validate_evidence_paths(manifest, payload)
+        evidence = payload.get('evidence')
         if not isinstance(evidence, list) or not evidence:
             raise RuntimeError('UNABLE: 有图片但证据清单为空或结构不正确；未执行远端写入')
         known = {str((Path(manifest).parent / e.get('sourcePath', '')).resolve()) for e in evidence}
         for _, ref in images:
-            path = Path(source).parent / ref
+            path = confined_asset(Path(source).parent, ref)
             if not ref or not path.is_file() or str(path.resolve()) not in known:
                 raise RuntimeError('UNABLE: 图片缺真实文件或不在证据清单中；未执行远端写入')
             from _image import validate_image

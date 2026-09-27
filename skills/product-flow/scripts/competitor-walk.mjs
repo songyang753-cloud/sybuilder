@@ -13,7 +13,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 const require = createRequire(import.meta.url);
-const { connect, clickExpression, actionBlockReason, loadActionPolicy } = require('./_cdp.js');
+const { connect, clickExpression, actionBlockReason, loadActionPolicy, privatePageMetadata } = require('./_cdp.js');
 
 const A = process.argv.slice(2);
 const PORT = A[0], OUT = A[1];
@@ -32,7 +32,7 @@ const c = await connect(PORT, { pick }).catch(e => { console.error(e.message); p
 fs.mkdirSync(path.join(OUT, 'shots'), { recursive: true });
 
 const base = await c.enumerate();
-fs.writeFileSync(path.join(OUT, 'dom-base.json'), JSON.stringify(base, null, 1));
+fs.writeFileSync(path.join(OUT, 'dom-base.json'), JSON.stringify({...base,...privatePageMetadata(base.url,base.title)}, null, 1));
 async function capture(file) {
   await c.shot(file);
   if (!fs.existsSync(file) || !fs.statSync(file).size) {
@@ -41,7 +41,7 @@ async function capture(file) {
   }
 }
 await capture(path.join(OUT, 'shots', '00-base.png'));
-process.stderr.write(`  基线: ${base.n} 控件 (导航 ${base.els.filter(e => e.nav).length}) @ ${base.url.slice(-34)}\n`);
+process.stderr.write(`  基线: ${base.n} 控件 (导航 ${base.els.filter(e => e.nav).length}); URL/title retained only as private state keys\n`);
 
 const clicked = new Set(), transitions = [], skipped = [], routes = new Set([base.url]);
 let step = 0;
@@ -67,7 +67,9 @@ async function clickAndDiff(el, tag) {
   const f = `${String(step).padStart(2, '0')}-${tag}-${el.txt.replace(/[^\w一-龥]/g, '_').slice(0, 16)}.png`;
   await capture(path.join(OUT, 'shots', f));
   transitions.push({ step, depth: tag, clicked: el.txt, nav: !!el.nav, shot: f,
-    urlBefore: before.url, urlAfter: after.url, titleAfter: after.title,
+    urlBefore: privatePageMetadata(before.url,before.title).url,
+    urlAfter: privatePageMetadata(after.url,after.title).url,
+    titleAfter: privatePageMetadata(after.url,after.title).title,
     appeared: appeared.slice(0, 20), gone: gone.slice(0, 8),
     counts: { before: before.n, after: after.n, appeared: appeared.length, gone: gone.length } });
   process.stderr.write(`  ${step}.[${tag}] ${el.txt.slice(0, 18)} → +${appeared.length}/-${gone.length}${after.url !== before.url ? ' [路由变]' : ''}\n`);

@@ -12,12 +12,13 @@ import argparse
 import base64
 import os
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import tempfile
 import time
-import xml.etree.ElementTree as ET
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _svg_safety import validated_svg
 
 
 MAC_CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
@@ -36,35 +37,19 @@ def browser() -> str | None:
     return None
 
 
-def _number(value: str | None) -> float | None:
-    if not value:
-        return None
-    match = re.match(r"\s*([0-9]+(?:\.[0-9]+)?)", value)
-    return float(match.group(1)) if match else None
-
-
 def dimensions(svg: Path, target_width: int) -> tuple[int, int]:
-    root = ET.parse(svg).getroot()
-    view_box = root.attrib.get("viewBox", "").split()
-    if len(view_box) == 4:
-        source_width, source_height = float(view_box[2]), float(view_box[3])
-    else:
-        source_width = _number(root.attrib.get("width")) or float(target_width)
-        source_height = _number(root.attrib.get("height")) or source_width * 0.625
-    if source_width <= 0 or source_height <= 0:
-        raise ValueError("SVG width/height must be positive")
-    return target_width, max(1, round(target_width * source_height / source_width))
+    return validated_svg(svg, target_width)
 
 
 def render(svg: Path, output: Path, width: int) -> None:
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'scripts'))
     from _image import validate_image
+    viewport_width, viewport_height = dimensions(svg, width)
     chrome = browser()
     if not chrome:
         raise RuntimeError("no local Chrome/Chromium renderer found")
 
-    viewport_width, viewport_height = dimensions(svg, width)
     encoded = base64.b64encode(svg.read_bytes()).decode("ascii")
     html = (
         "<!doctype html><meta charset=utf-8><style>"
