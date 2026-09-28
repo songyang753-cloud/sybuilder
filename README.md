@@ -63,6 +63,12 @@ four-node-review 独立证伪并裁决能否交付
 
 ## 验证
 
+先装 pinned 校验依赖（不装会得到 UNABLE/依赖类报错，不是套件缺陷）：
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+```
+
 ```bash
 ./scripts/verify-suite.sh --quick
 ./scripts/verify-suite.sh --full

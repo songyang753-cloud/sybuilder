@@ -460,7 +460,23 @@ BASE = """# 标题
 | 1 | 2 |
 """
 
+def _dep_ready():
+    """markdown-it-py 在场与否 —— 与 `_document_sync._parser` 同一依赖。"""
+    try:
+        from markdown_it import MarkdownIt  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
 def self_test():
+    # 🚨 2026-09-28 裸环境实测：缺 markdown-it-py 时本门自测 11 个用例「假失败」——
+    #    子进程 check/record 退 2（UNABLE），用例判「实得 2 ≠ 期望 0/1」记成失败。
+    #    缺依赖是 UNABLE 不是失败；预检在先，退 2 且零用例，selftest-all 才能归对类。
+    if not _dep_ready():
+        print("UNABLE: 缺 markdown-it-py —— 本门自测需要它构造文档模型"
+              "（python3 -m pip install -r requirements.txt 后重跑）。"
+              "环境缺席是 UNABLE，不是失败，也不是通过。")
+        sys.exit(2)
     t = tempfile.mkdtemp(prefix="dsg-")
     def w(n, c):
         p = os.path.join(t, n); io.open(p, 'w', encoding='utf-8').write(c); return p
@@ -617,6 +633,15 @@ def self_test():
     case("Figma 双锚齐全 → 绿",
          run('figma-anchors', w('g.md', "| p | [F-01/pc/empty](https://figma.com/file/x#node-id=1-2) | l |")), 0)
     case("文件不存在 → 报 2", run('fingerprint', os.path.join(t, 'nope.md')), 2)
+    # ── 2026-09-28 依赖预检自证（正反两向，防「新判据一次都没被跑过」）──
+    # poison：sys.modules['markdown_it']=None 会让后续 import 该模块抛 ImportError。
+    case("依赖在场 → _dep_ready()=True（本环境）", int(_dep_ready()), 1)
+    sys.modules['markdown_it'] = None
+    try:
+        case("反例：markdown_it 缺席 → _dep_ready()=False（UNABLE 前置，而非逐用例假失败）",
+             int(_dep_ready()), 0)
+    finally:
+        del sys.modules['markdown_it']
     print("\n%s" % ("✅ 格式边界守卫会出声" if ok else "❌ 自证失败"))
     return 0 if ok else 1
 

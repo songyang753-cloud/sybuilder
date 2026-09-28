@@ -146,6 +146,13 @@ class WritingContractTests(unittest.TestCase):
         self.assertEqual(scope_issues(self.text, target), ['scope-unrequested: F-02'])
 
     def test_prd_pre_is_not_native_final(self):
+        # 2026-09-28：check 链经 _document_sync 需要 markdown-it-py；缺席时依赖层抛
+        # UNABLE RuntimeError，unittest 会把它记成 error（读起来像门禁坏了）。
+        # 裸 discover 路径不经过 prd-quality-gate 的入口预检 ⇒ 这里显式降级为可见的 skip。
+        try:
+            import markdown_it  # noqa: F401
+        except ImportError:
+            self.skipTest('UNABLE: 缺 markdown-it-py（pip install -r requirements.txt）—— 环境缺席不是失败')
         source, review, scope = (self.root / n for n in ('report.md', 'review.md', 'scope.md'))
         source.write_text(self.text)
         scope.write_text(self.text)

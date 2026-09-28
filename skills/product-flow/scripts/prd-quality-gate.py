@@ -39,6 +39,16 @@ def _boundary():
 
 
 def self_test():
+    # 🚨 2026-09-28 裸环境实测：缺 markdown-it-py 时 `_document_sync._parser` 抛
+    #    RuntimeError('UNABLE: 缺 markdown-it-py…')，unittest 把它记成用例 error
+    #    ⇒ 本门退 1（失败）。依赖层说的是 UNABLE，自测入口不许把它翻译成失败。
+    try:
+        import markdown_it  # noqa: F401 —— check 链经 review_gate→_document_sync
+    except ImportError:
+        print('UNABLE: 缺 markdown-it-py —— 自测的 check 链需要它'
+              '（python3 -m pip install -r requirements.txt 后重跑）。'
+              '环境缺席是 UNABLE，不是失败，也不是通过。')
+        return 2
     import unittest
     tests = Path(__file__).resolve().parents[1] / 'tests'
     suite = unittest.defaultTestLoader.discover(str(tests), pattern='test_writing_contract.py')

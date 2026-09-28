@@ -5,9 +5,9 @@
     "python": "3.14.7",
     "os": "Darwin"
   },
-  "measuredAt": "2026-09-28T15:49:57",
+  "measuredAt": "2026-09-28T23:36:19",
   "scripts": 86,
-  "cases": 1451,
+  "cases": 1453,
   "failures": 0,
   "failedScripts": [],
   "unableScripts": [],
@@ -51,7 +51,7 @@
     "design-to-tokens.py": "5e4e49677e09f6ccb36be96a84a7265318c80cfa",
     "diagram-id-gate.py": "1c303f2e05507767a86b75e0651020daee814555",
     "dingtalk-delivery-gate.py": "0e01d95d7c80f89ddb12d4b3b4c7e5e6be1e746d",
-    "doc-sync-guard.py": "ee5676003ded9c8348df10c4ad509085e3c639fb",
+    "doc-sync-guard.py": "ff11d3723925dcd89e938a304b836cc4dbe9b05e",
     "element-identity-gate.py": "b9dd6425453023767214d546cd54c9dfe0ab8219",
     "feishu-delivery-gate.py": "c30fcc3805d39f6aba06a54af456668f4c00da63",
     "figma-editability-gate.py": "7f75c850525e06e9a4a6feafb9fca2597731627d",
@@ -67,7 +67,7 @@
     "mutation-sweep.py": "19f0afa13d893c3e403e40fd23481d3e0785f151",
     "no-loss-gate.py": "f5ceae630dc6f07d2bee08e513b256fee6edbf40",
     "platform-parity-gate.mjs": "9f83ef7f3d59f52dcbabf0210b67ee9cd1db6114",
-    "prd-quality-gate.py": "6f220212b6db07e0ede5e2e45dea74bc80490651",
+    "prd-quality-gate.py": "4628bfb775c147787cd8ec3e5cd2e2e8f67d684c",
     "prd_completeness_check.py": "837362c0a9d1abf79286ea8da49bd2dd3a81a4f8",
     "product-flow-run.py": "4407f223c48886ebd7fe0f576bdc7d4f5a1d9476",
     "product-structure-gate.py": "677338ff70d4b8099101018f4fce7f0f8acf93b8",
@@ -288,9 +288,9 @@
       "negLabel": 3
     },
     "doc-sync-guard.py": {
-      "cases": 34,
-      "negNumeric": 18,
-      "negLabel": 12
+      "cases": 36,
+      "negNumeric": 19,
+      "negLabel": 13
     },
     "element-identity-gate.py": {
       "cases": 26,
@@ -533,22 +533,13 @@
       "negLabel": 13
     }
   },
-  "negativesByExpectation": 551,
-  "negativesByLabel": 767,
+  "negativesByExpectation": 552,
+  "negativesByLabel": 768,
   "command": "python3 scripts/selftest-all.py --fresh",
   "treeDiff": [
-    "skills/product-flow/references/competitive-research.md",
-    "skills/product-flow/references/no-loss-renames.md",
-    "skills/product-flow/scripts/_writing_contract.py",
-    "skills/product-flow/scripts/g75-freeze-gate.py",
+    "skills/product-flow/scripts/doc-sync-guard.py",
     "skills/product-flow/scripts/prd-quality-gate.py",
-    "skills/product-flow/scripts/prd_completeness_check.py",
-    "skills/product-flow/templates/prd-backfill.md",
-    "skills/product-flow/templates/prd-complete.md",
-    "skills/product-flow/tests/fixtures/filled/PRD.md",
-    "skills/product-flow/tests/fixtures/filled/triad-root/PRD.md",
-    "skills/product-flow/tests/fixtures/filled/triad-root/testcases/",
     "skills/product-flow/tests/test_writing_contract.py"
   ],
-  "headAt": "47f7341"
+  "headAt": "d5346eb"
 }

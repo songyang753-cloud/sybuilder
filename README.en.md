@@ -56,6 +56,13 @@ After installing, ask your agent: "Use product-flow, start from S1 and work out 
 
 ## Verify
 
+Install the pinned validation dependencies first (without them you will get
+UNABLE / dependency errors, not suite defects):
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+```
+
 ```bash
 ./scripts/verify-suite.sh --quick
 ./scripts/verify-suite.sh --full
