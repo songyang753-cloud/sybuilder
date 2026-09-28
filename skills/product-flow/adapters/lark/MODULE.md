@@ -16,6 +16,11 @@
 `<源稿>.delivery-receipt.json`。平台无法原子比较并写入时仍有检查后竞态，不能宣称独占锁。
 图片交付必须提供证据清单；真实账号的端到端兼容性须单独验收，离线自证不等于平台实测。
 
+画板通道（2026-09-28 本机实测）：`docs +create/+update` 的 `<whiteboard type="mermaid">`
+内联块产出**可编辑**的原生画板；`whiteboard +export --output-type source` 回读源码与写入
+逐字比对作交付同步性证据。格式路由与正本纪律见 `references/diagram-standards.md`
+「飞书优先交付可编辑画板」一节；企业租户端到端仍须真机验收。
+
 官方入口：https://www.feishu.cn/feishu-cli
 
 正文、媒体、原生版本和回执 v2 的共用合同见套件 `docs/document-evidence.md`。

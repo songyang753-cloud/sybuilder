@@ -329,6 +329,26 @@
 **交付**：文本源（`.source.json` / `.mmd` / `.d2` / `.puml`）**进 git 作为正本** → SVG/PNG + 同版渲染记录 → 飞书或钉钉图片块。统一用 `modules/diagramming/scripts/render-diagram.py` 调用已安装的旧格式编译器，缺工具报 UNABLE；内置 JSON 使用 generate-from-template 与 render-svg。正式验收契约见 `references/delivery-quality-contract.md`。
 ⛔ **PNG 是产物不是正本**——改图改源，不改 PNG。
 
+#### 飞书优先交付**可编辑画板**，图片块降为回退（2026-09-28 本机实测）
+
+> 图片块在文档里是死图：读者不能改、评审批注只能圈截图。飞书画板是原生图形对象，
+> 文档内直接可编辑，且官方 CLI 支持**代码进、代码出**——正好同时满足
+> 「可编辑」与本文的「文本源正本」纪律。
+
+| 能力 | 通道 | 实测结果（2026-09-28，官方 lark-cli） |
+|---|---|---|
+| 写入 | `docs +create/+update` XML 的 `<whiteboard type="mermaid">` 内联块（支持 `path="@./x.mmd"` 引本地源） | 一次写入即产出原生画板块（block_type=whiteboard） |
+| 回读 | `whiteboard +export --output-type source` | 返回 mermaid 源**与写入逐字一致** + `syntax_type` |
+| 目检 | `whiteboard +export --output-type preview` | 原生画板样式（决策菱形/圆角节点/曲线边），中文正常 |
+| 增改 | `whiteboard +update --input_format mermaid/plantuml/svg` | 已有画板整板重建需 overwrite 确认 |
+
+**格式路由**：mermaid / plantuml 表达的图（流程/时序/状态/用例等）→ **画板交付**；
+D2+TALA 才能布局住的复杂架构图 → 维持 PNG 图片块 + git 文本源（画板不收 D2）。
+**对账口径不变**：`diagram-id-gate` 仍只认 git 里的文本源；画板导出源与 git 正本
+逐字比对可作为**交付同步性证据**，⛔ 画板本身不是正本——文档里被人改了图，
+回读比对红了才发现漂移，这正是要留导出通道的原因。
+⚠️ 本机实测 ≠ 全租户保证：企业租户的画板权限/版本差异仍须按 RELEASE_BLOCKERS 真机验收。
+
 ### ⚠️ 三条防假绿断言（都是实测踩出来的）
 
 1. 历史第三方 CLI 曾出现文档建成而图片失败。当前仅使用官方文档适配器，必须显式判退出码，并回读完整正文和同版图片；写入成功不等于交付成功。
