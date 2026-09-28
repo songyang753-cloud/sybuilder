@@ -264,6 +264,41 @@ class Contracts(unittest.TestCase):
         ok,issues=gate.check(str(self.root),formal=True)
         self.assertFalse(ok);self.assertTrue(any('真实编译产物' in issue for issue in issues))
 
+    def test_formal_flow_slots_cannot_be_waived_when_triggered(self):
+        # 2026-09-28：user-flow / business-flow 此前无触发条件 —— 写个理由就能整体跳过。
+        gate=load('remediation_flow_trigger',S/'diagram-id-gate.py')
+        (self.root/'PRD.md').write_text(
+            '## 功能清单\n| ID | 功能名称 |\n|---|---|\n| F-01 | 甲 |\n| F-02 | 乙 |\n| F-03 | 丙 |\n'
+            '## 流程与功能的对应\n| 流程节点 | 实现它的 F-xx |\n|---|---|\n| 步骤 | F-01 |\n')
+        folder=self.root/'diagrams';folder.mkdir()
+        (folder/'all.mmd').write_text('graph LR\nF-01 --> F-02\n')
+        manifest=json.loads((S.parent/'templates/diagram-manifest.json').read_text())
+        for row in manifest['diagrams']:row.update(applicable=False,rationale='Synthetic waiver')
+        (folder/'manifest.json').write_text(json.dumps(manifest))
+        ok,issues=gate.check(str(self.root),formal=True)
+        self.assertFalse(ok)
+        self.assertTrue(any('不可声明不适用：user-flow' in i for i in issues))
+        self.assertTrue(any('不可声明不适用：business-flow' in i for i in issues))
+
+    def test_formal_business_flow_needs_exception_edges(self):
+        # 5.1.1「三类流程都要画，⛔ 只画主流程 = 没画」—— 此前是散文没有门。
+        gate=load('remediation_flow_edges',S/'diagram-id-gate.py')
+        (self.root/'PRD.md').write_text('## 功能清单\n| ID | 功能名称 |\n|---|---|\n| F-01 | 甲 |\n')
+        folder=self.root/'diagrams';folder.mkdir()
+        (folder/'main-only.mmd').write_text('graph TD\nA --> B\nB --> C\n')
+        (folder/'with-branches.mmd').write_text('graph TD\nA --> B\nB -->|超时| D[降级读缓存]\nB -->|失败| E[报错]\n')
+        manifest=json.loads((S.parent/'templates/diagram-manifest.json').read_text())
+        for row in manifest['diagrams']:row.update(applicable=False,rationale='Synthetic waiver')
+        biz=[r for r in manifest['diagrams'] if '业务流程' in r['slot']][0]
+        biz.update(applicable=True,rationale='Synthetic formal test',source='diagrams/main-only.mmd')
+        (folder/'manifest.json').write_text(json.dumps(manifest))
+        ok,issues=gate.check(str(self.root),formal=True)
+        self.assertTrue(any('只画主流程' in i for i in issues))
+        biz.update(source='diagrams/with-branches.mmd')
+        (folder/'manifest.json').write_text(json.dumps(manifest))
+        ok,issues=gate.check(str(self.root),formal=True)
+        self.assertFalse(any('只画主流程' in i for i in issues))
+
     def package(self):
         d=self.golden()
         comp={'id':'COMP-01','featureMap':{'AF-001':['AF-001']}}

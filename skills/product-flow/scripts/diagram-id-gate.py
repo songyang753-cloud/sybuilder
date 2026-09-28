@@ -171,7 +171,12 @@ def check(root, formal=False):
             kind, section = contracts.get(entry.get('slot'), ('', ''))
             trigger = {'product-module': len(table_ids(md, '模块设计', 'M') or []) >= 6,
                        'functional-architecture': len(table_ids(md, '功能清单', 'F') or []) >= 10,
-                       'information-architecture': len(table_ids(md, '页面结构', 'P') or []) >= 5}.get(kind, False)
+                       'information-architecture': len(table_ids(md, '页面结构', 'P') or []) >= 5,
+                       # 2026-09-28 补：这两个图位此前无触发 —— 写个理由就能整体跳过。
+                       # 4.4 用户流程图：功能清单 ≥3 个 F 就必然有一条核心用户路径要画；
+                       # 5.1 业务流程图：5.2 流程投影表已经在引用 F —— 流程存在，图就必须存在。
+                       'user-flow': len(table_ids(md, '功能清单', 'F') or []) >= 3,
+                       'business-flow': bool(ids_in(section_at(md, '流程与功能的对应') or '', 'F'))}.get(kind, False)
             if trigger and entry.get('applicable') is not True:
                 bad.append('图位数量触发条件已满足，不可声明不适用：' + kind)
             if not entry.get('rationale') or re.search(r'<|TODO|待填|未评估', entry.get('rationale', ''), re.I) or not isinstance(entry.get('applicable'), bool):
@@ -184,6 +189,19 @@ def check(root, formal=False):
                 if candidate in used:
                     bad.append('图位不得共用同一图源：' + str(entry.get('slot')))
                 used.add(candidate)
+                # 2026-09-28 补：5.1.1「三类流程都要画，⛔ 只画主流程 = 没画」此前是散文没有门。
+                # 判法与 research-gate 的 key-flow 异常边同族：图源文本里必须有分支/异常证据。
+                if kind == 'business-flow':
+                    try:
+                        _raw = Path(candidate).read_text(encoding='utf-8', errors='replace')
+                    except OSError:
+                        _raw = ''
+                    if _raw and not re.search(
+                            r'失败|异常|超时|错误|降级|回退|重试|fail|error|timeout|fallback|retry',
+                            _raw, re.I):
+                        bad.append('D〔5.1〕业务流程图源里找不到任何分支/异常边'
+                                   '（失败/超时/降级/回退/重试…都没有）—— '
+                                   '5.1.1：三类流程都要画，⛔ 只画主流程 = 没画')
                 kind, section = contracts.get(entry.get('slot'), ('', ''))
                 if not candidate.endswith('.source.json'):
                     try:
