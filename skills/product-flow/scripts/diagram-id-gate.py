@@ -197,7 +197,8 @@ def check(root, formal=False):
                     except OSError:
                         _raw = ''
                     if _raw and not re.search(
-                            r'失败|异常|超时|错误|降级|回退|重试|fail|error|timeout|fallback|retry',
+                            r'失败|异常|超时|错误|降级|回退|重试|拒绝|不通过|取消|中断|无权限|离线'
+                            r'|fail|error|timeout|fallback|retry|reject|cancel|denied|offline',
                             _raw, re.I):
                         bad.append('D〔5.1〕业务流程图源里找不到任何分支/异常边'
                                    '（失败/超时/降级/回退/重试…都没有）—— '

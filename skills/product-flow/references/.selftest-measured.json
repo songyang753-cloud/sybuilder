@@ -5,7 +5,7 @@
     "python": "3.14.7",
     "os": "Darwin"
   },
-  "measuredAt": "2026-09-28T12:07:22",
+  "measuredAt": "2026-09-28T12:26:01",
   "scripts": 86,
   "cases": 1430,
   "failures": 0,
@@ -49,7 +49,7 @@
     "demo-anchor-gate.py": "8465d6bd9236453ec7dbd4499630f78fc3e1b87a",
     "design-intent-gate.py": "2bfeb621e720ce4daf0cc13e5b47d697433ca601",
     "design-to-tokens.py": "5e4e49677e09f6ccb36be96a84a7265318c80cfa",
-    "diagram-id-gate.py": "25b8ba1b1ad43492084f2393e4189c78e96e917f",
+    "diagram-id-gate.py": "1c303f2e05507767a86b75e0651020daee814555",
     "dingtalk-delivery-gate.py": "0e01d95d7c80f89ddb12d4b3b4c7e5e6be1e746d",
     "doc-sync-guard.py": "ee5676003ded9c8348df10c4ad509085e3c639fb",
     "element-identity-gate.py": "b9dd6425453023767214d546cd54c9dfe0ab8219",
@@ -537,8 +537,9 @@
   "negativesByLabel": 751,
   "command": "python3 scripts/selftest-all.py --fresh",
   "treeDiff": [
+    "skills/product-flow/references/competitive-research.md",
     "skills/product-flow/scripts/diagram-id-gate.py",
-    "skills/product-flow/templates/prd-complete.md"
+    "skills/product-flow/spec/s2-research.json"
   ],
-  "headAt": "ecbace1"
+  "headAt": "278a2de"
 }
