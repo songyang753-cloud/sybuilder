@@ -49,6 +49,7 @@ Mermaid 的 `direction` 失效、层散开；D2 默认布局塌成一条横带�
 | `page-relation.example.d2` | **页面关系图**（跳转拓扑，✅ 有回环） | `P-01`…`P-05` | 6.3.1 |
 | `data-lifecycle.example.d2` | 数据生命周期图 | data store ↔ 附件 D 实体 | 附件 C.5 |
 | `tech-architecture-c4.example.d2` | 技术架构图 C4 · Container | 容器名 | 附件 N |
+| `layered-architecture.example.svg` | **分层架构图·风格样例**（嵌套分层容器＋层主题色＋编号圆点＋徽标＋带标签箭头＋图例；供飞书画板可编辑交付，风格契约见 `diagram-standards.md`「分层架构图风格契约」） | ⛔ 风格样例，内容为中立示例；正式图 ID 以结构源为正本 | 6.1 / 附件 N 的读者版渲染 |
 
 ⚠️ 它们是**示例不是模板**：你的 `M-xx` / `F-xx` / `P-xx` 必须来自你自己 PRD 的表，
 ⛔ 否则 `diagram-id-gate` 的双向集合对账会红。

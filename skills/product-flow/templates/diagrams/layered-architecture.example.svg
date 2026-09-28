@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 830" font-family="Noto Sans SC">
+  <rect x="0" y="0" width="1240" height="830" fill="#F4F6FB"/>
+
+  <text x="60" y="56" font-size="24" font-weight="bold" fill="#1F2430">示例产品 整体架构</text>
+  <text x="300" y="56" font-size="13" fill="#6B7280">一个决策者 · 分层服务 · 云端运行</text>
+
+  <rect x="48" y="76" width="900" height="640" rx="16" fill="#FFFFFF" stroke="#4C566A" stroke-width="1.5"/>
+
+  <rect x="270" y="110" width="650" height="150" rx="12" fill="#FFF7E0" stroke="#E8A23D" stroke-width="1.5"/>
+  <circle cx="298" cy="138" r="12" fill="#E8A23D"/>
+  <text x="294" y="143" font-size="13" font-weight="bold" fill="#FFFFFF">1</text>
+  <text x="318" y="144" font-size="17" font-weight="bold" fill="#8A5A10">决策层</text>
+  <rect x="392" y="124" width="104" height="26" rx="13" fill="#F0B84C"/>
+  <text x="408" y="142" font-size="12" fill="#FFFFFF">唯一决策者</text>
+  <rect x="292" y="176" width="190" height="64" rx="8" fill="#FFFFFF" stroke="#E8C98F"/>
+  <rect x="300" y="188" width="4" height="40" fill="#E8A23D"/>
+  <text x="314" y="204" font-size="14" font-weight="bold" fill="#333A45">上下文与状态机</text>
+  <text x="314" y="226" font-size="11" fill="#8A8F99">会话状态 · 意图供给</text>
+  <rect x="494" y="176" width="190" height="64" rx="8" fill="#FFFFFF" stroke="#E8C98F"/>
+  <rect x="502" y="188" width="4" height="40" fill="#E8A23D"/>
+  <text x="516" y="204" font-size="14" font-weight="bold" fill="#333A45">前台响应</text>
+  <text x="516" y="226" font-size="11" fill="#8A8F99">快速回复 · 对话融合</text>
+  <rect x="696" y="176" width="190" height="64" rx="8" fill="#FFFFFF" stroke="#E8C98F"/>
+  <rect x="704" y="188" width="4" height="40" fill="#E8A23D"/>
+  <text x="718" y="204" font-size="14" font-weight="bold" fill="#333A45">后台任务</text>
+  <text x="718" y="226" font-size="11" fill="#8A8F99">主动循环 · 记忆演化</text>
+
+  <polyline points="540,262 540,306" fill="none" stroke="#D97E1E" stroke-width="2"/>
+  <polygon points="534,268 540,258 546,268" fill="#D97E1E"/>
+  <polygon points="534,300 540,310 546,300" fill="#D97E1E"/>
+  <text x="556" y="282" font-size="12" fill="#C06A10">事件上行 · 指令下行</text>
+
+  <rect x="270" y="312" width="650" height="182" rx="12" fill="#EAF6EC" stroke="#4F9D69" stroke-width="1.5"/>
+  <circle cx="298" cy="340" r="12" fill="#4F9D69"/>
+  <text x="294" y="345" font-size="13" font-weight="bold" fill="#FFFFFF">2</text>
+  <text x="318" y="346" font-size="17" font-weight="bold" fill="#2C6B42">服务层</text>
+  <rect x="392" y="326" width="130" height="26" rx="13" fill="#58A472"/>
+  <text x="404" y="344" font-size="12" fill="#FFFFFF">无决策 · 只执行</text>
+  <rect x="292" y="364" width="146" height="112" rx="8" fill="#FFFFFF" stroke="#BFE0C8"/>
+  <text x="306" y="388" font-size="14" font-weight="bold" fill="#2C6B42">事件与触发</text>
+  <circle cx="312" cy="410" r="3" fill="#4F9D69"/>
+  <text x="322" y="414" font-size="11" fill="#5B6470">条件 · 动作</text>
+  <circle cx="312" cy="432" r="3" fill="#4F9D69"/>
+  <text x="322" y="436" font-size="11" fill="#5B6470">感知信号转事件</text>
+  <rect x="450" y="364" width="146" height="112" rx="8" fill="#FFFFFF" stroke="#BFE0C8"/>
+  <text x="464" y="388" font-size="14" font-weight="bold" fill="#2C6B42">交互编排</text>
+  <circle cx="470" cy="410" r="3" fill="#4F9D69"/>
+  <text x="480" y="414" font-size="11" fill="#5B6470">原语下行</text>
+  <circle cx="470" cy="432" r="3" fill="#4F9D69"/>
+  <text x="480" y="436" font-size="11" fill="#5B6470">回执上行</text>
+  <rect x="608" y="364" width="146" height="112" rx="8" fill="#FFFFFF" stroke="#BFE0C8"/>
+  <text x="622" y="388" font-size="14" font-weight="bold" fill="#2C6B42">媒体服务</text>
+  <circle cx="628" cy="410" r="3" fill="#4F9D69"/>
+  <text x="638" y="414" font-size="11" fill="#5B6470">录音 · 播放</text>
+  <circle cx="628" cy="432" r="3" fill="#4F9D69"/>
+  <text x="638" y="436" font-size="11" fill="#5B6470">实时通话</text>
+  <rect x="766" y="364" width="146" height="112" rx="8" fill="#FFFFFF" stroke="#BFE0C8"/>
+  <text x="780" y="388" font-size="14" font-weight="bold" fill="#2C6B42">开放能力</text>
+  <circle cx="786" cy="410" r="3" fill="#4F9D69"/>
+  <text x="796" y="414" font-size="11" fill="#5B6470">按权限暴露</text>
+  <circle cx="786" cy="432" r="3" fill="#4F9D69"/>
+  <text x="796" y="436" font-size="11" fill="#5B6470">外部能力接入</text>
+
+  <rect x="270" y="514" width="650" height="86" rx="12" fill="#E6F4F6" stroke="#3E8FA3" stroke-width="1.5"/>
+  <circle cx="298" cy="542" r="12" fill="#3E8FA3"/>
+  <text x="294" y="547" font-size="13" font-weight="bold" fill="#FFFFFF">3</text>
+  <text x="318" y="548" font-size="17" font-weight="bold" fill="#20657A">硬件抽象</text>
+  <rect x="440" y="530" width="100" height="26" rx="13" fill="#FFFFFF" stroke="#7FB9C6"/>
+  <text x="458" y="548" font-size="12" fill="#20657A">设备管理</text>
+  <rect x="552" y="530" width="100" height="26" rx="13" fill="#FFFFFF" stroke="#7FB9C6"/>
+  <text x="570" y="548" font-size="12" fill="#20657A">状态镜像</text>
+  <rect x="664" y="530" width="100" height="26" rx="13" fill="#FFFFFF" stroke="#7FB9C6"/>
+  <text x="694" y="548" font-size="12" fill="#20657A">连接</text>
+  <rect x="776" y="530" width="120" height="26" rx="13" fill="#FFFFFF" stroke="#7FB9C6"/>
+  <text x="790" y="548" font-size="12" fill="#20657A">传输通道管理</text>
+  <text x="440" y="582" font-size="11" fill="#5B8B98">并列能力共享硬件 · 层内冲突各自裁决</text>
+
+  <rect x="72" y="312" width="170" height="230" rx="12" fill="#F3EFFB" stroke="#9A7FD1" stroke-width="1.5"/>
+  <text x="92" y="342" font-size="15" font-weight="bold" fill="#5B3E96">数据与记忆</text>
+  <rect x="88" y="360" width="138" height="46" rx="8" fill="#FFFFFF" stroke="#C9B8E8"/>
+  <text x="102" y="388" font-size="13" fill="#4A3B66">用户文件区</text>
+  <rect x="88" y="418" width="138" height="46" rx="8" fill="#FFFFFF" stroke="#C9B8E8"/>
+  <text x="102" y="446" font-size="13" fill="#4A3B66">结构化数据区</text>
+  <rect x="88" y="476" width="138" height="46" rx="8" fill="#FFFFFF" stroke="#C9B8E8"/>
+  <text x="102" y="504" font-size="13" fill="#4A3B66">抽象记忆存储</text>
+
+  <polyline points="242,400 270,400" fill="none" stroke="#8B5FC7" stroke-width="2"/>
+  <polygon points="264,394 274,400 264,406" fill="#8B5FC7"/>
+  <text x="196" y="300" font-size="12" fill="#7A52B8">直接读写</text>
+  <polyline points="156,312 156,262 270,200" fill="none" stroke="#8B5FC7" stroke-width="2"/>
+  <polygon points="262,196 276,197 266,207" fill="#8B5FC7"/>
+
+  <rect x="72" y="628" width="848" height="60" rx="12" fill="#EEF0F3" stroke="#8B93A1" stroke-width="1.5"/>
+  <circle cx="100" cy="658" r="12" fill="#6B7480"/>
+  <text x="96" y="663" font-size="13" font-weight="bold" fill="#FFFFFF">4</text>
+  <text x="120" y="664" font-size="15" font-weight="bold" fill="#3F4854">云服务基建</text>
+  <rect x="240" y="644" width="72" height="26" rx="13" fill="#FFFFFF" stroke="#A9B0BC"/>
+  <text x="262" y="662" font-size="12" fill="#3F4854">沙箱</text>
+  <rect x="324" y="644" width="72" height="26" rx="13" fill="#FFFFFF" stroke="#A9B0BC"/>
+  <text x="346" y="662" font-size="12" fill="#3F4854">部署</text>
+  <rect x="408" y="644" width="72" height="26" rx="13" fill="#FFFFFF" stroke="#A9B0BC"/>
+  <text x="430" y="662" font-size="12" fill="#3F4854">灰度</text>
+  <rect x="492" y="644" width="72" height="26" rx="13" fill="#FFFFFF" stroke="#A9B0BC"/>
+  <text x="514" y="662" font-size="12" fill="#3F4854">监控</text>
+  <rect x="576" y="644" width="72" height="26" rx="13" fill="#FFFFFF" stroke="#A9B0BC"/>
+  <text x="598" y="662" font-size="12" fill="#3F4854">埋点</text>
+
+  <rect x="970" y="380" width="220" height="164" rx="12" fill="#EEF4FE" stroke="#4C7DD0" stroke-width="1.5"/>
+  <text x="990" y="410" font-size="15" font-weight="bold" fill="#2C5AA8">外部能力群</text>
+  <rect x="990" y="424" width="88" height="24" rx="12" fill="#FFFFFF" stroke="#9DB8E4"/>
+  <text x="1004" y="441" font-size="12" fill="#2C5AA8">三方托管</text>
+  <rect x="990" y="456" width="180" height="44" rx="8" fill="#FFFFFF" stroke="#9DB8E4" stroke-dasharray="4 3"/>
+  <text x="1004" y="476" font-size="12" fill="#2C5AA8">应用开发 SDK</text>
+  <text x="1004" y="492" font-size="10" fill="#7A8DA8">薄 · 平台提供</text>
+  <text x="990" y="530" font-size="11" fill="#4C7DD0">← 开放能力调用（虚线）</text>
+  <polyline points="970,450 940,450 924,440" fill="none" stroke="#4C7DD0" stroke-width="2" stroke-dasharray="6 4"/>
+  <polygon points="928,434 918,436 926,446" fill="#4C7DD0"/>
+
+  <rect x="970" y="110" width="220" height="246" rx="12" fill="#FFFFFF" stroke="#C6CBD4" stroke-width="1.5"/>
+  <text x="990" y="140" font-size="14" font-weight="bold" fill="#3F4854">图例</text>
+  <rect x="990" y="154" width="14" height="14" rx="3" fill="#FFF7E0" stroke="#E8A23D"/>
+  <text x="1012" y="166" font-size="12" fill="#5B6470">决策层</text>
+  <rect x="990" y="178" width="14" height="14" rx="3" fill="#EAF6EC" stroke="#4F9D69"/>
+  <text x="1012" y="190" font-size="12" fill="#5B6470">服务层</text>
+  <rect x="990" y="202" width="14" height="14" rx="3" fill="#E6F4F6" stroke="#3E8FA3"/>
+  <text x="1012" y="214" font-size="12" fill="#5B6470">硬件抽象</text>
+  <rect x="990" y="226" width="14" height="14" rx="3" fill="#F3EFFB" stroke="#9A7FD1"/>
+  <text x="1012" y="238" font-size="12" fill="#5B6470">数据与记忆</text>
+  <rect x="990" y="250" width="14" height="14" rx="3" fill="#EEF0F3" stroke="#8B93A1"/>
+  <text x="1012" y="262" font-size="12" fill="#5B6470">基础设施</text>
+  <line x1="990" y1="284" x2="1004" y2="284" stroke="#D97E1E" stroke-width="2"/>
+  <text x="1012" y="288" font-size="12" fill="#5B6470">层间调用</text>
+  <line x1="990" y1="308" x2="1004" y2="308" stroke="#8B5FC7" stroke-width="2"/>
+  <text x="1012" y="312" font-size="12" fill="#5B6470">数据读写</text>
+  <line x1="990" y1="332" x2="1004" y2="332" stroke="#4C7DD0" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="1012" y="336" font-size="12" fill="#5B6470">开放能力（虚线）</text>
+
+  <text x="60" y="770" font-size="11" fill="#8A8F99">注：本图是分层架构图的风格样例——嵌套分层容器 + 层主题色 + 编号圆点 + 徽标 + 带语义标签的箭头 + 图例。</text>
+  <text x="60" y="790" font-size="11" fill="#8A8F99">节点与连线均为画板可编辑元素；配色与图例语义契约见 diagram-standards。</text>
+</svg>

@@ -17,9 +17,11 @@
 图片交付必须提供证据清单；真实账号的端到端兼容性须单独验收，离线自证不等于平台实测。
 
 画板通道（2026-09-28 本机实测）：`docs +create/+update` 的 `<whiteboard type="mermaid">`
-内联块产出**可编辑**的原生画板；`whiteboard +export --output-type source` 回读源码与写入
-逐字比对作交付同步性证据。格式路由与正本纪律见 `references/diagram-standards.md`
-「飞书优先交付可编辑画板」一节；企业租户端到端仍须真机验收。
+内联块产出**可编辑**的原生画板；`whiteboard +update --input_format svg` 把风格化 SVG
+转成**原生可编辑节点**（样例实测 126 节点＝52 图形＋62 文本＋7 连线，仅 5 个 polygon
+箭头降级为图）；`whiteboard +export --output-type source/raw` 回读作交付同步性证据。
+架构图/流程图⛔ 不许以图片块形态进文档。格式路由/风格契约/正本纪律见
+`references/diagram-standards.md`「飞书优先交付可编辑画板」一节；企业租户端到端仍须真机验收。
 
 官方入口：https://www.feishu.cn/feishu-cli
 
