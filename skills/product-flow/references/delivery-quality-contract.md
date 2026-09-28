@@ -34,7 +34,7 @@
 
 ## 内置制图与原型
 
-`modules/diagramming` 提供本地结构化 JSON → SVG → PNG；原有 D2/Mermaid/PlantUML 也可用 `render-diagram.py` 调用已安装编译器交付真实 SVG/PNG，缺编译器返回 UNABLE，不用源码或占位文字冒充图片。正式交付填写 `templates/diagram-manifest.json`，逐图绑定图位、类型、PRD 章节及源；通过 `diagram-id-gate.py <项目目录> --formal`。JSON 使用 `templates/diagram-source.json`，SVG 必须从本版结构源完整复建；其他图源在清单补 diagramType/targetSection/svg/png/receipt，并保存真实编译回执。每张图独立对账，其他图不能补漏，PNG 真解码，回执绑定源/SVG/PNG 三个哈希。迁移图源时保留旧源，逐条核对节点与边，不能丢业务关系。
+`modules/diagramming` 提供本地结构化 JSON → SVG → PNG；原有 D2/Mermaid/PlantUML 也可用 `render-diagram.py` 调用已安装编译器交付真实 SVG/PNG，缺编译器返回 UNABLE，不用源码或占位文字冒充图片。正式交付填写 `templates/diagram-manifest.json`，逐图绑定图位、类型、PRD 章节及源；通过 `diagram-id-gate.py <项目目录> --formal`。`--formal` 同时执行图位触发（功能清单 ≥3 个 F 时用户流程图、5.2 流程投影引用 F 时业务流程图，均不可声明不适用）与业务流程图分支/异常边检查（源里连一条失败/超时/降级边都没有即红——只画主流程 = 没画）。JSON 使用 `templates/diagram-source.json`，SVG 必须从本版结构源完整复建；其他图源在清单补 diagramType/targetSection/svg/png/receipt，并保存真实编译回执。每张图独立对账，其他图不能补漏，PNG 真解码，回执绑定源/SVG/PNG 三个哈希。迁移图源时保留旧源，逐条核对节点与边，不能丢业务关系。
 
 选择适用图位并写依据，不强制八张空图；未适用也不能省略记录。画完必须目检真实渲染结果的中文、比例、层级、箭头、文字遮挡和业务含义；机器不代替这个检查。内置渲染器逐个尝试可用后端，失败不拿旧 PNG 冒充成功。
 
