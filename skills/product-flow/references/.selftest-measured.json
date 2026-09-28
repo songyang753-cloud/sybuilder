@@ -5,9 +5,9 @@
     "python": "3.14.7",
     "os": "Darwin"
   },
-  "measuredAt": "2026-09-28T23:36:19",
+  "measuredAt": "2026-09-29T00:13:07",
   "scripts": 86,
-  "cases": 1453,
+  "cases": 1457,
   "failures": 0,
   "failedScripts": [],
   "unableScripts": [],
@@ -45,7 +45,7 @@
     "coordination-gate.py": "f3adaec83537587bc0052c33166cb5946a897b76",
     "coverage_check.py": "02753ed94e3e033cb4612afbe2632ab07112c17f",
     "dead-click-gate.mjs": "0989d66d8d335dd696b1bffb69dcbeff775e7d14",
-    "definition-gate.py": "95534c467bb3187dd0071b05d86f55e4970c0cf4",
+    "definition-gate.py": "d9dd2ec0625d9fec70a6ba1e91ac548ebee44dbf",
     "demo-anchor-gate.py": "8465d6bd9236453ec7dbd4499630f78fc3e1b87a",
     "design-intent-gate.py": "2bfeb621e720ce4daf0cc13e5b47d697433ca601",
     "design-to-tokens.py": "5e4e49677e09f6ccb36be96a84a7265318c80cfa",
@@ -258,9 +258,9 @@
       "negLabel": 5
     },
     "definition-gate.py": {
-      "cases": 51,
-      "negNumeric": 37,
-      "negLabel": 36
+      "cases": 55,
+      "negNumeric": 39,
+      "negLabel": 38
     },
     "demo-anchor-gate.py": {
       "cases": 22,
@@ -533,13 +533,14 @@
       "negLabel": 13
     }
   },
-  "negativesByExpectation": 552,
-  "negativesByLabel": 768,
+  "negativesByExpectation": 554,
+  "negativesByLabel": 770,
   "command": "python3 scripts/selftest-all.py --fresh",
   "treeDiff": [
-    "skills/product-flow/scripts/doc-sync-guard.py",
-    "skills/product-flow/scripts/prd-quality-gate.py",
-    "skills/product-flow/tests/test_writing_contract.py"
+    "skills/product-flow/SKILL.md",
+    "skills/product-flow/references/design-quality-gates.md",
+    "skills/product-flow/scripts/definition-gate.py",
+    "skills/product-flow/templates/definition-final.md"
   ],
-  "headAt": "d5346eb"
+  "headAt": "231518f"
 }
