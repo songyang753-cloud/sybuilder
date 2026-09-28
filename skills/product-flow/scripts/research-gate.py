@@ -944,6 +944,16 @@ def check(d):
         '七章 设计交互': r'七章|设计交互|设计令牌|design-tokens',
         '附件 D 字段规格': r'附件\s*D|字段规格|field-specs',
         '附件 E 状态机': r'附件\s*E|状态机|状态覆盖|state-coverage',
+        # ── 2026-09-28 三源对齐：2.3a ⑧⑨⑩⑬⑭ 一直在权威表里但没人守；⑮–⑱ 新入分母 ──
+        '附件 A FR/AC': r'附件\s*A|FR/AC|可观察结果',
+        '附件 C.2 权限矩阵': r'C\.2|权限矩阵',
+        '附件 C.6 安全可见面': r'C\.6|安全可见面|导出审批',
+        '附件 F 文案规格': r'附件\s*F|文案',
+        '附件 L 动效': r'附件\s*L|动效',
+        '附件 B AI 能力边界': r'附件\s*B|能力边界',
+        '附件 C.1/C.4 隐私可见面': r'C\.1|C\.4|隐私',
+        '附件 N 技术路线': r'附件\s*N|技术路线|技术架构',
+        'NFR 实测观察': r'NFR|响应档位',
     }
     _STATUS_OK = re.compile(r'已覆盖|未获取|N/?A|不适用')
     _STATUS_SOFT = re.compile(r'未获取|N/?A|不适用')
@@ -1650,7 +1660,7 @@ def self_test():
               key_flows=True, flow_source=True,
               conflicts=True, conflicts_mode='full', isomorphic=True,
               # 2026-09-15 新契约旋钮（枚举式：一次只挪一样东西）
-              carriers='full',        # full | missing_section | blank_status
+              carriers='full',        # full | missing_section | blank_status | row_gap（旧 9 行分母）
               per_comp='full',        # full | gap（某可读竞品缺页面关系图）
               design='full',          # full | no_tokens | no_channel | no_states
               conclusions='full',     # full | no_innov | no_floor | no_counter | no_diff |
@@ -1940,7 +1950,7 @@ def self_test():
                 + _rows + _none + '\n## 双路 deep-research 合并记录\n' + _dual)
         if isomorphic:
             io.open(os.path.join(d, 'prd-isomorphic.md'), 'w', encoding='utf-8').write(
-                '# 载体映射产出（全员档 ①③④⑥ · 深挖档 ①–⑭）\n'
+                '# 载体映射产出（全员档 ①③④⑥ · 深挖档 ①–⑱）\n'
                 '- 核心体验路径：COMP-01/core-path.d2（对应 PRD 4.4）\n'
                 '- 产品模块图：COMP-01/module.d2（CM-01 列表 / CM-02 设置，对应 PRD 6.1）\n'
                 '- 功能架构图：COMP-01/feature-tree.d2（叶子 = CAF-001…，对应 PRD 6.2）\n'
@@ -2026,7 +2036,18 @@ def self_test():
                     '| 七章 设计交互 | design-tokens.md | 简表 2/2 | 1/1 | 已覆盖 |\n'
                     '| 附件 D 字段规格 | field-specs.md | — | 1/1 | %s |\n'
                     '| 附件 E 状态机 | state-coverage.md | — | 1/1 | 已覆盖 |\n'
-                    % ('' if carriers == 'blank_status' else '未获取：付费档阻断')))
+                    % ('' if carriers == 'blank_status' else '未获取：付费档阻断')
+                    # row_gap＝沿用 2.3a 扩表前的旧 9 行分母 —— 新分母下必须红
+                    + ('' if carriers == 'row_gap' else (
+                    '| 附件 A FR/AC | atomic-feature-ledger.md 可观察结果列 | 2/2 | 1/1 | 已覆盖 |\n'
+                    '| 附件 C.2 权限矩阵 | 角色×可见可做观察表 | — | 1/1 | 已覆盖 |\n'
+                    '| 附件 C.6 安全可见面 | 导出审批/配额可见面 | — | 1/1 | N/A + 理由：单机工具无审批面 |\n'
+                    '| 附件 F 文案规格 | COMP-01.md 关键文案原文 | — | 1/1 | 已覆盖 |\n'
+                    '| 附件 L 动效 | 交互与动效对比表+录屏 | — | 1/1 | 已覆盖 |\n'
+                    '| 附件 B AI 能力边界 | COMP-01.md AI 专项 | — | 1/1 | N/A + 理由：非 AI 产品 |\n'
+                    '| 附件 C.1/C.4 隐私可见面 | 隐私政策+设置面观察 | — | 1/1 | 已覆盖 |\n'
+                    '| 附件 N 技术路线 | tech-route 小节 | — | 1/1 | 已覆盖 |\n'
+                    '| NFR 实测观察 | 响应档位实测 | — | 1/1 | 已覆盖 |\n'))))
                 + '## 研究 → 下游\nINS-001 → PRD/Figma/HTML：adapted；OPP-01：watch。\n')
         # ── 2026-09-15 新契约的夹具 ──
         if design != 'no_tokens':
@@ -2359,6 +2380,8 @@ def self_test():
               build(carriers='missing_section'), 1),
              ("反例 某载体状态留空（留白与漏了在产物上一样）",
               build(carriers='blank_status'), 1),
+             ("反例 载体对账仍用扩表前的旧 9 行分母（A/C/F/L/B/N/NFR/隐私 全漏）",
+              build(carriers='row_gap'), 1),
              ("反例 可读竞品缺全员档页面关系图（⛔ 不许挑几个代表画）",
               build(per_comp='gap'), 1),
              ("反例 缺设计令牌表（S5/S7 与 PRD 七章无据可用）", build(design='no_tokens'), 1),

@@ -2,12 +2,12 @@
   "snapshotSchema": 2,
   "distribution": "complete-sybuilder-suite",
   "runtime": {
-    "python": "3.13.12",
+    "python": "3.14.7",
     "os": "Darwin"
   },
-  "measuredAt": "2026-09-27T18:53:45",
+  "measuredAt": "2026-09-28T11:41:00",
   "scripts": 86,
-  "cases": 1429,
+  "cases": 1430,
   "failures": 0,
   "failedScripts": [],
   "unableScripts": [],
@@ -75,7 +75,7 @@
     "reconcile-gate.py": "b99c0c57267414d81fb7eaec7b20b69102f3a843",
     "report-structure-gate.py": "f35a3fe58595ff63866fef5a2c0681a31f6cf562",
     "requirements-quality-gate.py": "c5770cd37108a0ac8a9943b50681def3303f756e",
-    "research-gate.py": "8e7cd64f234be60efce88f5d7152f30d2d9ed8cb",
+    "research-gate.py": "b7299ee7f5c80d3706c6bd93e099a1d8884805b3",
     "research-quality-gate.py": "b4da2b20e1f7a5da12b2bc8fdb66fd300317dcb2",
     "retro-gate.py": "1a1f84b553ff8407cdc5fe4e1786faa1449b8a12",
     "reverse-test.py": "92e825a9e0feef545924ccb1ba287c96224ece3c",
@@ -408,9 +408,9 @@
       "negLabel": 8
     },
     "research-gate.py": {
-      "cases": 144,
-      "negNumeric": 124,
-      "negLabel": 123
+      "cases": 145,
+      "negNumeric": 125,
+      "negLabel": 124
     },
     "research-quality-gate.py": {
       "cases": 3,
@@ -533,9 +533,15 @@
       "negLabel": 13
     }
   },
-  "negativesByExpectation": 545,
-  "negativesByLabel": 750,
+  "negativesByExpectation": 546,
+  "negativesByLabel": 751,
   "command": "python3 scripts/selftest-all.py --fresh",
-  "treeDiff": [],
-  "headAt": "522afb8"
+  "treeDiff": [
+    "skills/product-flow/references/competitive-research.md",
+    "skills/product-flow/references/no-loss-renames.md",
+    "skills/product-flow/scripts/research-gate.py",
+    "skills/product-flow/templates/competitive-research-pack.md",
+    "skills/product-flow/templates/research-report.md"
+  ],
+  "headAt": "6eda76f"
 }
