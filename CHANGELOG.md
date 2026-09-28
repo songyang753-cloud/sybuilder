@@ -7,6 +7,11 @@ a development preview; changes remain **Unreleased** and no stable version is cl
 
 ### Added
 
+- PRD-carrier reconciliation across four sources at an 18-row denominator (authoritative table, pack template, scaffold spec, research gate), including copy, motion, AI-capability and privacy-visibility carriers.
+- Flow-diagram enforcement: user-flow and business-flow slots can no longer be waived when triggered, and business-flow sources must carry branch/exception edges (main-flow-only fails).
+- R&D-side stage contracts: atomic acceptance criteria, capacity-anchored performance NFRs, concurrency/offline semantics for dual-platform PRDs, eval sets as tracked dependencies, effect-regression triggers, online sampling & bad-case reflow, testcase readiness before the G7.5 freeze, engineering/algorithm/testing sign-off on the freeze record, and a PRD-stage hard-technical-constraint registry.
+- Feishu editable-board delivery for architecture and flow diagrams (mermaid source inlining; styled-SVG-to-native-node import), with a seven-point layered-architecture style contract and a neutral exemplar.
+- Metric-baseline provenance at the definition stage (S3A-to-S3B handoff): bare numbers fail, sources or explicit TBD/无 required.
 - Three-Skill suite: `product-flow`, `coding-standards`, and `four-node-review`.
 - Internal research, diagramming, design-quality, prototyping and repository-enforcement modules.
 - Adaptive competitive-research granularity down to the smallest independently verifiable behavior.
