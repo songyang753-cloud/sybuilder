@@ -5,9 +5,9 @@
     "python": "3.14.7",
     "os": "Darwin"
   },
-  "measuredAt": "2026-09-28T12:26:01",
+  "measuredAt": "2026-09-28T15:49:57",
   "scripts": 86,
-  "cases": 1430,
+  "cases": 1451,
   "failures": 0,
   "failedScripts": [],
   "unableScripts": [],
@@ -32,7 +32,7 @@
     "_section_oracle.py": "b0840538b080e55128da2770712a0ce785cdba21",
     "_sweep_lib.py": "92530c3f9b3cf7d393b32605a9b685bb97f2a60b",
     "_workflow.py": "c54d654d4eed1e8464ec453e31396ccaf622234e",
-    "_writing_contract.py": "f4b8d412a96b83ffa2e5fdcd4b6bc5297a611ace",
+    "_writing_contract.py": "40f0f6b5b0a549f562e3f5e020cc8ef967551e3c",
     "ai-slop-gate.py": "6866aa5da0d2a93732a1ed404731da8e6ddcbb3a",
     "audience-gate.py": "355afe2ff4a557f3112ce33357d959bf00c54881",
     "bar-weakening-scan.py": "3e1f92bd338a07f4a65abfe70eeb1090e6805b84",
@@ -58,7 +58,7 @@
     "flow-metrics.py": "15bf967bd6a3e368eb41861bbd895a41fae76973",
     "flow-walk-gate.mjs": "83bf2c00a913152ab58d95d3f2ef70910b51cd43",
     "flows-to-testcases.py": "bbd19de814209e1a43ec8460d42f535d8651b1c7",
-    "g75-freeze-gate.py": "c7a139bce2fc52dc75c81d07986fe7199ce282e2",
+    "g75-freeze-gate.py": "467a9e7d1853323d650999c82082da0e5183db95",
     "gate-run.py": "aff715f3ba7c9b492c6f7df5bda57a66bf3c960e",
     "gen-docs.py": "98edf72d4485bd731e26a3d886f82c7a6c4ebfaf",
     "intent-gate.py": "bcf3a28879c688a1c71f2fe831d9da821835afb9",
@@ -67,8 +67,8 @@
     "mutation-sweep.py": "19f0afa13d893c3e403e40fd23481d3e0785f151",
     "no-loss-gate.py": "f5ceae630dc6f07d2bee08e513b256fee6edbf40",
     "platform-parity-gate.mjs": "9f83ef7f3d59f52dcbabf0210b67ee9cd1db6114",
-    "prd-quality-gate.py": "4fd540c20430d6355435834155078663a30f97ad",
-    "prd_completeness_check.py": "8c536f22a9940783bd01dcb50563aede78d9acc4",
+    "prd-quality-gate.py": "6f220212b6db07e0ede5e2e45dea74bc80490651",
+    "prd_completeness_check.py": "837362c0a9d1abf79286ea8da49bd2dd3a81a4f8",
     "product-flow-run.py": "4407f223c48886ebd7fe0f576bdc7d4f5a1d9476",
     "product-structure-gate.py": "677338ff70d4b8099101018f4fce7f0f8acf93b8",
     "receipt-check.py": "f917524b1347b181ac0d4310a1cb3c3547af36ba",
@@ -193,9 +193,9 @@
       "negLabel": 1
     },
     "_writing_contract.py": {
-      "cases": 27,
+      "cases": 30,
       "negNumeric": 0,
-      "negLabel": 25
+      "negLabel": 28
     },
     "ai-slop-gate.py": {
       "cases": 25,
@@ -323,9 +323,9 @@
       "negLabel": 5
     },
     "g75-freeze-gate.py": {
-      "cases": 23,
+      "cases": 29,
       "negNumeric": 0,
-      "negLabel": 18
+      "negLabel": 23
     },
     "gate-run.py": {
       "cases": 33,
@@ -368,14 +368,14 @@
       "negLabel": 16
     },
     "prd-quality-gate.py": {
-      "cases": 27,
+      "cases": 30,
       "negNumeric": 0,
-      "negLabel": 25
+      "negLabel": 28
     },
     "prd_completeness_check.py": {
-      "cases": 45,
-      "negNumeric": 36,
-      "negLabel": 29
+      "cases": 54,
+      "negNumeric": 41,
+      "negLabel": 34
     },
     "product-flow-run.py": {
       "cases": 19,
@@ -533,13 +533,22 @@
       "negLabel": 13
     }
   },
-  "negativesByExpectation": 546,
-  "negativesByLabel": 751,
+  "negativesByExpectation": 551,
+  "negativesByLabel": 767,
   "command": "python3 scripts/selftest-all.py --fresh",
   "treeDiff": [
     "skills/product-flow/references/competitive-research.md",
-    "skills/product-flow/scripts/diagram-id-gate.py",
-    "skills/product-flow/spec/s2-research.json"
+    "skills/product-flow/references/no-loss-renames.md",
+    "skills/product-flow/scripts/_writing_contract.py",
+    "skills/product-flow/scripts/g75-freeze-gate.py",
+    "skills/product-flow/scripts/prd-quality-gate.py",
+    "skills/product-flow/scripts/prd_completeness_check.py",
+    "skills/product-flow/templates/prd-backfill.md",
+    "skills/product-flow/templates/prd-complete.md",
+    "skills/product-flow/tests/fixtures/filled/PRD.md",
+    "skills/product-flow/tests/fixtures/filled/triad-root/PRD.md",
+    "skills/product-flow/tests/fixtures/filled/triad-root/testcases/",
+    "skills/product-flow/tests/test_writing_contract.py"
   ],
-  "headAt": "278a2de"
+  "headAt": "47f7341"
 }

@@ -174,6 +174,49 @@ branches stay unknown; they cannot establish a verified normal path.
     return issues
 
 
+COMPOUND_AC = re.compile(r'且|并且|同时')
+ATOMIC_MARK = re.compile(r'\[原子[:：]')
+PERF_NUMBER = re.compile(r'P9[59]|响应时间|延迟|吞吐')
+CAPACITY_ANCHOR = re.compile(r'适用量级|D\.0')
+
+
+def compound_ac_issues(text):
+    """One AC, one assertable behavior (R2, 2026-09-28).
+
+A compound AC makes FR-level reference coverage a lie: one case cites the FR
+while only one of its assertions is actually tested. Split, or mark the rare
+single-behavior conjunction with [原子:reason]."""
+    from _prd_parse import appendix
+    seg = appendix(text, '# 附件 A', '# 附件 B') or ''
+    issues = []
+    for line in _blank_fenced(seg).splitlines():
+        matched = re.match(r'\s*-\s*(AC-\d+)\s+(.*)', line)
+        if not matched:
+            continue
+        if COMPOUND_AC.search(matched.group(2)) and not ATOMIC_MARK.search(matched.group(2)):
+            issues.append('ac-compound: %s 含「且/并且/同时」——拆成两条 AC，'
+                          '或确属同一原子行为时在行尾标 [原子:理由]' % matched.group(1))
+    return issues
+
+
+def nfr_capacity_issues(text):
+    """Performance numbers without a capacity anchor are untestable (R1).
+
+P95<=2s means opposite things at 100 rows and 100k rows; the NFR block must
+bind the D.0 volume it is accepted at."""
+    from _prd_parse import appendix
+    seg = appendix(text, '# 附件 A', '# 附件 B') or ''
+    issues = []
+    for block in re.split(r'(?m)^##\s+', _blank_fenced(seg)):
+        head = (block.splitlines() or [''])[0].strip()
+        if not head.startswith('NFR'):
+            continue
+        if PERF_NUMBER.search(block) and not CAPACITY_ANCHOR.search(block):
+            issues.append('nfr-capacity: %s 有性能数字但没绑量级——'
+                          '加「**适用量级**：引附件 D.0（按什么量级验收）」' % head.split()[0].strip('　'))
+    return issues
+
+
 def review_files(record, base):
     """Only declared evidence within the review package; no machine-wide probing."""
     base = Path(base).resolve()

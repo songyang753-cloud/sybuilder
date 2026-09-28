@@ -6,7 +6,7 @@ import argparse
 import importlib.util
 from pathlib import Path
 import sys
-from _writing_contract import behavior_issues, feature_ids, scope_issues
+from _writing_contract import behavior_issues, compound_ac_issues, feature_ids, nfr_capacity_issues, scope_issues
 
 
 def review_gate():
@@ -28,6 +28,8 @@ def check(source, review, scope, phase='final'):
         raise ValueError('scope-input: PRD functional inventory missing')
     issues = scope_issues(upstream, text)
     issues += behavior_issues(text, features)
+    issues += compound_ac_issues(text)
+    issues += nfr_capacity_issues(text)
     issues += review_gate().check(source, review, phase, features=features, scope=scope)
     return issues
 

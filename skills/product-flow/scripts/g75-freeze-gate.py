@@ -209,6 +209,42 @@ def check(root):
         if empty:
             bad.append('⑥ 切片覆盖类型有空缺：%s' % '、'.join(empty))
 
+    # ⑩ 用例就绪度前移（R8，2026-09-28 研发侧需求）：PRD 不可测要在**还能改**的时候暴露，
+    #    S8 才跑 readiness 的结果是缺口出现在冻结之后，改一条要走整套变更。
+    _prd_md = (read(prd) or '') if prd else ''
+    rd = find_doc(root, (os.path.join('testcases', 'readiness.md'), 'readiness.md'))
+    if re.search(r'本轮不做用例工程', _prd_md):
+        info.append('⑩ 用例工程已显式豁免（PRD 登记「本轮不做用例工程 + 理由」）')
+    elif not rd:
+        bad.append('⑩ 冻结前没有用例就绪度判定（testcases/readiness.md）—— '
+                   '跑用例工程的就绪度单步，或在 PRD 显式登记「本轮不做用例工程 + 理由」')
+    else:
+        _rmd = read(rd) or ''
+        _cl = next((l for l in _rmd.splitlines() if re.search(r'结论[：:]', l)), '')
+        if '可生成' in _cl and '不可生成' in _cl and '/' in _cl:
+            bad.append('⑩ 用例就绪度的结论行还是模板原文（三个选项都在）—— 没判定过')
+        elif re.search(r'结论[：:]\s*不可生成', _cl):
+            bad.append('⑩ 用例就绪度结论＝不可生成 —— 冻结前先补 PRD 缺口（readiness 的缺口清单就是改单）')
+        elif '可生成' not in _cl:
+            bad.append('⑩ 用例就绪度文件没有结论行（结论：可生成/部分可生成/不可生成）')
+        else:
+            info.append('⑩ 用例就绪度在案（%s）' % _cl.strip().lstrip('#').strip())
+
+    # ⑪ 研发/算法/测试会签（R9）：冻结时研发不进场，S8 第一天翻出可行性异议＝冻结形同虚设
+    if prd:
+        m2 = table_rows(_prd_md, '冻结记录')
+        if m2 is None:
+            bad.append('⑪ PRD 缺 M.2 冻结记录表 —— 冻结的结果账都不在')
+        else:
+            sign = [r for r in m2 if '会签' in r]
+            if not sign:
+                bad.append('⑪ M.2 缺「研发/算法/测试会签」行（模板已更新）—— 研发不进场的冻结拦不住 S8 的可行性异议')
+            else:
+                _cells = [c.strip() for c in sign[0].strip().strip('|').split('|')]
+                _v = _cells[1] if len(_cells) > 1 else ''
+                if not _v or _v.startswith('<'):
+                    bad.append('⑪ 研发/算法/测试会签留空/占位 —— 「已阅无阻断异议」也要有名字')
+
     # ⑦⑧⑨ 原生证据
     cm = find_doc(root, ('contract-manifest.json',))
     native_ok = 0
@@ -314,13 +350,20 @@ def _self_test():
         print(('  ✅ ' if cond else '  ❌ ') + name + ('' if cond else '　' + extra))
         ok = ok and cond
 
+    _prd_ok = ('# X PRD\n### OPEN 项登记表\n\n| ID | 内容 | owner | 决策阶段 | 回灌位置 | 状态 |\n'
+               '|---|---|---|---|---|---|\n| OPEN-002 | 空态插画 | 张三 | S5 | 四章 | closed |\n'
+               '## M.2 冻结记录\n| 项 | 值 |\n|---|---|\n'
+               '| 三方批准（产品/设计/交互） | 甲/乙/丙 |\n'
+               '| 研发/算法/测试会签（已阅无阻断异议） | 丁/戊/己 |\n')
+
     def mk(root, **over):
         """造一套可冻结的最小项目，over 里给的文件内容覆盖默认。"""
         shutil.rmtree(root, ignore_errors=True)
         os.makedirs(os.path.join(root, '.product-flow', 'gates'), exist_ok=True)
         files = {
-            'PRD.md': ('# X PRD\n### OPEN 项登记表\n\n| ID | 内容 | owner | 决策阶段 | 回灌位置 | 状态 |\n'
-                       '|---|---|---|---|---|---|\n| OPEN-002 | 空态插画 | 张三 | S5 | 四章 | closed |\n'),
+            'PRD.md': _prd_ok,
+            'testcases/readiness.md': ('# 就绪度判定\n## 结论：部分可生成（3 个功能中 2 个可生成）\n'
+                                       '缺口已入 GAP-01。\n'),
             'prd-backfill.md': ('# 回灌\n## DELTA\n| DELTA-ID | 来源 | 原值 | 新值 | 影响域 | 处置 | 回灌位置 | 状态 |\n'
                                 '|---|---|---|---|---|---|---|---|\n| DELTA-002 | figma | a | b | 文案 | 回灌 | 四章 | closed |\n'),
             'research-decision-ledger.md': ('# 账本\n### INS-001\n- 命题：x\n- 强度：high\n- 最终处置：adopted\n'),
@@ -353,6 +396,29 @@ def _self_test():
     rc, _ = run(mk(d, **{'PRD.md': ('# X\n### OPEN 项登记表\n| ID | 内容 | owner | 阶段 | 回灌 | 状态 |\n'
                                     '|---|---|---|---|---|---|\n| OPEN-2 | x | 李 | S5 | 四 | open |\n')}))
     chk('反例①b：有 open 的 OPEN 项 → 1', rc == 1)
+
+    # ── R8/R9（2026-09-28 研发侧需求）：用例就绪度前移 + 研发/QA 会签 ──
+    #   ⛔ 反例逐条锚定判据文本（negative-case-pins-criterion）：门有十几查，只断 rc 证明不了为哪条红。
+    rc, out = run(mk(d, **{'testcases/readiness.md': None}))
+    chk('反例⑩a：冻结前没有用例就绪度判定 → 1',
+        rc == 1 and '⑩ 冻结前没有用例就绪度判定' in out, '实得 %d' % rc)
+    rc, out = run(mk(d, **{'testcases/readiness.md': None,
+                           'PRD.md': _prd_ok + '\n本轮不做用例工程：纯后端配置项，无用户可见用例面。\n'}))
+    chk('正例⑩b：显式豁免用例工程 → 0（收紧不误伤）', rc == 0, '实得 %d' % rc)
+    rc, out = run(mk(d, **{'testcases/readiness.md': '# 就绪度\n## 结论：不可生成\n缺口 4 条。\n'}))
+    chk('反例⑩c：就绪度结论＝不可生成 → 1',
+        rc == 1 and '结论＝不可生成' in out, '实得 %d' % rc)
+    rc, out = run(mk(d, **{'testcases/readiness.md': ('# 就绪度判定\n'
+                           '## 结论：可生成 / 部分可生成（N 个功能中 M 个可生成）/ 不可生成\n')}))
+    chk('反例⑩d：结论行还是模板原文 → 1（没判定过不算判定）',
+        rc == 1 and '模板原文' in out, '实得 %d' % rc)
+    rc, out = run(mk(d, **{'PRD.md': _prd_ok.replace('丁/戊/己', '<待填>')}))
+    chk('反例⑪a：研发/算法/测试会签占位 → 1',
+        rc == 1 and '会签留空/占位' in out, '实得 %d' % rc)
+    rc, out = run(mk(d, **{'PRD.md': _prd_ok.replace(
+        '| 研发/算法/测试会签（已阅无阻断异议） | 丁/戊/己 |\n', '')}))
+    chk('反例⑪b：M.2 缺会签行 → 1',
+        rc == 1 and '缺「研发/算法/测试会签」行' in out, '实得 %d' % rc)
     # ⚠️ 期限一律用**相对今天**算，⛔ 不硬编码：
     #   原来这条写死 `deferred(至2026-10-01)`，本意是测「无 owner」——
     #   可一过那天，它会**因为另一个原因红**（期限过期），夹具就不再测它声称测的东西了。

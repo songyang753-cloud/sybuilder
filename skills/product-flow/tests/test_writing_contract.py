@@ -156,6 +156,30 @@ class WritingContractTests(unittest.TestCase):
         self.assertEqual(gate['check'](source, review, scope, 'pre'), [])
         self.assertTrue(any('review-receipt' in i for i in gate['check'](source, review, scope, 'final')))
 
+    def test_compound_ac_is_flagged(self):
+        # R2：复合 AC 让 FR 级引用变成假覆盖 —— 三个断言可能只测了一个。
+        from _writing_contract import compound_ac_issues
+        text = self.text.replace('- AC-1 Given',
+                                 '- AC-2 支持拖拽排序，同时结果跟随账号保存\n- AC-1 Given')
+        self.assertTrue(any('ac-compound' in i and 'AC-2' in i for i in compound_ac_issues(text)))
+
+    def test_atomic_marker_is_not_punished(self):
+        # 门不许惩罚正确用法：确属单一行为的连接词，标了 [原子:理由] 就放行。
+        from _writing_contract import compound_ac_issues
+        text = self.text.replace('- AC-1 Given',
+                                 '- AC-2 字段标红且给出具体原因 [原子:同一次反馈的两个侧面]\n- AC-1 Given')
+        self.assertEqual(compound_ac_issues(text), [])
+
+    def test_nfr_perf_number_needs_capacity_anchor(self):
+        # R1：没有量级的性能数字不可测 —— P95≤2s 在 100 条和 10 万条下结论相反。
+        from _writing_contract import nfr_capacity_issues
+        text = self.text.replace('# 附件 E',
+                                 '## NFR-001 所属 全局\nP95 响应时间 ≤ 500ms\n\n# 附件 E')
+        self.assertTrue(any('nfr-capacity' in i for i in nfr_capacity_issues(text)))
+        anchored = text.replace('P95 响应时间 ≤ 500ms',
+                                'P95 响应时间 ≤ 500ms\n**适用量级**：D.0 条目当前 1 万，按 1 万验收')
+        self.assertEqual(nfr_capacity_issues(anchored), [])
+
     def test_invalid_json_returns_unable_not_crash(self):
         source, review, scope = (self.root / n for n in ('report.md', 'review.md', 'scope.md'))
         source.write_text(self.text)
