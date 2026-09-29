@@ -1,5 +1,7 @@
 # Dependencies and adapters
 
+> ⚠️ 单仓分发（不带 SYBuilder 套件根）时,本文的 `../../` 链接不可达——那些是**套件级文档**;此场景下依赖清单以本文「Included implementation」节为准,套件级依赖（兄弟 Skill/根脚本）缺席时按 UNABLE 处理,⛔ 不当默认可用。
+
 This is one component of the **SYBuilder suite**, not a stand-alone release.
 The maintained runtime contract is [suite dependencies](../../DEPENDENCIES.md) and
 [supported environments](../../docs/supported-environments.md).

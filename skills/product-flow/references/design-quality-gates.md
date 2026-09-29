@@ -83,7 +83,7 @@ peer 会话 `编程规范skill` 2026-09-05 的实证（形态极隐蔽，值得�
 （2026-09-06 记：我一度把这句里的数字从 51 直接改成 52 让门变绿 —— 
 那等于宣称当天新建的 `selftest-all.py` 也在 09-05 被扫过。**数字对上了，话变假了**；
 script-count 只对账数字，对账不了这句话诚不诚实。）
-全部带自证脚本的自证共 **1464 个用例**（2026-09-28 候选树实测；
+全部带自证脚本的自证共 **1487 个用例**（2026-09-29 重写树实测（measuredAt 与发布快照同源）；
 计数记录不等于验收通过，最终状态以同一冻结版本的完整 `--fresh` 日志为准）。
 干净副本复核方式：`git archive HEAD | tar -x` 解包后直接跑
 `python3 scripts/selftest-all.py --fresh`，零手工补文件；缺依赖或未验项必须如实保留。
@@ -108,7 +108,7 @@ script-count 只对账数字，对账不了这句话诚不诚实。）
    ⚠️ 而这一段本身**今天被我覆盖回旧版一次** —— 把隔离副本的文档拷回主树时，
      连带把刚订正的注解一起盖掉了。⭐ **正本回拷是覆盖，不是合并**。
 （2026-09-09 第五轮独立复核批次；增量见 `.proposals/one-shot-adoption-2026-09-09.md`。）
-反例两个口径：按「期望非零退出码」556 个 / 按标题带「反例」772 个（两个口径本来就不一样：
+反例两个口径：按「期望非零退出码」557 个 / 按标题带「反例」793 个（两个口径本来就不一样：
 `demo-anchor-gate` 12 条反例全不写「期望 N」，数字口径下是 0 —— 单看任何一个口径都会漏）。
 **每道门禁至少在一个口径下有反例**；逐脚本数字见 `references/.selftest-progress.jsonl`。
 —— 2026-09-06 由 `scripts/selftest-all.py` 实测（正本 `references/.selftest-measured.json`；
@@ -691,7 +691,7 @@ python3 scripts/figma-editability-gate.py <fileKey> [--keychain figma-rest-pat] 
 ## 补充证据：impeccable 检测器（有用，但不可作充分条件）
 
 ```bash
-node ~/.claude/skills/impeccable/scripts/detect.mjs --json <file>   # 退出码 0=干净 2=有发现
+node <impeccable skill 实际安装位>/scripts/detect.mjs（外部 AI 审查,可选;未安装记 UNABLE,⛔ 不是硬依赖） --json <file>   # 退出码 0=干净 2=有发现
 ```
 44 条规则、四个引擎。**但静态文件下只跑得动 3 个**——依赖布局与视口的规则（巨标题占比、
 实际渲染对比度）全部弃权。实测埋 6 个缺陷只报出 2 个。

@@ -24,6 +24,12 @@ a development preview; changes remain **Unreleased** and no stable version is cl
 
 ### Changed
 
+- Interpreter-entry hardening in the W5 evaluator: relative interpreter paths are rejected (project-root-relative venv launchers excepted, with root-escape checks), absolute interpreters must self-identify as real Python/Node, and the basename-only comparison hole is closed; judge FAIL controls now validate failDimensions as a nonempty six-dimension list, git detection uses structured rev-parse results instead of English message matching, private writes share one O_EXCL/0600/fsync helper, and process-group cleanup no longer races reaped pids.
+- coding-standards: hash tooling falls back to sha256sum with fingerprint format assertions (missing tools report UNABLE, not silent PASS), the pre-commit hook uses -z raw paths with explicit awk exit triage and a truthful copy-install message, D32 gains the internal-error exit mapping and skips same-path re-runs, the 11 duplicated three-state dispatch cases collapse into one helper, script-hygiene globs cover hooks/, CI templates gain per-job timeouts, and suite-root links degrade to UNABLE instead of FAIL in single-skill distribution.
+- product-flow: run-id validation is shared across plan/resume (path traversal refused), the consumer index update takes the mutation-state lock, the metric-baseline check only inspects the declared baseline column (guardrail baselines no longer false-positive, name-matching rows no longer skip), delivery-depth regressions join the PRD gate self-test, walk/sweep scripts validate numeric arguments, subprocess timeouts land with UNABLE semantics, and line-number lookups stop copying string prefixes.
+- four-node-review: lens scheduling gains an explicit priority-exception clause (L9 first-half, L10-before-L1) with counting rules, the evidence-independence clause 5 is clarified as per-node with provider-absent notation, and the W5 acceptance tests ship inside the skill directory (single-repo verifiable).
+- Suite-root references across skills now carry single-distribution notes; external-skill absolute paths become placeholders with UNABLE fallbacks; per-skill .gitignore files ship so runtime artifacts stay ignored in single-skill distribution.
+
 - Collaborative-document delivery is platform-neutral: each run chooses one canonical Feishu or DingTalk node.
 - Diagramming is mandatory and bundled as an internal module rather than an external Skill dependency.
 - Gate results and delivery receipts now bind current inputs, rules, document revision and execution attempt.

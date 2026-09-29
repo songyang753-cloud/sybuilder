@@ -40,14 +40,20 @@ def measure(stage, root):
     t = tempfile.mkdtemp(prefix='spa-%s-' % stage)
     try:
         out = os.path.join(t, stage)
-        sc = subprocess.run([sys.executable, os.path.join(root, 'scripts', 'scaffold.py'),
-                             '--stage', stage, '--out', out, '--force'],
-                            capture_output=True, text=True)
+        try:
+            sc = subprocess.run([sys.executable, os.path.join(root, 'scripts', 'scaffold.py'),
+                                 '--stage', stage, '--out', out, '--force'],
+                                capture_output=True, text=True, timeout=180)
+        except subprocess.TimeoutExpired:
+            return None  # 子工具挂死=本节 UNABLE,不折叠成通过
         if sc.returncode != 0:
             return None
-        cv = subprocess.run([sys.executable, os.path.join(root, 'scripts', 'converge.py'),
-                             '--stage', stage, '--artifact', out],
-                            capture_output=True, text=True)
+        try:
+            cv = subprocess.run([sys.executable, os.path.join(root, 'scripts', 'converge.py'),
+                                 '--stage', stage, '--artifact', out],
+                                capture_output=True, text=True, timeout=180)
+        except subprocess.TimeoutExpired:
+            return None
         if cv.returncode == 2:
             return None
         m = re.search(r'结构红\D+?(\d+)', cv.stdout)

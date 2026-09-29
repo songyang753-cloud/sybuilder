@@ -71,6 +71,18 @@ pass(){ _argn 1 $# pass; n_pass=$((n_pass+1)); printf '  PASS   %s\n' "$1"; }
 fail(){ _argn 1 $# fail; n_fail=$((n_fail+1)); FAILS+=("$1"); printf '  FAIL   %s\n' "$1"; }
 unable(){ _argn 1 $# unable; n_unable=$((n_unable+1)); UNABLES+=("$1"); printf '  UNABLE %s\n' "$1"; }
 
+# 2026-09-29 评审 M15:三态分派 case 块曾复制 11 份(同一段兜底文案逐字重复)——E7 治「必然漂移的副本」,
+# 本 skill 自己先犯。抽单源 dispatch:输入=内联 python 的完整 stdout,输出=三态结论。
+dispatch(){ # $1 = 判据的完整 stdout
+  case "$1" in
+    '') unable "判据没有任何输出 —— 没能执行，不是不合格（A19）。**真因看上方 stderr**，别照搬这句猜：常见是缺 python3 / 输入文件不可读 / 脚本自身异常" ;;
+    PASS*) pass "${1#PASS }" ;;
+    UNABLE*) unable "${1#UNABLE }" ;;
+    FAIL*) fail "${1#FAIL }" ;;
+    *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：$1" ;;
+  esac
+}
+
 echo "== coding-standards 自证门禁 =="
 echo
 
@@ -447,7 +459,9 @@ echo
 echo "[6] 反推源漂移"
 if [ "${SRC_OK}" = 1 ]; then
   rec=$(${GREP} -oE '`[0-9a-f]{16}`' "${DERIV}" | head -1 | tr -d '`' || true)
-  now=$(shasum -a 256 "${SRC}" | cut -c1-16)
+  # 2026-09-29 评审 M15-2:shasum 缺席时 now 为空,与记录哈希不等→把「工具不在」误报成「源已变化」。
+now=$( { command -v shasum >/dev/null 2>&1 && shasum -a 256 "${SRC}" || sha256sum "${SRC}"; } 2>/dev/null | cut -c1-16)
+if [ -z "${now}" ]; then unable "哈希工具缺席(shasum/sha256sum 都不可用),源漂移判不了——A1:收集不到就报 UNABLE"; fi
   if [ -z "${rec:-}" ]; then unable "derivation.md 里没记录源文件哈希，无法判断是否漂移"
   elif [ "${rec}" = "${now}" ]; then pass "源文件未变: ${now}"
   else
@@ -637,13 +651,7 @@ if missing: p.append('Z2 OWASP 缺 API%s'%','.join(missing))
 print(('FAIL '+'; '.join(p)) if p else 'PASS 基础层 P 四节齐（P1 %d 条 / P3 %d 行）· Z 层三节齐（Z1 五行 good/poor 两列全对 + OWASP 10 条）'%(n1,n3))
 PYEOF
 )"
-case "${_fz}" in
-  '') unable "判据没有任何输出 —— 没能执行，不是不合格（A19）。**真因看上方 stderr**，别照搬这句猜：常见是缺 python3 / 输入文件不可读 / 脚本自身异常" ;;
-  PASS*) pass "${_fz#PASS }" ;;
-  UNABLE*) unable "${_fz#UNABLE }" ;;
-  FAIL*) fail "${_fz#FAIL }" ;;
-  *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：${_fz}" ;;
-esac
+dispatch "${_fz}"
 
 # 10c 总条数单源：SKILL.md 里**只有一处**写总数，且必须等于 L+K+M 实际
 # 实测 2026-09-05：此前散落 5 处手写总数（127/108/120 三个不同的值），全部过期。
@@ -663,13 +671,7 @@ else:
     print('PASS 总条数单源且对账一致（%d 条 = 承重 + K + M）'%real)
 PYEOF
 )"
-case "${_tot}" in
-  '') unable "判据没有任何输出 —— 没能执行，不是不合格（A19）。**真因看上方 stderr**，别照搬这句猜：常见是缺 python3 / 输入文件不可读 / 脚本自身异常" ;;
-  PASS*) pass "${_tot#PASS }" ;;
-  UNABLE*) unable "${_tot#UNABLE }" ;;
-  FAIL*) fail "${_tot#FAIL }" ;;
-  *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：${_tot}" ;;
-esac
+dispatch "${_tot}"
 
 # 10d 交叉引用闭世界：被引用的条款号必须真的存在
 # 「反推过程中被修正的初稿（留痕）」一节是**历史记录**，会提到已被合并/删除的旧编号，故整节跳过。
@@ -712,13 +714,7 @@ else:
     print('PASS 交叉引用闭世界：%d 个条款号，枚举 %d 行，豁免 %d 行（行号未移位），含裸写形态，全部指得到'%(len(exist),n_lines,n_skip))
 PYEOF
 )"
-case "${_xref}" in
-  '') unable "判据没有任何输出 —— 没能执行，不是不合格（A19）。**真因看上方 stderr**，别照搬这句猜：常见是缺 python3 / 输入文件不可读 / 脚本自身异常" ;;
-  PASS*) pass "${_xref#PASS }" ;;
-  UNABLE*) unable "${_xref#UNABLE }" ;;
-  FAIL*) fail "${_xref#FAIL }" ;;
-  *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：${_xref}" ;;
-esac
+dispatch "${_xref}"
 
 # 10f 【必须】档必须从**给人用的**场景索引到达
 # 实测 2026-09-05：本轮新增的 8 条准则全部进了机器可读的组内索引（有门禁守），
@@ -746,13 +742,7 @@ else:
     print('PASS 【必须】%d 条全部可从场景索引到达（逐条点名 %d 个 + 组级入口 %s）'%(len(must),len(byid),''.join(sorted(bygrp))))
 NAVEOF
 )"
-case "${_nav}" in
-  '') unable "判据没有任何输出 —— 没能执行，不是不合格（A19）。**真因看上方 stderr**，别照搬这句猜：常见是缺 python3 / 输入文件不可读 / 脚本自身异常" ;;
-  PASS*) pass "${_nav#PASS }" ;;
-  UNABLE*) unable "${_nav#UNABLE }" ;;
-  FAIL*) fail "${_nav#FAIL }" ;;
-  *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：${_nav}" ;;
-esac
+dispatch "${_nav}"
 
 # 10g frontmatter 的 description 也要对账
 # 它是这个 skill 被加载时**唯一会被读到的那段文字**（模型据它判断要不要加载），
@@ -792,13 +782,7 @@ print(('FAIL '+'; '.join(p)) if p else
       'PASS frontmatter description 四项数字与实际一致（承重%d/K%d/M%d/必须%d），五层表 L/K/M 同值'%(nl,nk,nm,nmust))
 FMEOF
 )"
-case "${_fm}" in
-  '') unable "判据没有任何输出 —— 没能执行，不是不合格（A19）。**真因看上方 stderr**，别照搬这句猜：常见是缺 python3 / 输入文件不可读 / 脚本自身异常" ;;
-  PASS*) pass "${_fm#PASS }" ;;
-  UNABLE*) unable "${_fm#UNABLE }" ;;
-  FAIL*) fail "${_fm#FAIL }" ;;
-  *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：${_fm}" ;;
-esac
+dispatch "${_fm}"
 
 # 10h ⭐ 与【必须】是两个正交的轴，且这件事必须被说出来
 # 实测 2026-09-05：⭐ 这套记号全库从未被解释过，而它与【必须】视觉同类、含义不同，
@@ -839,13 +823,7 @@ print(('FAIL '+'; '.join(p)) if p else
       'PASS 两轴说明在场且四处数字一致（【必须】%d/无星 %d/⭐⭐⭐按应当 %d）'%(len(must),nostar,hi))
 AXEOF
 )"
-case "${_ax}" in
-  '') unable "判据没有任何输出 —— 没能执行，不是不合格（A19）。**真因看上方 stderr**，别照搬这句猜：常见是缺 python3 / 输入文件不可读 / 脚本自身异常" ;;
-  PASS*) pass "${_ax#PASS }" ;;
-  UNABLE*) unable "${_ax#UNABLE }" ;;
-  FAIL*) fail "${_ax#FAIL }" ;;
-  *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：${_ax}" ;;
-esac
+dispatch "${_ax}"
 
 # 10i Markdown 链接完整性
 # 实测 2026-09-05：4 处文件链接多带了 references/ 前缀（在 references/ 里又写一遍），
@@ -857,7 +835,7 @@ d=sys.argv[1]
 files=[os.path.join(d,'SKILL.md')]+sorted(glob.glob(os.path.join(d,'references','*.md')))
 if len(files)<5:
     print('UNABLE 只枚举到 %d 个 md 文件（下限 5）'%len(files)); raise SystemExit
-badf=[]; bada=[]; total=0
+badf=[]; bada=[]; badsuite=[]; total=0
 for f in files:
     s=io.open(f,encoding='utf-8').read()
     for m in re.finditer(r'\[[^\]]*\]\(([^)\s]+)\)', s):
@@ -867,22 +845,28 @@ for f in files:
             # 标题含中文与 ⭐，GitHub 的 slug 不稳定 ⇒ 同文件内交叉引用一律用粗体，不用锚点链接
             bada.append('%s → %s'%(os.path.basename(f),t)); continue
         p=os.path.normpath(os.path.join(os.path.dirname(f), t.split('#')[0]))
-        if not os.path.exists(p): badf.append('%s → %s'%(os.path.basename(f),t))
+        if not os.path.exists(p):
+            # 2026-09-29 评审 M15-1:指向 SYBuilder 套件根(本 skill 目录之上)的链接,
+            # 缺的是**套件资产**而非本 skill 写错——归 UNABLE(没能测),不与「文档写错」混为 FAIL。
+            # 2026-09-29 变异套件当场抓到首版判定写反(绝对路径恒以 skill 目录为前缀,
+            # 一切死链都被归成套件资产缺席)。正确口径:解析结果相对 skill 目录以 '..' 开头
+            # = 指向套件根 → UNABLE;skill 内不存在的路径 = 文档写错 → FAIL。
+            if os.path.relpath(os.path.abspath(p), os.path.abspath(os.path.dirname(d))).startswith('..'):
+                badsuite.append('%s → %s'%(os.path.basename(f),t))
+            else:
+                badf.append('%s → %s'%(os.path.basename(f),t))
 if total<20:
     print('UNABLE 只扫到 %d 个链接（下限 20）——是解析坏了'%total); raise SystemExit
-p=[]
+p=[]; u=[]
 if badf: p.append('文件链接指向不存在的路径：%s'%'; '.join(badf[:5]))
 if bada: p.append('存在 #锚点链接（标题含中文与 ⭐，slug 不稳定，一律改粗体）：%s'%'; '.join(bada[:5]))
-print(('FAIL '+'; '.join(p)) if p else 'PASS 链接完整性：%d 个 inline 链接（`[x](path)` 形态）全部可达、无不稳定的 #锚点链接；尖括号目标/引用式链接/带括号目标未检查'%total)
+if badsuite: u.append('指向 SYBuilder 套件根的链接在本仓不可达（缺套件资产，不是文档写错；单仓分发按 SKILL.md「分发前提」处理）：%s'%'; '.join(badsuite[:5]))
+if p: print('FAIL '+'; '.join(p))
+elif u: print('UNABLE '+'; '.join(u))
+else: print('PASS 链接完整性：%d 个 inline 链接（`[x](path)` 形态）全部可达、无不稳定的 #锚点链接；尖括号目标/引用式链接/带括号目标未检查'%total)
 LKEOF
 )"
-case "${_lk}" in
-  '') unable "判据没有任何输出 —— 没能执行，不是不合格（A19）。**真因看上方 stderr**，别照搬这句猜：常见是缺 python3 / 输入文件不可读 / 脚本自身异常" ;;
-  PASS*) pass "${_lk#PASS }" ;;
-  UNABLE*) unable "${_lk#UNABLE }" ;;
-  FAIL*) fail "${_lk#FAIL }" ;;
-  *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：${_lk}" ;;
-esac
+dispatch "${_lk}"
 
 # 10i2 代码围栏配对
 # 实测 2026-09-10：rules-load-bearing.md 里有**一个孤立的闭栏**（A4 那段散文末尾多写了一行 ```），
@@ -918,13 +902,7 @@ if total<10:
 print(('FAIL 代码围栏配对：'+'; '.join(bad[:4])) if bad else 'PASS 代码围栏配对：%d 个围栏全部成对（含引用块内与缩进形态、~~~），语言标签只出现在开栏'%total)
 FCEOF
 )"
-case "${_fc}" in
-  '') unable "判据没有任何输出 —— 没能执行，不是不合格（A19）。**真因看上方 stderr**，别照搬这句猜：常见是缺 python3 / 输入文件不可读 / 脚本自身异常" ;;
-  PASS*) pass "${_fc#PASS }" ;;
-  UNABLE*) unable "${_fc#UNABLE }" ;;
-  FAIL*) fail "${_fc#FAIL }" ;;
-  *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：${_fc}" ;;
-esac
+dispatch "${_fc}"
 
 # 10j 薄入口有硬上限：SKILL.md 曾是 1700 行，拆薄后没有任何判据守着它别长回去
 # （「慢慢长回去」不会让任何东西报错 —— G 组说的正是这种）
@@ -944,14 +922,16 @@ fi
 # 10k 本 skill 自己的脚本不许写死临时路径（C12 做法 1：修完一类立刻做成判据，
 # 因为判据不区分「既有代码」和「你五分钟后写的代码」，而人的注意力区分）
 # 实测 2026-09-05：precommit-guard 刚改成 mktemp，一轮后新写的 reverse-test.sh 又写死了 /tmp/xxx.out
-_tmp_bad=$(${GREP} -nE '(>|>>|=)[[:space:]]*"?/tmp/[A-Za-z0-9_.-]+' "${SKILL_DIR}"/scripts/*.sh \
+_tmp_bad=$(${GREP} -nE '(>|>>|=)[[:space:]]*"?/tmp/[A-Za-z0-9_.-]+' "${SKILL_DIR}"/scripts/*.sh "${SKILL_DIR}"/scripts/hooks/* \
            | ${GREP} -v 'mktemp' | ${GREP} -v '^[^:]*:[0-9]*:[[:space:]]*#' || true)
 _tmp_n=$(printf '%s' "${_tmp_bad}" | ${GREP} -c . || true)
 # 顺带查不可见控制字符：用工具改写脚本时，`\b` 之类的转义会被解释成真正的控制字节写进文件，
 # 它在编辑器和 grep 输出里**看不见**，却会静默改变正则语义（实测 2026-09-05：
 # 两个 `\b` 变成退格字符，A14 的词边界失效 ⇒ 正向基线从 3 掉到 1）。
+# 2026-09-29 评审 M15:hooks/pre-commit(随包分发的推荐执行入口,POSIX sh)此前不在
+# 脚本卫生与 A14/A16 扫描覆盖内——glob 扩到 hooks/*;目录项/不存在由下方 [ -f ] 挡。
 _ctl=0; _nsf=0
-for _sf in "${SKILL_DIR}"/scripts/*.sh; do
+for _sf in "${SKILL_DIR}"/scripts/*.sh "${SKILL_DIR}"/scripts/hooks/*; do
   [ -f "${_sf}" ] || continue
   _nsf=$((_nsf+1))
   _n=$(tr -cd '\001-\010\013\014\016-\037' < "${_sf}" | wc -c | tr -d ' ')
@@ -1026,7 +1006,7 @@ _scan() {  # $1=模式 $2=文件
   ${GREP} -nE "$1" "$2" 2>/dev/null | ${GREP} -vE '^[0-9]+:[[:space:]]*#' || true
 }
 _bad=""; _base=0
-for _f in "${SKILL_DIR}"/scripts/*.sh "${SKILL_DIR}"/tests/fixtures/*/*.sh; do
+for _f in "${SKILL_DIR}"/scripts/*.sh "${SKILL_DIR}"/scripts/hooks/* "${SKILL_DIR}"/tests/fixtures/*/*.sh; do
   [ -f "${_f}" ] || continue
   _hit=""
   [ -n "$(_scan '^[[:space:]]*(gate|check|verify)[a-z_]*[[:space:]]*;[[:space:]]*[^ ]' "${_f}")" ] && _hit="A16"
@@ -1083,13 +1063,7 @@ else:
 print(('FAIL '+'; '.join(p)) if p else 'PASS 自述段落四项数字与实际一致（锚点%d/例外%d/必须%d/三桶合计%d）'%(anchors,unver,must,tot))
 PYEOF
 )"
-case "${_claim}" in
-  '') unable "判据没有任何输出 —— 没能执行，不是不合格（A19）。**真因看上方 stderr**，别照搬这句猜：常见是缺 python3 / 输入文件不可读 / 脚本自身异常" ;;
-  PASS*) pass "${_claim#PASS }" ;;
-  UNABLE*) unable "${_claim#UNABLE }" ;;
-  FAIL*) fail "${_claim#FAIL }" ;;
-  *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：${_claim}" ;;
-esac
+dispatch "${_claim}"
 echo
 # 10p ⭐⭐⭐ 条款的场景索引可达率（**只报数，不判失败**）
 # 由来（2026-09-05）：拿当天真实遇到的 5 个问题去翻索引，**新增的 5 条条款一条都翻不到**；
@@ -1220,13 +1194,7 @@ if alive==0: print('UNABLE 一条锚点都没验成（%d 条全被跳过）—�
 print('PASS 变异表 %d 条锚点全部唯一命中，覆盖 %d/%d 个判据组'%(len(rows),len({r[5] for r in rows}),len(gates)))
 PYEOF2
 )"
-case "${_claim}" in
-  '') unable "判据没有任何输出 —— 没能执行，不是不合格（A19）。**真因看上方 stderr**，别照搬这句猜：常见是缺 python3 / 输入文件不可读 / 脚本自身异常" ;;
-  PASS*) pass "${_claim#PASS }" ;;
-  UNABLE*) unable "${_claim#UNABLE }" ;;
-  FAIL*) fail "${_claim#FAIL }" ;;
-  *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：${_claim}" ;;
-esac
+dispatch "${_claim}"
 
 # 覆盖度自述对账：此前 SKILL.md 手写「34 道判据里 24 道被机器验过（27 条变异）」，
 # 三个数字全过期 —— 因为它们在任何地方都不可推导，只能手写（E7）。
@@ -1254,13 +1222,7 @@ elif cy!=ngates: p.append('自述判据组总数 %d，实际 %d'%(cy,ngates))
 print(('FAIL '+'; '.join(p)) if p else 'PASS 覆盖度自述可推导且一致（%d 条变异 · %d/%d 个判据组）'%(n,ng,cy))
 PYEOF2
 )"
-case "${_claim}" in
-  '') unable "判据没有任何输出 —— 没能执行，不是不合格（A19）。**真因看上方 stderr**，别照搬这句猜：常见是缺 python3 / 输入文件不可读 / 脚本自身异常" ;;
-  PASS*) pass "${_claim#PASS }" ;;
-  UNABLE*) unable "${_claim#UNABLE }" ;;
-  FAIL*) fail "${_claim#FAIL }" ;;
-  *) unable "判据输出不符合三态契约（既不是 PASS/FAIL/UNABLE 开头）——多半是内联 python 打了半截就崩，**这不是不合格，是没能测**（A19）。实得：${_claim}" ;;
-esac
+dispatch "${_claim}"
 echo
 echo "[9] 门禁自述（最后一条）"
 _claim="$(${GREP} -oE '检查项（\*\*[0-9]+ 组 [0-9]+ 条\*\*）' "${SKILL}" | head -1 || true)"

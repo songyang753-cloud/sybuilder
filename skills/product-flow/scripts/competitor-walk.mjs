@@ -18,8 +18,20 @@ const { connect, clickExpression, actionBlockReason, loadActionPolicy, privatePa
 const A = process.argv.slice(2);
 const PORT = A[0], OUT = A[1];
 const pick = A.includes('--pick') ? A[A.indexOf('--pick') + 1] : '';
-const steps = A.includes('--steps') ? parseInt(A[A.indexOf('--steps') + 1]) : 40;
-const subK = A.includes('--sub') ? parseInt(A[A.indexOf('--sub') + 1]) : 4;
+// 2026-09-29 评审 M14:parseInt('abc')=NaN 会让「step>=steps」恒假、遍历预算静默失效仍退 0——
+// 与 competitor-sweep.mjs 的 1..1000 校验同源:非法即 UNABLE(退 2),不产出受控证据。
+const intArg = (name, dflt, lo, hi) => {
+  const i = A.indexOf(name);
+  if (i < 0) return dflt;
+  const v = parseInt(A[i + 1]);
+  if (!Number.isInteger(v) || v < lo || v > hi) {
+    console.error(`${name} must be integer ${lo}..${hi}（实得 ${A[i + 1]}）`);
+    process.exit(2);
+  }
+  return v;
+};
+const steps = intArg('--steps', 40, 1, 1000);
+const subK = intArg('--sub', 4, 1, 50);
 
 // --help：只显示帮助（文件头注释）并退 0，⛔ 必须在 connect() 之前——求助不该去连浏览器
 if (A.includes('--help') || A.includes('-h')) {

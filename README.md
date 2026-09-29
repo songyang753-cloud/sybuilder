@@ -13,7 +13,7 @@ SYBuilder 把三个可独立使用的 Skill 组成一条可对账的产品研发
 | Skill | 职责 | 不负责 |
 |---|---|---|
 | `product-flow` | 调研、PRD、设计交互、技术/算法/测试方案、开发切片、GUI 验收与复盘 | 不在流程文档里复制整套编码规范或终审规则 |
-| `coding-standards` | 实现阶段的编码约束、诚实性门禁、反向测试与提交前自检；内置 `repository-enforcement/` 提供 CI、章程、ADR、CODEOWNERS 与棘轮模板 | 不替代产品决策或终审 |
+| `coding-standards` | 实现阶段的编码约束、诚实性门禁、反向测试与提交前自检；内置 `repository-enforcement/` 提供 CI、章程、ADR、CODEOWNERS 与棘轮模板 | 不替代产品决策或终审 ；完整自证需 SYBuilder 套件（兄弟 Skill 与根脚本参与其 selfcheck）|
 | `four-node-review` | 交付前的风险分档、覆盖对账、对抗式证伪、QA/安全/性能终审 | 不代替日常 CI，也不倒写产品要求 |
 
 ## 为什么是套件，不是一个巨型 SKILL.md

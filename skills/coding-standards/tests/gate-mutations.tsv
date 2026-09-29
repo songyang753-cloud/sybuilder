@@ -29,7 +29,7 @@ scripts/selfcheck.sh	#   3 = 有 UNABLE 无 FAIL（没能测 —— 不是合格
 references/authority.md	Z3 只负责定义	<!-- MUST:BEGIN 伪造的第二份 -->Z3 只负责定义	1	拷贝	10
 SKILL.md	**I4** 接缝面	**I4** 接缝面、**I9** 不存在	1	引用了不存在	10
 SKILL.md	| **J** 数据即代码 |	| 数据即代码 |	1	读者翻不到	4
-scripts/selfcheck.sh	for _sf in "${SKILL_DIR}"/scripts/*.sh; do	for _sf in "${SKILL_DIR}"/nosuchdir/*.sh; do	3	只扫到 0 个脚本	10
+scripts/selfcheck.sh	for _sf in "${SKILL_DIR}"/scripts/*.sh "${SKILL_DIR}"/scripts/hooks/*; do	for _sf in "${SKILL_DIR}"/nosuchdir/*.sh; do	3	只扫到 0 个脚本	10
 scripts/rule-fixtures.sh	np=0; nf=0; nu=0	np=0; nf=0; nu=0 # $np（个）	1	全角标点	10
 references/rules-load-bearing.md	### D36 · 反向测试	### D36 反向测试	1	格式不合规	3a
 scripts/selfcheck.sh	MAX_UNVER=38	MAX_UNVER=1	1	棘轮上限	2

@@ -39,8 +39,8 @@ node "${ROOT}/scripts/test-crawler-regressions.cjs"
 if [ "${MODE}" = "--full" ]; then
   node "${ROOT}/scripts/test-capture-ui.mjs"
 fi
-python3 "${ROOT}/scripts/test-w5.py"
-python3 "${ROOT}/scripts/test-w5-boundaries.py"
+python3 "${ROOT}/skills/four-node-review/tests/test-w5.py"
+python3 "${ROOT}/skills/four-node-review/tests/test-w5-boundaries.py"
 python3 "${ROOT}/scripts/test-gate-binding.py"
 python3 -m unittest discover -s "${ROOT}/skills/product-flow/tests" -p 'test_*depth.py'
 python3 -m unittest discover -s "${ROOT}/skills/product-flow/tests" -p 'test_writing_contract.py'

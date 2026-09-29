@@ -1,5 +1,7 @@
 # product-flow
 
+> ⚠️ 单仓分发（不带 SYBuilder 套件根）时,`../../` 指向的套件文档与 NOTICE/THIRD_PARTY/licenses 不可达;再分发本目录时按 RELEASING.md 的「保留套件根」要求执行,或显式标注来源套件与获取方式。S8/S9 依赖的兄弟 Skill（coding-standards / four-node-review）缺席时相关判据记 UNABLE。
+
 Distribution: this component requires the **complete SYBuilder suite**, including sibling
 Skills, shared scripts, tests and license notices. Use the [suite installer](../../README.md);
 a bare copy of this directory is not a supported independent package.

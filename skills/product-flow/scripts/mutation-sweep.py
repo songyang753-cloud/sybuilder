@@ -309,8 +309,11 @@ def _sweep_locked(paths):
                 ids = [('L%d' % ln, off) for off, ln in sites]
                 strat = 'C' if p.endswith('.mjs') else 'B'
             h0 = hashlib.sha256(src.encode()).hexdigest()
-            base = subprocess.run((['node'] if p.endswith('.mjs') else [sys.executable])
-                                  + [p, '--self-test'], capture_output=True, text=True)
+            try:
+                base = subprocess.run((['node'] if p.endswith('.mjs') else [sys.executable])
+                                      + [p, '--self-test'], capture_output=True, text=True, timeout=900)
+            except subprocess.TimeoutExpired:
+                base = subprocess.CompletedProcess([], 124, '', 'self-test 超时（900s）——按未通过计，⛔ 不折叠成通过')
             if base.returncode != 0:
                 skipped.append((os.path.basename(p), '自证本来就不绿，变异结果无意义')); continue
             if m: print("── %s（%d 条判据）" % (os.path.basename(p), len(ids)))
@@ -377,7 +380,7 @@ def _sweep_locked(paths):
                     _fd = os.path.join(_tf.mkdtemp(prefix='ms-syn-'), 'm.mjs')
                     io.open(_fd, 'w', encoding='utf-8').write(mutated)
                     if subprocess.run(['node', '--check', _fd],
-                                      capture_output=True).returncode != 0:
+                                      capture_output=True, timeout=180).returncode != 0:
                         print("   ⚠️ %-28s 变异体语法不合法，跳过（不计入结论）" % rid); continue
                 else:
                     try:
@@ -390,7 +393,7 @@ def _sweep_locked(paths):
                 io.open(_mp, 'w', encoding='utf-8').write(mutated)
                 try:
                     r = subprocess.run((['node'] if p.endswith('.mjs') else [sys.executable])
-                                       + [_mp, '--self-test'], capture_output=True, text=True)
+                                       + [_mp, '--self-test'], capture_output=True, text=True, timeout=900)
                 finally:
                     io.open(_mp, 'w', encoding='utf-8').write(src)
                 # ⛔ 真实文件必须原样：这条断言现在是**不变量**而不是「还原成功了吗」

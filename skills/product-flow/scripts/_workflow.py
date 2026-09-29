@@ -21,14 +21,18 @@ class WorkflowError(ValueError):
 
 
 def suite_script(name):
-    """Resolve only the supported complete suite (including symlink installs)."""
+    """Resolve only the supported complete suite (including symlink installs).
+
+    2026-09-29:W5 验收测试随 four-node-review skill 分发(tests/ 目录),
+    其余套件脚本仍在根 scripts/——按两个候选位置解析,都要求完整套件标记在位。"""
     root = Path(__file__).resolve().parents[3]
     markers = ('install.sh', 'LICENSE', 'shared', 'skills/coding-standards/SKILL.md',
                'skills/four-node-review/SKILL.md')
-    path = root / 'scripts' / name
-    if any(not (root / p).exists() for p in markers) or not path.is_file():
+    candidates = [root / 'scripts' / name,
+                  root / 'skills/four-node-review/tests' / name]
+    if any(not (root / p).exists() for p in markers) or not any(p.is_file() for p in candidates):
         raise WorkflowError('UNABLE: 不完整的套件布局；请用官方安装器安装完整 SYBuilder，不能单独拷贝本 helper')
-    return path
+    return next(p for p in candidates if p.is_file())
 
 
 def canonical_bytes(value):

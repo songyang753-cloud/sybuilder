@@ -33,7 +33,7 @@
 **令牌值从哪来**（不许自由发挥，这是防 AI slop 的关键）：
 - 有已上线程序 → **量真实程序**（`scripts/capture-live-ui.js`）
 - 行业基线 → `ui-ux-pro-max`（192 配色 / 74 字体搭配）+ `impeccable`（129 条 OKLCH 品牌种子）
-- **视觉高度锚定一个真实配方**：`~/.claude/skills/web-design-engineer/references/style-recipes/` 有 **25 个真实品牌配方**（linear / raycast / aesop / stripe-press / muji-kenya-hara / vignelli…），带精确 hex、字体、间距、留白比例。**选一个当锚，不要东拼西凑**；`cc-design` 另有 20 个设计流派可选。
+- **视觉高度锚定一个真实配方**（外部 skill,可选）：`web-design-engineer` 的 `style-recipes/` 有 **25 个真实品牌配方**（路径按该 skill 在你机器的实际安装位填写;未安装时本锚点记 UNABLE,⛔ 不是硬依赖）（linear / raycast / aesop / stripe-press / muji-kenya-hara / vignelli…），带精确 hex、字体、间距、留白比例。**选一个当锚，不要东拼西凑**；`cc-design` 另有 20 个设计流派可选。
 - 中文产品 → `chinese-font-selector`：可商用授权分级 + 中英混排规则（**英文字体在前、中文在后**；中文无斜体）
 
 ⚠️ **锚点可以只借设计语言、不照搬底色**：Raycast 是深色底，而照片类产品必须浅色（内容才是主角）。借它的间距阶/圆角阶/快捷键 chip/浮层阴影，底色走自己的——用 Variables 的 Light/Dark 两个 Mode 两头都覆盖。

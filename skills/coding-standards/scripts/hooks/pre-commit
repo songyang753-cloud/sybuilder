@@ -8,7 +8,9 @@
 #   coding-standards 文件，本 hook 会拦下这次提交。这恰好挡住「整索引把红文件卷走」（铁律 114）；
 #   确认这次提交真不含本 skill 时用 `git commit --no-verify` 放行（用它 = 对红灯自己负责）。
 # ⚠️ git 失败不许静默放行(2026-09-09 codex):先捕获退出码,失败=fail-closed 拒绝,而不是让空输出走进 `|| exit 0`
-staged=$(git diff --cached --name-only) || { echo "pre-commit: git diff --cached 失败,fail-closed 拒绝提交(排查 git 状态后重试或 --no-verify)" >&2; exit 1; }
+# 2026-09-29 评审 M15-3:用 -z 取原始路径(默认 core.quotePath=true 会把非 ASCII 文件名
+# 输出成带引号的八进制转义,行首前缀匹配失效=静默漏检);awk 分诊退出码,过滤失败=fail-closed。
+staged=$(git diff --cached --name-only -z | tr '\0' '\n') || { echo "pre-commit: git diff --cached 失败,fail-closed 拒绝提交(排查 git 状态后重试或 --no-verify)" >&2; exit 1; }
 root=$(git rev-parse --show-toplevel) || { echo "pre-commit: git rev-parse 失败" >&2; exit 1; }
 source=$0
 while [ -L "$source" ]; do
@@ -16,6 +18,13 @@ while [ -L "$source" ]; do
   case "$target" in /*) source=$target ;; *) source=$(dirname "$source")/$target ;; esac
 done
 skill=$(cd "$(dirname "$source")/../.." && pwd -P) || exit 1
-case "$skill" in "$root"/*) prefix=${skill#"$root"/}/ ;; *) echo 'pre-commit: hook source outside repository' >&2; exit 1 ;; esac
-printf '%s\n' "$staged" | awk -v p="$prefix" 'index($0,p)==1 {found=1} END {exit !found}' || exit 0
+case "$skill" in
+  "$root"/*) prefix=${skill#"$root"/}/ ;;
+  *) # 2026-09-29 评审 M15-3:复制安装(非 ln -s)时提示不再误报 outside——本 hook 按软链安装设计
+     echo 'pre-commit: 本 hook 仅支持软链安装(见文件头:ln -s …/.git/hooks/pre-commit);检测到复制安装,请重装,或本次 --no-verify 自担' >&2; exit 1 ;;
+esac
+# awk 退出码分诊:0=暂存区含本 skill(继续跑守卫);1=不含(快速放行);其它=过滤失败(fail-closed 拒绝)
+printf '%s\n' "$staged" | awk -v p="$prefix" 'index($0,p)==1 {found=1} END {exit !found}'
+rc=$?
+[ "$rc" -eq 0 ] || { [ "$rc" -eq 1 ] && exit 0; echo "pre-commit: 暂存区过滤失败(awk rc=$rc),fail-closed" >&2; exit 1; }
 exec bash "$skill/scripts/precommit-guard.sh"

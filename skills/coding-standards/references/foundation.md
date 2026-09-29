@@ -65,8 +65,9 @@
 **变更与提交**（依据：google/eng-practices、conventional-commits、agis/git-style-guide）
 
 > 小变更与可评审性指导选译自 Google Engineering Practices（Google 及贡献者，CC BY 3.0），
-> 已做精简并加入本地说明，不是官方译本；[许可](../../../licenses/google--eng-practices.txt)
-> 与 [来源版本](../../../licenses/sources.json) 须随改编内容保留。
+> 已做精简并加入本地说明，不是官方译本；许可（google--eng-practices.txt，CC BY 3.0）与来源版本
+> （licenses/sources.json）在 SYBuilder 套件根 `licenses/`，须随改编内容保留（单仓分发本 skill 时
+> 该目录不可达——再分发者需从上游套件取随附，或注明获取方式）。
 
 - **一个 CL 只做一件事**，且小到能被一次看完。Google 的判据：*reviewer 能不能在合理时间内完整理解它*。
 - 提交信息第一行说**做了什么**，正文说**为什么**——「为什么」在 diff 里读不出来，「做了什么」能。

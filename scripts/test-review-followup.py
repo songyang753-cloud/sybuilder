@@ -170,7 +170,7 @@ class Followup(unittest.TestCase):
 
     def test_distributor_refuses_missing_required_test_before_linking(self):
         checkout=self.root/'suite';shutil.copytree(ROOT,checkout,ignore=shutil.ignore_patterns('.git','.sybuilder','.product-flow','__pycache__'))
-        (checkout/'scripts/test-w5.py').unlink()
+        (checkout/'skills/four-node-review/tests/test-w5.py').unlink()
         target=self.root/'host'
         proc=subprocess.run(['bash',str(checkout/'install.sh'),str(target)],capture_output=True,text=True)
         self.assertNotEqual(proc.returncode,0)

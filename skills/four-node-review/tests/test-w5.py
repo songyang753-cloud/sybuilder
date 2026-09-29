@@ -7,7 +7,7 @@ import sys
 import tempfile
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[3]
 spec = importlib.util.spec_from_file_location('w5', ROOT / 'skills/four-node-review/agent-evaluation/run.py')
 w5 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(w5)
@@ -25,14 +25,16 @@ class EvaluationTests(unittest.TestCase):
                 baseline.write_text(json.dumps({'suiteHash': w5.digest(suite),
                                                 'cases': {'C1': dict.fromkeys(w5.DIMENSIONS, 1)}}))
                 adapter = 'adapter.py'
-                (root / adapter).write_bytes((ROOT / 'scripts/test-w5-adapter.py').read_bytes())
+                (root / adapter).write_bytes((Path(__file__).resolve().parent / 'test-w5-adapter.py').read_bytes())
                 cfg = {'mode': 'production', 'targetVersion': 'synthetic-test-only',
                        'productionContract': dict.fromkeys(('promptRef', 'toolSchemaRef'), 'suite.json'),
-                       'runner': [sys.executable, adapter, 'runner'],
-                       'judge': [sys.executable, adapter, 'judge', mode],
+                       # 2026-09-29 评审 M16-1:解释器只允许裸名(禁路径分隔符)——
+                       # 夹具不再用含 '/' 的 sys.executable;adapter 为纯标准库脚本,PATH 上的 python3 即可。
+                       'runner': ['python3', adapter, 'runner'],
+                       'judge': ['python3', adapter, 'judge', mode],
                        'suiteRef': 'suite.json', 'baselineRef': 'baseline.json',
                        'judgeControls': [{'expected': 'PASS', 'input': {'trace': {'knownBad': False}}},
-                                         {'expected': 'FAIL', 'input': {'trace': {'knownBad': True}}}]}
+                                         {'expected': 'FAIL', 'failDimensions': ['task_success'], 'input': {'trace': {'knownBad': True}}}]}
                 cfg['productionContract'].update(adapterRef=adapter, judgeRef=adapter)
                 path = root / 'config.json'; path.write_text(json.dumps(cfg))
                 self.assertEqual(w5.execute(path, root / 'output'), expected)

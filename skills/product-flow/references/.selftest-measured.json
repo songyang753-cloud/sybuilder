@@ -5,9 +5,9 @@
     "python": "3.14.7",
     "os": "Darwin"
   },
-  "measuredAt": "2026-09-29T13:31:33",
+  "measuredAt": "2026-09-29T16:13:11",
   "scripts": 86,
-  "cases": 1464,
+  "cases": 1487,
   "failures": 0,
   "failedScripts": [],
   "unableScripts": [],
@@ -22,7 +22,7 @@
     "_document_sync.py": "6af906bc5239ff0e46eac53476a4a1c8f12ee54e",
     "_feishu.py": "9383f3b1fba15357277ffa94e8e763b5579d5eb1",
     "_image.py": "af33cbb2c785ad5cfe7f555feeb86053fed48acc",
-    "_module_contract.py": "8655e100b32c0da65b502c0c241f3534d2fc9678",
+    "_module_contract.py": "1306d21eddd5a157da52b82037158ece83b82211",
     "_mutation_state.py": "209162505e37b911d2fa47698d3a6f3117910c3d",
     "_prd_parse.py": "eb7626b43abcaf7c3559e16506be57152f57f3de",
     "_research_package.py": "17dc7db074733c8df0e521e1727c0a4dc67311fe",
@@ -31,7 +31,7 @@
     "_section.py": "e6b00278407d78cc5898ddc2a42ebc71c1d3d208",
     "_section_oracle.py": "b0840538b080e55128da2770712a0ce785cdba21",
     "_sweep_lib.py": "92530c3f9b3cf7d393b32605a9b685bb97f2a60b",
-    "_workflow.py": "c54d654d4eed1e8464ec453e31396ccaf622234e",
+    "_workflow.py": "74a22c232b5eadccf02999b586af53bbe2581f08",
     "_writing_contract.py": "40f0f6b5b0a549f562e3f5e020cc8ef967551e3c",
     "ai-slop-gate.py": "6866aa5da0d2a93732a1ed404731da8e6ddcbb3a",
     "audience-gate.py": "355afe2ff4a557f3112ce33357d959bf00c54881",
@@ -40,12 +40,12 @@
     "business-map-gate.py": "f4d7fea51a72722c7216a0d16780e84f40694649",
     "cdp-reuse-gate.py": "eba394e77ce2310317e83bd500c7abaa01e2a2b3",
     "chain-gate.py": "ea93cbd7e2d9e71b97c2f5ef579af65c98f7fa4d",
-    "consistency-gate.py": "975137bec0122b4e99a9f706d66c39e8f097d448",
+    "consistency-gate.py": "97ab96ac0b404c969d3bb284eaf0eacb07eb027e",
     "converge.py": "4b26b86b641e04e019734fda571f3099f8a443e1",
     "coordination-gate.py": "f3adaec83537587bc0052c33166cb5946a897b76",
     "coverage_check.py": "e1c6bb756236b3b27e5e75c1fc04611669e56c05",
     "dead-click-gate.mjs": "0989d66d8d335dd696b1bffb69dcbeff775e7d14",
-    "definition-gate.py": "9bc80b275c490b190c838a38cf76c963727f1414",
+    "definition-gate.py": "0aa57aa25fe14e9a95ea87ac844cd818f238ef1d",
     "demo-anchor-gate.py": "8465d6bd9236453ec7dbd4499630f78fc3e1b87a",
     "design-intent-gate.py": "2bfeb621e720ce4daf0cc13e5b47d697433ca601",
     "design-to-tokens.py": "5e4e49677e09f6ccb36be96a84a7265318c80cfa",
@@ -64,12 +64,12 @@
     "intent-gate.py": "bcf3a28879c688a1c71f2fe831d9da821835afb9",
     "interaction-gate.py": "bad54885612a873b0a2104a61c0e57835fbb9654",
     "mock-seam-gate.mjs": "8e8bb7c263c2348ba8a10d6a1309a323efa2a54c",
-    "mutation-sweep.py": "19f0afa13d893c3e403e40fd23481d3e0785f151",
+    "mutation-sweep.py": "cafa9cd4511e7a0432317e3415fc40f670fe9ee9",
     "no-loss-gate.py": "f5ceae630dc6f07d2bee08e513b256fee6edbf40",
     "platform-parity-gate.mjs": "9f83ef7f3d59f52dcbabf0210b67ee9cd1db6114",
-    "prd-quality-gate.py": "4628bfb775c147787cd8ec3e5cd2e2e8f67d684c",
+    "prd-quality-gate.py": "0f263128f2b8d2ba7bc65596a1e519feceefcc71",
     "prd_completeness_check.py": "837362c0a9d1abf79286ea8da49bd2dd3a81a4f8",
-    "product-flow-run.py": "4407f223c48886ebd7fe0f576bdc7d4f5a1d9476",
+    "product-flow-run.py": "02d2c38c0b51be5353dc3ade5a42058bee354b04",
     "product-structure-gate.py": "677338ff70d4b8099101018f4fce7f0f8acf93b8",
     "receipt-check.py": "f917524b1347b181ac0d4310a1cb3c3547af36ba",
     "reconcile-gate.py": "b99c0c57267414d81fb7eaec7b20b69102f3a843",
@@ -86,16 +86,16 @@
     "s9-quality-report-gate.py": "ee267fe8cad4e6421c75eec948d28c4ffb2309db",
     "scaffold.py": "bafaecb3dd555d6b90bff8dfc7b3f614cf142594",
     "scenario-matrix-gate.mjs": "2819f77e4bec8a94168485546afc2fba271b18bb",
-    "sec-scan.py": "bac2c8c28b66fde3dfd44a413a99c8681a85c579",
+    "sec-scan.py": "6010b1a54deada1efbdae2edcb5863e5041b1c69",
     "selftest-all.py": "4ae7a8884e9d8244562edd9985b8b70ea93ad43f",
     "serial-orchestration-gate.py": "c75fb16e5e21744c759fc0be4a2f59251dd9b8ca",
-    "spec-authoring-gate.py": "cd556762012b08c4173c83c8b0e2b9de9ec2aaad",
+    "spec-authoring-gate.py": "98eebeefbdf03c2d71b07bf8e9dcd82800bf9d82",
     "spec-check.py": "a2ea2c4345641af2e57679589fccfc1bfd2df0c3",
     "spec-sync-gate.py": "6902c99e7d1b2be5980fa8340d28421e067ce29b",
     "spec-to-js.py": "44a1b3e0ec3b4b8b13e438fd6e99a3b8169fc67a",
     "taste-memory.py": "97546e72be94851c18b3286ab5f123ba8c400691",
     "tech-research-gate.py": "512b42a104980cff71cc7255083caca8745b90f1",
-    "token-provenance-gate.py": "14837eda2440c02a59fd6bd4bc1156a0e464f7a0",
+    "token-provenance-gate.py": "b0973e13b2b8550ca3d83082b265f689eb9f156a",
     "tokens-to-css.py": "4ce3fbf83b8d0915b8c23af64d6a4bdf5d8f2816",
     "traversal-coverage-gate.py": "511ed67b93e4ed61f160dbde7ddd254e71938302",
     "unexecuted-check.py": "2e56a211f0cec80cdc52b4649f93dfcfca925ff5",
@@ -193,9 +193,9 @@
       "negLabel": 1
     },
     "_writing_contract.py": {
-      "cases": 30,
+      "cases": 40,
       "negNumeric": 0,
-      "negLabel": 28
+      "negLabel": 38
     },
     "ai-slop-gate.py": {
       "cases": 25,
@@ -258,9 +258,9 @@
       "negLabel": 5
     },
     "definition-gate.py": {
-      "cases": 56,
-      "negNumeric": 39,
-      "negLabel": 38
+      "cases": 59,
+      "negNumeric": 40,
+      "negLabel": 39
     },
     "demo-anchor-gate.py": {
       "cases": 22,
@@ -368,9 +368,9 @@
       "negLabel": 16
     },
     "prd-quality-gate.py": {
-      "cases": 30,
+      "cases": 40,
       "negNumeric": 0,
-      "negLabel": 28
+      "negLabel": 38
     },
     "prd_completeness_check.py": {
       "cases": 54,
@@ -533,9 +533,33 @@
       "negLabel": 13
     }
   },
-  "negativesByExpectation": 556,
-  "negativesByLabel": 772,
+  "negativesByExpectation": 557,
+  "negativesByLabel": 793,
   "command": "python3 scripts/selftest-all.py --fresh",
-  "treeDiff": [],
-  "headAt": "e0f2924"
+  "treeDiff": [
+    "skills/product-flow/.gitignore",
+    "skills/product-flow/DEPENDENCIES.md",
+    "skills/product-flow/README.md",
+    "skills/product-flow/RELEASING.md",
+    "skills/product-flow/modules/diagramming/scripts/README.md",
+    "skills/product-flow/references/.selftest-measured.json",
+    "skills/product-flow/references/craft-layer.md",
+    "skills/product-flow/references/design-orchestration.md",
+    "skills/product-flow/references/design-quality-gates.md",
+    "skills/product-flow/references/path-ownership.json",
+    "skills/product-flow/references/s7-figma.md",
+    "skills/product-flow/scripts/_module_contract.py",
+    "skills/product-flow/scripts/_workflow.py",
+    "skills/product-flow/scripts/competitor-walk.mjs",
+    "skills/product-flow/scripts/consistency-gate.py",
+    "skills/product-flow/scripts/deep-walk.cjs",
+    "skills/product-flow/scripts/definition-gate.py",
+    "skills/product-flow/scripts/mutation-sweep.py",
+    "skills/product-flow/scripts/prd-quality-gate.py",
+    "skills/product-flow/scripts/product-flow-run.py",
+    "skills/product-flow/scripts/sec-scan.py",
+    "skills/product-flow/scripts/spec-authoring-gate.py",
+    "skills/product-flow/scripts/token-provenance-gate.py"
+  ],
+  "headAt": "19b6c18"
 }

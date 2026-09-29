@@ -27,7 +27,12 @@ files(){ git -C "${REPO}" ls-files -com --exclude-standard "${REL}/" | sort -u; 
 # 挡不住「跑的这一秒里隔壁会话把文件改了」——本机常年 8–10 个会话改同一批文件（COORDINATION.md）。
 # ⚠️ 2026-09-10：这个函数在 P0-2 重写（0cd389e）里被**静默删掉**，而头部注释和
 #    references/gates.md 都还在承诺它 —— 本 skill 自己的 E1「注释承诺必须成立」被自己违反了一次。
-snap(){ files | while IFS= read -r f; do [ -f "${REPO}/${f}" ] && shasum -a256 "${REPO}/${f}"; done | shasum -a256 | cut -c1-16; }
+# 2026-09-29 评审 M15-2:shasum 缺失(精简容器常只有 sha256sum)时,旧实现输出空串、
+# before==after 恒真 → D30 假绿仍打✓。回退 + 指纹格式断言,量具坏了报 UNABLE 不报 PASS(A1/A3)。
+hash256(){ command -v shasum >/dev/null 2>&1 && shasum -a 256 || command -v sha256sum >/dev/null 2>&1 && sha256sum || { echo "HASH-TOOL-MISSING" >&2; return 1; }; }
+snap(){ files | while IFS= read -r f; do [ -f "${REPO}/${f}" ] && hash256 "${REPO}/${f}"; done | hash256 | cut -c1-16; }
+fingerprint_or_die(){ local v; v="$(snap)" || { echo "UNABLE  哈希工具缺席(shasum/sha256sum 都不可用)——D30 并发检测没法做,这次不算数(A1)"; exit 3; }
+  case "${v}" in [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) printf '%s' "${v}" ;; *) echo "UNABLE  指纹形态非法——量具异常,结论不可采信"; exit 3 ;; esac; }
 
 n=$(files | ${GREP:-/usr/bin/grep} -c . || true)
 if [ "${n:-0}" -lt "${MIN}" ]; then
@@ -61,9 +66,9 @@ if ! git -C "${REPO}" diff --quiet -- "${REL}"; then
   git -C "${REPO}" diff --name-only -- "${REL}" | sed 's/^/          /'
   exit 3
 fi
-before="$(snap)"
+before="$(fingerprint_or_die)"
 bash "${DIR}/scripts/selfcheck.sh" > "${GATE_OUT}" 2>&1; rc=$?
-after="$(snap)"
+after="$(fingerprint_or_die)"
 
 printf '文件 %d 个 · 门禁 rc=%s · 工作区==暂存(已验一致,D30) · 指纹 %s -> %s\n' "${n}" "${rc}" "${before}" "${after}"
 if [ "${before}" != "${after}" ]; then
@@ -89,6 +94,10 @@ else
   LINK="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -L)"
 fi
 if [ -e "${LINK}/scripts/selfcheck.sh" ]; then
+  # 2026-09-29 评审 M15:同物理路径时二次运行=同一棵树重复跑,「真实路径同样通过」是误导——跳过并 NOTE。
+  if [ "$(cd "${LINK}" 2>/dev/null && pwd -P)" = "$(cd "${DIR}" 2>/dev/null && pwd -P)" ]; then
+    echo "NOTE    软链与开发树同径(${LINK}),二次运行跳过——已跑的就是真实加载路径本身"
+  else
   bash "${LINK}/scripts/selfcheck.sh" >/dev/null 2>&1; lrc=$?
   # ⚠️ 2026-09-10（codex P1-26）：这里原来把 3/4/126/127 全折叠成 exit 1 ——
   #    「真实路径上门禁没跑起来」被报成「真实路径不合格」。与上面主门禁用同一张映射。
@@ -96,10 +105,12 @@ if [ -e "${LINK}/scripts/selfcheck.sh" ]; then
     0) ;;
     1) echo "FAIL    开发路径绿，但**真实加载路径** ${LINK} 判定不合格（D32）"; exit 1 ;;
     3) echo "UNABLE  真实加载路径 ${LINK} 有检查项没能执行（不是不合格）"; exit 3 ;;
+    4) echo "FAIL    真实加载路径 ${LINK} 门禁自身内部错误（判据坏了，结论不可采信）"; exit 4 ;;  # 2026-09-29 评审 M15:主映射有 4),D32 曾缺
     126|127) echo "FAIL    真实加载路径 ${LINK} 的门禁不可执行（rc=${lrc}）—— 根本没跑"; exit 4 ;;
     *) echo "FAIL    真实加载路径 ${LINK} 以未声明的退出码 ${lrc} 结束"; exit 4 ;;
   esac
   echo "真实加载路径同样通过：${LINK}"
+  fi
 else
   echo "NOTE    未找到真实加载路径 ${LINK}，跳过 D32 这一项（缺席已留痕，A7）"
 fi

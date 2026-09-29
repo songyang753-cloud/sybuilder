@@ -1,0 +1,8 @@
+# 随 skill 分发的忽略规则(2026-09-29 评审 M14-2:根级 .gitignore 不随单目录分发,
+# team-skills 等单仓场景下运行态产物必须仍被忽略——证据目录进 git 与进飞书是同一条外流链)
+.product-flow/
+__pycache__/
+*.pyc
+node_modules/
+references/.selftest-progress.jsonl
+references/.selftest-progress.jsonl.*

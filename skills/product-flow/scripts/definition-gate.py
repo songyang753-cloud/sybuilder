@@ -609,23 +609,39 @@ def check(path, proposals=None):
         #    到定义这里此前可以**裸拍一个数字**而无人对账 —— 上游量过的现状被静默覆盖。
         #    现状列每行要么带出处（business-map/调研 CLM/访谈/报表），
         #    要么显式 TBD/无（新业务），⛔ 不许裸数字。
-        _rows = [l for l in goal.splitlines()
-                 if l.strip().startswith('|') and '现状' not in l
-                 and not re.match(r'^\s*\|[\s\-:|]+\|\s*$', l.strip())]
+        # ⭐ 2026-09-29 评审 M14-1 修正：首版取「节内所有非『现状』表行的第 2 列」，
+        #   把护栏指标底线（纯数字合法）也当现状误伤，且指标名含「现状」的数据行被整行跳过（反向漏检）。
+        #   收窄：只查**表头含「现状」列**的那张表的该列；其它表（护栏/目标）不适用本判据。
         _bad = []
-        for l in _rows:
-            cells = [c.strip() for c in l.strip().strip('|').split('|')]
-            if len(cells) < 2:
+        _checked = 0
+        _in_tbl = False
+        _col = None
+        for l in goal.splitlines():
+            t = l.strip()
+            if not t.startswith('|'):
+                _in_tbl, _col = False, None
                 continue
-            base = cells[1]
+            cells = [c.strip() for c in t.strip('|').split('|')]
+            if set(''.join(cells)) <= set('-: '):
+                continue
+            if not _in_tbl:
+                # 新表：表头行须含独立的「现状」列（整格等于或以「现状」开头），否则整表跳过
+                _col = next((i for i, c in enumerate(cells) if c == '现状' or c.startswith('现状')), None)
+                _in_tbl = _col is not None
+                continue
+            if _col is None or _col >= len(cells):
+                continue
+            base = cells[_col]
+            name = cells[0] if cells else ''
+            _checked += 1
             if not base or re.search(r'<|占位|待填', base):
-                _bad.append('「%s」现状空 —— 没想过 ≠ 没有现状' % cells[0][:12])
+                _bad.append('「%s」现状空 —— 没想过 ≠ 没有现状' % name[:12])
             elif re.fullmatch(r'[\d.,万亿%\s/~-]+', base):
                 _bad.append('「%s」现状裸数字「%s」无出处 —— 引 business-map 指标/调研 CLM/报表，或写 TBD+owner'
-                            % (cells[0][:12], base[:14]))
-        add("metric-baseline-provenance", "指标现状带出处（承接 S3A 实测，⛔ 裸数字=拍脑袋覆盖上游）",
-            (not _bad) if _rows else None,
-            _bad[:4] or ('%d 行齐备' % len(_rows)) if _rows else '本节无指标表行')
+                            % (name[:12], base[:14]))
+        add("metric-baseline-provenance", "指标现状带出处（承接 S3A 实测，⛔ 裸数字=拍脑袋覆盖上游；仅查含「现状」列的表）",
+            (not _bad) if _checked else None,
+            _bad[:4] or ('%d 行现状受检' % _checked) if _checked else '本节无含「现状」列的指标表')
 
     # 4 拍板状态如实标注
     signed = re.search(r'拍板状态', s)
@@ -859,6 +875,16 @@ def self_test():
          GOOD.replace("41%（business-map 指标树实测）", "41%［S2·CLM-003·2026-09］"), 0),
         ("反例 指标现状留空（没想过 ≠ 没有现状）",
          GOOD.replace("41%（business-map 指标树实测）", ""), 1),
+        # ── 2026-09-29 评审 M14-1 收窄回归：护栏底线纯数字合法、列头定位、名含「现状」仍受检 ──
+        ("正例 护栏指标底线为纯数字 → 不误伤（只查含「现状」列的表）",
+         GOOD.replace("### 护栏指标\n| 指标 | 底线 | 踩了怎么办 |\n|---|---|---|\n| 首屏耗时 | 不超过 800ms | 回滚 |",
+                      "### 护栏指标\n| 指标 | 底线 | 踩了怎么办 |\n|---|---|---|\n| 外发次数 | 0 | 回滚 |"), 0),
+        ("正例 成功指标表带「现状」列头、指标名含「现状」字样 → 仍按列受检不漏",
+         GOOD.replace("| 检索成功率 | 41%（business-map 指标树实测）| 70% | 上线后 3 个月 | 埋点 |",
+                      "| 库现状照片数 | 41%（business-map 指标树实测）| 70% | 上线后 3 个月 | 埋点 |"), 0),
+        ("反例 指标名含「现状」且该列裸数字 → 必须红（首版曾整行跳过=反向漏检）",
+         GOOD.replace("| 检索成功率 | 41%（business-map 指标树实测）| 70% | 上线后 3 个月 | 埋点 |",
+                      "| 库现状照片数 | 12000 | 15000 | 上线后 3 个月 | 埋点 |"), 1),
         # ── 2026-09-29 真机试产：桌面原生是合法载体形态（词表曾漏）──
         ("正例 载体写「仅 macOS」→ 合法（桌面原生形态）",
          GOOD.replace("| 仅 web | 是 | L |", "| 仅 macOS | 是 | L |"), 0),

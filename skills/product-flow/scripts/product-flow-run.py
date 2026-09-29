@@ -55,6 +55,17 @@ def _read_json(path, label='JSON'):
         raise WorkflowError('%s 读不了：%s' % (label, e))
 
 
+_RUN_ID_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]*')
+
+
+def _valid_run_id(value, origin='runId'):
+    """plan/resume/issue 共享的白名单——resume 曾缺它,可 '../x' 越界落盘
+    (2026-09-29 外部评审 MR#14 严重#3)。manifest 读回的 runId 同样要过。"""
+    if not _RUN_ID_RE.fullmatch(str(value or '')):
+        raise WorkflowError('%s 只允许字母数字开头及 . _ -；禁止路径越界（实得 %r）' % (origin, value))
+    return value
+
+
 def _new_run_id():
     return 'PF-%s-%s' % (datetime.datetime.now().strftime('%Y%m%d%H%M%S'),
                          uuid.uuid4().hex[:6])
@@ -67,9 +78,7 @@ def _plan(args):
                         args.evidence_capability, research_mode=args.research_mode,
                         document_platform=args.document_platform)
     manifest = dict(plan)
-    if args.run_id and not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', args.run_id):
-        raise WorkflowError('runId 只允许字母数字开头及 . _ -；禁止路径越界')
-    manifest['runId'] = args.run_id or _new_run_id()
+    manifest['runId'] = _valid_run_id(args.run_id) if args.run_id else _new_run_id()
     manifest['createdAt'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
     intake = _read_json(args.intake, 'intake') if args.intake else {}
     for key in ('inputs', 'assumptions', 'openDecisions', 'stopLines', 'requiredBackfills'):
@@ -127,7 +136,8 @@ def _resume(args):
             if name.endswith('.json'):
                 old_imports.append(_read_json(os.path.join(old_import_dir, name), 'import receipt'))
     resumed = dict(manifest)
-    resumed['runId'] = args.run_id or _new_run_id()
+    _valid_run_id(manifest['runId'], 'resume 源 manifest.runId')  # 读回值同样不可信
+    resumed['runId'] = _valid_run_id(args.run_id) if args.run_id else _new_run_id()
     resumed['createdAt'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
     resumed['supersedesRunId'] = manifest['runId']
     rel = os.path.join('runs', resumed['runId'], 'run-manifest.json')

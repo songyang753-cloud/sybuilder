@@ -113,8 +113,12 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("tokens")
     p.add_argument("--asm", help="假设登记文件，用于校验 ASM-### 是否真的登记过")
+    # 2026-09-29 评审 M14:外部 skill 的本机绝对路径不许当默认值/硬依赖
+    # (modules/design-quality/MODULE.md 自己定的纪律)。可选参数化:未提供且无本地安装时,
+    # 配方锚点检查记 UNABLE,其余判据照常——⛔ 不静默跳过也不硬依赖。
     p.add_argument("--recipe-dir",
-                   default=os.path.expanduser("~/.claude/skills/web-design-engineer/references/style-recipes"))
+                   default=os.environ.get("SYBUILDER_RECIPE_DIR") or "",
+                   help="可选:web-design-engineer 的 style-recipes 目录;缺省尝试常见安装位,找不到记 UNABLE")
     p.add_argument("--json", action="store_true")
     a = p.parse_args()
 

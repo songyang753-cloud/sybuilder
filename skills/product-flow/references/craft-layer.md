@@ -5,6 +5,7 @@
 > 第 3 节改编自 @meodai 的 skill.color-expert/SKILL.md（CC BY 4.0），不包含其外部文章库。
 > ui-craft、dig-ui-skill 与 dashmotion 的改编归属和完整许可见
 > [THIRD_PARTY.md](../../../THIRD_PARTY.md) 与 [来源清单](../../../licenses/sources.json)。
+> ⚠️ **单仓分发注（2026-09-29 评审补）**：上面两个 `../../../` 链接指向 SYBuilder 套件根,单 skill 分发时不可达。内联要点——本文件所引外部 skill（cc-design / garden-skills / color-expert / ui-craft / dig-ui-skill / dashmotion）均只借鉴方法与判据形态,未复制其表达或资产;各自许可(声明于其 README/SKILL,MIT 与 CC BY 4.0)在上游仓;涉及 W3C WCAG 的条款为标准原文引用,非译本非背书。完整逐项归属以套件根 THIRD_PARTY.md 为准。
 
 > `visual-spec.md` 回答**做对没有**（对比度、间距倍数、圆角集合）。
 > 本文件回答**做好了没有**——构图、光学、色彩科学、情绪、delight。

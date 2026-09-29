@@ -149,11 +149,13 @@ def issue_result(root, draft_path):
     _write(dst, body, no_clobber=True)
     if supersedes:
         index_path = os.path.join(root, '.product-flow', 'index', 'module-consumers.json')
-        index = _read(index_path, 'consumer index') if os.path.isfile(index_path) else {'schemaVersion': '1.0', 'results': {}}
-        for consumer in (index.get('results', {}).get(supersedes, {}).get('consumers') or []):
-            consumer['staleAt'] = body['producedAt']
-            consumer['staleReason'] = '源结果已被 %s 取代' % result_id
-        _write(index_path, index)
+        from _mutation_state import locked_targets
+        with locked_targets([index_path]):
+            index = _read(index_path, 'consumer index') if os.path.isfile(index_path) else {'schemaVersion': '1.0', 'results': {}}
+            for consumer in (index.get('results', {}).get(supersedes, {}).get('consumers') or []):
+                consumer['staleAt'] = body['producedAt']
+                consumer['staleReason'] = '源结果已被 %s 取代' % result_id
+            _write(index_path, index)
     return dst
 
 
@@ -274,11 +276,15 @@ def import_result(root, result_path):
                        'imports', result['resultId'] + '.json')
     _write(dst, receipt, no_clobber=True)
     index_path = os.path.join(root, '.product-flow', 'index', 'module-consumers.json')
-    index = _read(index_path, 'consumer index') if os.path.isfile(index_path) else {'schemaVersion': '1.0', 'results': {}}
-    item = index['results'].setdefault(result['resultId'],
-                                       {'sourceResultRef': result_path, 'consumers': []})
-    item['consumers'].append({'runId': manifest['runId'], 'importReceiptRef': dst})
-    _write(index_path, index)
+    # 2026-09-29 外部评审 MR#14 严重#4:读-改-写整份索引在并发 import 下会互相整份覆盖,
+    # 丢掉的 consumer 永不降级 stale。纳入 _mutation_state 的同域文件锁。
+    from _mutation_state import locked_targets
+    with locked_targets([index_path]):
+        index = _read(index_path, 'consumer index') if os.path.isfile(index_path) else {'schemaVersion': '1.0', 'results': {}}
+        item = index['results'].setdefault(result['resultId'],
+                                           {'sourceResultRef': result_path, 'consumers': []})
+        item['consumers'].append({'runId': manifest['runId'], 'importReceiptRef': dst})
+        _write(index_path, index)
     return dst, refresh_claim_state(root, manifest)
 
 

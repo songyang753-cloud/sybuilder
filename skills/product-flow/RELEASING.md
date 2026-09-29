@@ -1,5 +1,7 @@
 # Releasing product-flow within SYBuilder
 
+> ⚠️ 单仓分发（不带 SYBuilder 套件根）时,本文的 `../../` 链接不可达——发布检查表在套件仓根;此场景按本文件正文纪律执行,缺失的套件资产逐项记 UNABLE。
+
 Publish **one suite from the repository root**, including all three Skills and shared modules.
 Do not export this subdirectory alone: that drops shared contracts and third-party notices.
 

@@ -164,8 +164,9 @@ fireworks-tech-graph/
 ### 场景 1：验证现有 SVG
 
 ```bash
-SKILL_ROOT=~/.agents/skills/fireworks-tech-graph # Codex
-# SKILL_ROOT=~/.claude/skills/fireworks-tech-graph # Claude Code
+# ⭐ 本模块已随 SYBuilder 仓分发（modules/diagramming/ 即 SKILL_ROOT 本体）——
+#   2026-09-29 评审 M14:不要再指向外部安装位,MODULE.md 明令不依赖单独安装的 fireworks-tech-graph。
+SKILL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 "$SKILL_ROOT/scripts/validate-svg.sh" /path/to/your-diagram.svg
 ```
 
@@ -182,8 +183,9 @@ SKILL_ROOT=~/.agents/skills/fireworks-tech-graph # Codex
 ### 场景 3：批量测试所有风格
 
 ```bash
-SKILL_ROOT=~/.agents/skills/fireworks-tech-graph # Codex
-# SKILL_ROOT=~/.claude/skills/fireworks-tech-graph # Claude Code
+# ⭐ 本模块已随 SYBuilder 仓分发（modules/diagramming/ 即 SKILL_ROOT 本体）——
+#   2026-09-29 评审 M14:不要再指向外部安装位,MODULE.md 明令不依赖单独安装的 fireworks-tech-graph。
+SKILL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 "$SKILL_ROOT/scripts/test-all-styles.sh"
 ```
 

@@ -266,7 +266,7 @@ def r_ref(root):
             # ⚠️ 必须排除「别的 skill 的 references/」——实测 web-design-engineer 的
             #    advanced-patterns.md 被误判成本 skill 缺文件。
             if re.search(r'(?<![\w/-])(references|scripts|templates)/' + re.escape(fn), s):
-                line = s[:m.start()].count('\n') + 1
+                line = s.count('\n', 0, m.start()) + 1
                 bad.append("%s:%d 引用 %s，本 skill 内不存在" % (os.path.relpath(f, root), line, fn))
     return (not bad), bad or "引用都存在"
 
@@ -394,7 +394,7 @@ def r_gate_n(root):
             v = m.group(1)
             got = cn2int(v)
             if got and got != n:
-                line = s[:m.start()].count('\n') + 1
+                line = s.count('\n', 0, m.start()) + 1
                 bad.append("%s:%d 声称 %s 道门禁，实际 %d 道" % (os.path.relpath(f, root), line, v, n))
     # 🚨 2026-09-12：量程**第三次**被发现开小了 —— 这次漏的是**图源**。
     #   实测代价：我当天新画的三张示例图里，`(30 道)`、`41 道`、`(41 道)` 三处全错，

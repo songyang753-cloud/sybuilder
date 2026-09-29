@@ -51,7 +51,10 @@ def self_test():
         return 2
     import unittest
     tests = Path(__file__).resolve().parents[1] / 'tests'
+    # 2026-09-29 评审 M14 建议补:delivery-depth 回归此前只被 verify-suite 的
+    # `test_*depth.py` discover 覆盖,本门自证口径漏了它——两条契约同属 PRD 写作面,一并加载。
     suite = unittest.defaultTestLoader.discover(str(tests), pattern='test_writing_contract.py')
+    suite.addTests(unittest.defaultTestLoader.discover(str(tests), pattern='test_delivery_depth.py'))
     class Result(unittest.TextTestResult):
         def startTest(self, test):
             if not hasattr(self, 'checked_names'):

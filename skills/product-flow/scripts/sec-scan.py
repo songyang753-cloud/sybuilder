@@ -63,7 +63,7 @@ def scan(target):
         except Exception: continue
         for sec, rid, desc, pat, why in RULES:
             for m in pat.finditer(s):
-                line = s[:m.start()].count('\n') + 1
+                line = s.count('\n', 0, m.start()) + 1  # 不复制前缀:MB 级产物×千命中时 O(n·m) 会退化
                 # Do not echo source lines, secret prefixes or unrelated secrets
                 # adjacent to a match. Location and rule are sufficient to fix it.
                 txt = '<匹配 %d 字符；内容不回显>' % len(m.group(0))

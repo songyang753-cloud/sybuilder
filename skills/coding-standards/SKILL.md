@@ -5,7 +5,7 @@ description: 研发阶段的编程规范与准则——写代码的当下遵守�
 
 # 编程规范与准则（研发阶段）
 
-分发前提：保留完整 SYBuilder 套件（兄弟 Skill、根 scripts/shared、NOTICE/THIRD_PARTY 与 licenses）；不支持只复制本目录后宣称验收通过。安装及限制见 [套件环境](../../docs/supported-environments.md)。
+分发前提：保留完整 SYBuilder 套件（兄弟 Skill、根 scripts/shared、NOTICE/THIRD_PARTY 与 licenses）；不支持只复制本目录后宣称验收通过。安装及限制见 SYBuilder 套件根 `docs/supported-environments.md`（套件内文档；单仓分发本 skill 时不可达,此时以本文件与 DEPENDENCIES 层为准,缺的套件资产按 UNABLE 处理）。
 
 **一句话**：别人的规范教你把代码写得好看；这份还要求你写的每一段**报告自己状态的代码**——返回值、日志、状态字段、健康检查、注释里的保证——都是它所声称那件事的**真实函数**。
 

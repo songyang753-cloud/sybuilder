@@ -1,6 +1,7 @@
 # Node CI jobs: paste under jobs:. Security checks block by default; no blanket waiver.
 # Historical debt requires a separately reviewed, owner/expiry-bound policy; this template grants none.
   frontend:
+    timeout-minutes: 15  # 2026-09-29 评审 M15:阻塞点要有墙钟超时(承重层 F1)
     name: 前端 (Node/TS)
     runs-on: ubuntu-latest
     permissions:
@@ -36,6 +37,7 @@
 
   # 跨语言通用的密钥扫描 job（任意栈都建议加）
   security:
+    timeout-minutes: 15  # 2026-09-29 评审 M15:阻塞点要有墙钟超时(承重层 F1)
     name: 安全 (密钥扫描)
     runs-on: ubuntu-latest
     permissions:

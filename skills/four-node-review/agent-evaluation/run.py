@@ -75,9 +75,50 @@ def validate_command(root, command, entry):
         raise Unable('runner/judge must be nonempty argv arrays')
     if (root / command[0]).resolve() == entry:
         return [str(entry)] + command[1:]
-    launcher = str(root / command[0]) if '/' in command[0] and not Path(command[0]).is_absolute() else command[0]
-    executable = shutil.which(launcher)
-    if not executable or not re.fullmatch(r'python(?:3(?:\.\d+)?)?|node(?:js)?', Path(command[0]).name):
+    # 2026-09-29 评审 M16-1:含路径的 command[0](如 /tmp/python3 或 x/python3)曾被
+    # shutil.which 原样放行、仅 basename 匹配解释器正则——改名 python3 的任意可执行
+    # 可通过并被执行,与 MODULE.md「命令数组必须调用已登记入口」不符。
+    # 修复(保留既有 venv launcher 契约:解析 symlink 会改 sys.prefix,不能 which 重解析):
+    #   · 相对路径(x/python3、./python3)→ 一律拒;
+    #   · 绝对路径 → realpath 的 basename 须匹配解释器正则,并做「解释器自证」——
+    #     真 Python/Node 会报告自身可执行路径(sys.executable / process.execPath),
+    #     改名的脚本要么挂掉要么答不上来(测行为,不测措辞);
+    #   · 裸名 → 走 PATH(操作者把 venv bin 放入 PATH 即可)。
+    _INTERP = r'python(?:3(?:\.\d+)?)?|node(?:js)?'
+    if '/' in command[0]:
+        candidate = Path(command[0])
+        if not candidate.is_absolute():
+            # 既有契约:项目内相对路径 venv launcher(如 venv/bin/python3)合法——
+            # 解析到项目根之下,⛔ 拒 ../ 越界;随后与绝对路径走同一套解释器自证。
+            candidate = (root / command[0])
+            # ⚠️ 越界判定用词法正规化(abspath,不跟 symlink):venv/bin/python3 是
+            #    指向系统解释器的 symlink,resolve() 会穿透到 root 外造成合法 venv 误判。
+            if '..' in Path(command[0]).parts or not Path(os.path.abspath(candidate)).is_relative_to(Path(os.path.abspath(root))):
+                raise Unable('relative interpreter escapes the project root: %r' % command[0])
+        if not candidate.is_file():
+            raise Unable('absolute interpreter does not exist: %r' % command[0])
+        real = candidate.resolve()
+        if not re.fullmatch(_INTERP, real.name):
+            raise Unable('absolute interpreter resolves to %r (expected a Python/Node interpreter name)'
+                         % real.name)
+        try:
+            if real.name.startswith('python'):
+                probe = subprocess.run([str(candidate), '-c', 'import sys; print(sys.executable)'],
+                                       capture_output=True, text=True, timeout=15)
+            else:
+                probe = subprocess.run([str(candidate), '-e', 'console.log(process.execPath)'],
+                                       capture_output=True, text=True, timeout=15)
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise Unable('interpreter self-identification failed for %r: %s' % (command[0], exc))
+        # ⚠️ macOS 的 /var→/private/var 一类 OS 级 symlink 会让 sys.executable 报「解析后」
+        #    路径——比对两侧各 resolve,消除正规化差异;传给 Popen 的仍是原 candidate(venv 语义)。
+        if probe.returncode != 0 or Path(probe.stdout.strip()).resolve() != candidate.resolve():
+            raise Unable('absolute interpreter failed self-identification (not a real Python/Node '
+                         'interpreter at %r)' % command[0])
+        executable = str(candidate)
+    else:
+        executable = shutil.which(command[0])
+    if not executable or not re.fullmatch(_INTERP, command[0] if '/' not in command[0] else Path(executable).name):
         raise Unable('command must directly invoke registered entry or Python/Node interpreter')
     index = 1
     safe_flags = {'-B', '-u', '-I', '-E'} if Path(command[0]).name.startswith('python') else set()
@@ -103,6 +144,14 @@ def validate_controls(controls):
     if {c.get('expected') for c in controls} != {'PASS', 'FAIL'}:
         raise Unable('judge requires positive AND negative controls')
     for control in controls:
+        # 2026-09-29 评审 M16 建议:failDimensions 校验此前只在带 scoreBounds 的控制例上做,
+        # 字符串形态(如 "safety")会漏到执行期逐字符迭代抛 KeyError、reason 只剩类名。
+        if control.get('expected') == 'FAIL':
+            dims = control.get('failDimensions', list(DIMENSIONS))
+            if (not isinstance(dims, list) or not dims
+                    or any(d not in DIMENSIONS for d in dims)):
+                raise Unable('FAIL control %r: failDimensions must be a nonempty list of the six '
+                             'dimensions (got %r)' % (control.get('input'), dims))
         if 'scoreBounds' not in control:
             continue
         bounds = control['scoreBounds']
@@ -190,9 +239,14 @@ def load_and_check_config(config_path):
     return cfg, cases, baseline, fingerprints, commands, plan
 
 
+def _private_fd(path):
+    """O_EXCL + 0600 的单一落盘口(2026-09-29 评审 M16:三处私写曾各写一遍,权限/发布语义须单源)。"""
+    return os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'wb')
+
+
 def write_private_json(path, value):
-    with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'w') as stream:
-        json.dump(value, stream, ensure_ascii=False, indent=2)
+    with _private_fd(path) as stream:
+        stream.write(json.dumps(value, ensure_ascii=False, indent=2).encode('utf-8'))
         stream.flush()
         os.fsync(stream.fileno())
 
@@ -203,9 +257,13 @@ def git_evidence_check(output):
         repo = subprocess.run(['git', '-C', str(output.parent), 'rev-parse', '--show-toplevel'],
                               capture_output=True, text=True, timeout=3)
         if repo.returncode:
-            if 'not a git repository' in repo.stderr.lower():
+            # 2026-09-29 评审 M16 建议:英文关键词判定在非英文 locale 失效(测措辞违背自家判据)。
+            # 结构化判定:rev-parse 的 128 = 不在仓库内(退出码是结构化信号,不依赖消息语言);
+            # 其它非零(git 缺失/损坏/权限)才 check-unavailable,stderr 原文保留在告警里。
+            if repo.returncode == 128:
                 return 'outside-git'
-            print('WARNING: could not establish whether evidence is in Git.', file=sys.stderr)
+            print('WARNING: could not establish whether evidence is in Git: %s'
+                  % repo.stderr.strip()[:200], file=sys.stderr)
             return 'check-unavailable'
         root = Path(repo.stdout.strip()).resolve()
         rel = output.resolve().relative_to(root).as_posix()
@@ -281,10 +339,13 @@ def run_owned(command, root, request_bytes, timeout, folder, max_output, budget)
         # Only this newly created group; never enumerate/kill unrelated services.
         # Reap before flushing: disk/fsync errors must not bypass process cleanup.
         if child is not None:
+            # 2026-09-29 评审 M16:子进程已被回收后对 child.pid killpg 存在 pgid 复用窗口;
+            # 且 ProcessLookupError 之外的 OSError(如 EPERM)会从 finally 逃逸、跳过证据落盘。
             for sig in (signal.SIGTERM, signal.SIGKILL):
                 try:
-                    os.killpg(child.pid, sig)
-                except ProcessLookupError:
+                    if child.returncode is None:
+                        os.killpg(child.pid, sig)
+                except OSError:
                     pass
                 try:
                     child.wait(timeout=0.2 if sig == signal.SIGTERM else 3)
@@ -332,7 +393,7 @@ def execute(config_path, output):
         try:
             if len(request_bytes) > min(plan['maxRequestBytes'], budget['remaining']):
                 raise Unable('request/evidence byte budget exhausted before call')
-            with os.fdopen(os.open(folder / 'request.json', os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'wb') as stream:
+            with _private_fd(folder / 'request.json') as stream:
                 stream.write(request_bytes)
                 stream.flush()
                 os.fsync(stream.fileno())
@@ -408,9 +469,8 @@ def execute(config_path, output):
         return 3
     finally:
         partial = output / ('.result-' + report['runId'])
-        fd = os.open(partial, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        with os.fdopen(fd, 'w') as stream:
-            json.dump(report, stream, ensure_ascii=False, indent=2)
+        with _private_fd(partial) as stream:
+            stream.write(json.dumps(report, ensure_ascii=False, indent=2).encode('utf-8'))
             stream.flush()
             os.fsync(stream.fileno())
         # Publish only a complete file, without replacing any existing evidence.

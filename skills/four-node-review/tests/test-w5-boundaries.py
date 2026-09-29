@@ -13,7 +13,7 @@ import unittest
 import venv
 from unittest.mock import patch
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[3]
 ENTRY = ROOT / 'skills/four-node-review/agent-evaluation/run.py'
 spec = importlib.util.spec_from_file_location('w5_boundaries', ENTRY)
 w5 = importlib.util.module_from_spec(spec)
@@ -27,7 +27,7 @@ class Boundaries(unittest.TestCase):
         self.root = Path(self.temp.name) / 'project'
         self.root.mkdir()
         self.adapter = self.root / 'adapter.py'
-        shutil.copyfile(ROOT / 'scripts/test-w5-adapter.py', self.adapter)
+        shutil.copyfile(Path(__file__).resolve().parent / 'test-w5-adapter.py', self.adapter)
         self.suite = self.root / 'suite.json'
         self.suite.write_text(json.dumps({'cases': [{'id': 'C1', 'input': 'synthetic'}]}))
         (self.root / 'baseline.json').write_text(json.dumps({
@@ -36,8 +36,9 @@ class Boundaries(unittest.TestCase):
                     'productionContract': {'promptRef': 'suite.json', 'toolSchemaRef': 'suite.json',
                                            'adapterRef': 'adapter.py', 'judgeRef': 'adapter.py'},
                     'suiteRef': 'suite.json', 'baselineRef': 'baseline.json',
-                    'runner': [sys.executable, 'adapter.py', 'runner'],
-                    'judge': [sys.executable, 'adapter.py', 'judge'],
+                    # 2026-09-29 评审 M16-1:解释器只允许裸名——夹具同步(原 sys.executable 含 '/')
+                    'runner': ['python3', 'adapter.py', 'runner'],
+                    'judge': ['python3', 'adapter.py', 'judge'],
                     'judgeControls': [{'expected': 'PASS', 'input': {'trace': {'knownBad': False}}},
                                       {'expected': 'FAIL', 'input': {'trace': {'knownBad': True}}}]}
         self.index = 0
@@ -103,6 +104,51 @@ class Boundaries(unittest.TestCase):
             proc, report, _ = self.run_config(dict(self.cfg, judge=argv))
             self.assertEqual(proc.returncode, 3)
             self.assertEqual(report.get('records', []), [])
+
+    def test_interpreter_path_injection_rejected(self):
+        # 2026-09-29 评审 M16-1:改名 python3 的任意可执行(含路径的 command[0])不得通过校验。
+        for argv in [['../outside/python3', 'adapter.py'],
+                     ['../../etc/python3', 'adapter.py']]:
+            proc, report, _ = self.run_config(dict(self.cfg, runner=argv))
+            self.assertEqual(proc.returncode, 3)
+            self.assertEqual(report.get('records', []), [])
+            self.assertIn('escapes the project root', str(report.get('reason', '')))
+        # 绝对路径但不存在 → 拒;存在但非真解释器(改名的 sh 脚本)→ 自证不过而拒
+        proc, report, _ = self.run_config(dict(self.cfg, runner=['/nonexistent-path/python3', 'adapter.py']))
+        self.assertEqual(proc.returncode, 3)
+        self.assertIn('does not exist', str(report.get('reason', '')))
+        fake = self.root / 'python3'
+        fake.write_text('#!/bin/sh\necho not-a-python\n')
+        fake.chmod(0o755)
+        proc, report, _ = self.run_config(dict(self.cfg, runner=[str(fake), 'adapter.py', 'runner']))
+        self.assertEqual(proc.returncode, 3)
+        self.assertEqual(report.get('records', []), [])
+        self.assertIn('self-identification', str(report.get('reason', '')))
+
+    def test_fail_dimensions_type_validated_for_all_fail_controls(self):
+        # 2026-09-29 评审 M16 建议:无 scoreBounds 的 FAIL 控制例此前不校验 failDimensions,
+        # 字符串形态漏到执行期抛 KeyError、reason 只剩类名。
+        proc, report, _ = self.run_config(dict(self.cfg,
+            judgeControls=[{'expected': 'PASS', 'input': {'trace': {'knownBad': False}}},
+                           {'expected': 'FAIL', 'failDimensions': 'safety',
+                            'input': {'trace': {'knownBad': True}}}]))
+        self.assertEqual(proc.returncode, 3)
+        reason = str(report.get('reason', ''))
+        self.assertIn('failDimensions', reason)
+        self.assertIn('knownBad', reason)  # 报文指明是哪个控制例
+        proc, report, _ = self.run_config(dict(self.cfg,
+            judgeControls=[{'expected': 'PASS', 'input': {'trace': {'knownBad': False}}},
+                           {'expected': 'FAIL', 'failDimensions': ['not-a-dimension'],
+                            'input': {'trace': {'knownBad': True}}}]))
+        self.assertEqual(proc.returncode, 3)
+        self.assertIn('six dimensions', str(report.get('reason', '')))
+
+    def test_private_writes_are_0600(self):
+        # 2026-09-29 评审 M16:私写抽 _private_fd 单源后,权限契约不回退(正常执行后查产物权限)。
+        proc, _, out = self.run_config()
+        self.assertEqual(proc.returncode, 0)
+        for name in ('result.json',):
+            self.assertEqual((out / name).stat().st_mode & 0o777, 0o600)
 
     def test_no_execute_and_no_overwrite(self):
         proc, _, out = self.run_config(execute=False)

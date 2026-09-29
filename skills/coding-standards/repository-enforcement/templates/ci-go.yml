@@ -4,6 +4,7 @@
 #           和 `go get -tool golang.org/x/vuln/cmd/govulncheck@<ver>`（Go≥1.24），
 #           会写进 go.mod 的 tool 指令 + go.sum 锁定，CI 用 `go tool X` 调用即可复现。
   backend:
+    timeout-minutes: 15  # 2026-09-29 评审 M15:阻塞点要有墙钟超时(承重层 F1)
     name: 后端 (Go)
     runs-on: ubuntu-latest
     permissions:

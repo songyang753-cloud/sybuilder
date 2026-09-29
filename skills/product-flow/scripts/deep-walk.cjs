@@ -12,11 +12,16 @@ const fs = require('fs');
 const { connect, clickExpression, actionBlockReason, loadActionPolicy, privatePageMetadata } = require('./_cdp.js');
 
 const PORT = parseInt(process.argv[2]);
+if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) { console.error('port must be 1..65535'); process.exit(2); }
 const OUT = process.argv[3];
 const argN = (k, d) => { const i = process.argv.indexOf(k); return i >= 0 ? parseInt(process.argv[i + 1]) : d; };
 const argS = (k, d) => { const i = process.argv.indexOf(k); return i >= 0 ? process.argv[i + 1] : d; };
-const MAX_DEPTH = argN('--depth', 6);
-const MAX_ACTIONS = argN('--max', 200);
+// 2026-09-29 评审 M14:NaN 会让预算上限静默失效仍退 0——非法即退 2(UNABLE),不产出受控证据。
+const intOrDie = (k, d, lo, hi) => { const v = argN(k, d);
+  if (!Number.isInteger(v) || v < lo || v > hi) { console.error(`${k} must be integer ${lo}..${hi}`); process.exit(2); }
+  return v; };
+const MAX_DEPTH = intOrDie('--depth', 6, 1, 50);
+const MAX_ACTIONS = intOrDie('--max', 200, 1, 100000);
 const PICK = argS('--pick', '');
 const policy = loadActionPolicy(argS('--actions', ''));
 

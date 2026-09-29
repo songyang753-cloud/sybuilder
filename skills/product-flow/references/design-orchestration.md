@@ -281,7 +281,7 @@ DESIGN.md 技术可行性审查：
 ```bash
 python3 scripts/token-provenance-gate.py design/tokens.json --asm prd/附件B.md
 python3 scripts/ai-slop-gate.py design/ --profile zh
-node ~/.claude/skills/impeccable/scripts/detect.mjs --json <样例页面>
+node <impeccable skill 实际安装位>/scripts/detect.mjs（外部 AI 审查,可选;未安装记 UNABLE,⛔ 不是硬依赖） --json <样例页面>
 ```
 
 ⚠️ **detect.mjs 的诚实边界**：它有四个引擎，但**静态文件下只跑得动 3 个**——
