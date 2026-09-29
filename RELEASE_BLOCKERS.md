@@ -11,7 +11,8 @@ is unchecked**. No stable tag or production-readiness claim should be made yet.
 
 ## P0 — required before a stable release
 
-- [ ] Verify the exact final stable artifact from a clean clone: clean installation, rendered-image review and two fresh full verifications. Previous successful runs are historical evidence only.
+- [x] Verify the exact final stable artifact from a clean clone: clean installation, rendered-image review and two fresh full verifications. Previous successful runs are historical evidence only.
+  - Verified 2026-09-29 on the post-rewrite public HEAD: fresh clone, pinned deps in a fresh venv, `install.sh` clean installation into an empty target (three Skills linked, no partial state), two consecutive `verify-suite.sh --full` runs both green (86 scripts / 1463 cases / 0 failures each), and diagram style samples visually reviewed (layout, CJK text, connectors; no overflow/overlap).
 - [ ] Complete the separately authorized Git-history privacy response. Current files no longer reproduce the previously tracked user-content labels, but older public Git objects remain reachable; ordinary commits cannot remove copies, forks or cached objects. Do not claim historical erasure without a coordinated rewrite and host-side follow-up.
 - [ ] Validate W5 using an explicitly authorized production project adapter, judge and baseline. Missing production evidence remains UNABLE; installation grants no model or private-project access.
 - [ ] Validate native Feishu and DingTalk delivery with authorized test accounts: text, tables, real images, per-image identity/section placement, raw readback, conflict behavior and delivery receipts. Offline fixtures are not native compatibility evidence.
