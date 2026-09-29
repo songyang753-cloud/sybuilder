@@ -64,7 +64,7 @@ def scan_files(root, paths, terms=()):
             if any(term.casefold() in line.casefold() for term in terms):
                 findings.append(f"{rel}:{line_no}: external-private-denylist")
             # ⭐ 2026-09-29 真机投递实测：d2 渲染的 SVG 里，贝塞尔 path 坐标
-            #   （如 `C 92.198997 106 79 126 79 162`）恰好匹配手机号模式——
+            #   （多段浮点坐标用空格相连）恰好构成手机号模式——
             #   图形坐标不是个人数据。对 svg 的 path data 属性先剥离再扫电话规则；
             #   ⛔ 其余规则与其余文件不受影响，SVG 文本节点里的真手机号仍会红。
             if path.suffix.lower() == '.svg':
