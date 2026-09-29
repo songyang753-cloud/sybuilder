@@ -60,17 +60,18 @@ def scan_files(root, paths, terms=()):
                 text = json.dumps(data, ensure_ascii=False)
             except ValueError:
                 findings.append(f'{rel}: invalid-json-export')
-        for line_no, line in enumerate(text.splitlines(), 1):
+        # ⭐ 2026-09-29 真机投递实测+二轮评审#8：d2 渲染的 SVG 里，贝塞尔 path 坐标
+        #   恰好构成手机号模式——图形坐标不是个人数据。对 svg 在**整文件级**剥离
+        #   path data(单双引号两种属性形态、跨行 path data 都覆盖；逐行版对多行
+        #   path 与单引号形态失配);⛔ 只影响电话规则,SVG 文本节点里的真手机号仍红。
+        if path.suffix.lower() == '.svg':
+            text_scan = re.sub(r"d=(?:\"[^\"]*\"|'[^']*')", 'd=""', text, flags=re.S)
+        else:
+            text_scan = text
+        for line_no, line in enumerate(text_scan.splitlines(), 1):
             if any(term.casefold() in line.casefold() for term in terms):
                 findings.append(f"{rel}:{line_no}: external-private-denylist")
-            # ⭐ 2026-09-29 真机投递实测：d2 渲染的 SVG 里，贝塞尔 path 坐标
-            #   （多段浮点坐标用空格相连）恰好构成手机号模式——
-            #   图形坐标不是个人数据。对 svg 的 path data 属性先剥离再扫电话规则；
-            #   ⛔ 其余规则与其余文件不受影响，SVG 文本节点里的真手机号仍会红。
-            if path.suffix.lower() == '.svg':
-                scan_line = re.sub(r'd="[^"]*"', 'd=""', line)
-            else:
-                scan_line = line
+            scan_line = line
             for name, pattern in PATTERNS.items():
                 for match in pattern.finditer(scan_line if name == 'phone-like-personal-data' else line):
                     # One audited synthetic security-test value; other values in

@@ -175,8 +175,8 @@ SKILL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 1. 使用 Codex 或 Claude Code 生成 SVG 内容
 2. 运行验证和导出：
    ```bash
-   SKILL_ROOT=~/.agents/skills/fireworks-tech-graph # Codex
-   # SKILL_ROOT=~/.claude/skills/fireworks-tech-graph # Claude Code
+   # 本模块已随仓分发——SKILL_ROOT 直接指向模块根(2026-09-29 二轮评审#10:场景2 漏改,与场景1/3 统一)
+   SKILL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
    "$SKILL_ROOT/scripts/generate-diagram.sh" -t architecture -s 1 -o ./output/arch.svg
    ```
 

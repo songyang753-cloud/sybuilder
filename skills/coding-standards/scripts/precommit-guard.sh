@@ -30,9 +30,14 @@ files(){ git -C "${REPO}" ls-files -com --exclude-standard "${REL}/" | sort -u; 
 # 2026-09-29 评审 M15-2:shasum 缺失(精简容器常只有 sha256sum)时,旧实现输出空串、
 # before==after 恒真 → D30 假绿仍打✓。回退 + 指纹格式断言,量具坏了报 UNABLE 不报 PASS(A1/A3)。
 hash256(){ command -v shasum >/dev/null 2>&1 && shasum -a 256 || command -v sha256sum >/dev/null 2>&1 && sha256sum || { echo "HASH-TOOL-MISSING" >&2; return 1; }; }
-snap(){ files | while IFS= read -r f; do [ -f "${REPO}/${f}" ] && hash256 "${REPO}/${f}"; done | hash256 | cut -c1-16; }
-fingerprint_or_die(){ local v; v="$(snap)" || { echo "UNABLE  哈希工具缺席(shasum/sha256sum 都不可用)——D30 并发检测没法做,这次不算数(A1)"; exit 3; }
-  case "${v}" in [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) printf '%s' "${v}" ;; *) echo "UNABLE  指纹形态非法——量具异常,结论不可采信"; exit 3 ;; esac; }
+# 2026-09-29 二轮评审#4:逐文件哈希失败必须传播(管道曾吞掉=指纹静默少文件);先验完整 64 位再截短。
+snap64(){ files | while IFS= read -r f; do [ -f "${REPO}/${f}" ] && hash256 "${REPO}/${f}" || exit 3; done | hash256 || exit 3; }
+fingerprint_or_die(){ local v; v="$(snap64)" || { echo "UNABLE  哈希工具缺席或单文件哈希失败——D30 没法做,这次不算数(A1)"; exit 3; }
+  # hash256 的 &&/|| 回退链在管道里可能连打两行(汇总+空输入哈希)——取首行首字段,
+  # 再做完整 64 位断言(截短前的完整形态才可判量具健康)。
+  v="$(printf '%s' "${v}" | head -1 | awk '{print $1}')"
+  if [ "${#v}" -ne 64 ] || [ -n "$(printf '%s' "${v}" | tr -d '0-9a-f')" ]; then echo "UNABLE  指纹形态非法(长度 ${#v})——量具异常,结论不可采信"; exit 3; fi
+  printf '%s' "${v}" | cut -c1-16; }
 
 n=$(files | ${GREP:-/usr/bin/grep} -c . || true)
 if [ "${n:-0}" -lt "${MIN}" ]; then
@@ -66,9 +71,9 @@ if ! git -C "${REPO}" diff --quiet -- "${REL}"; then
   git -C "${REPO}" diff --name-only -- "${REL}" | sed 's/^/          /'
   exit 3
 fi
-before="$(fingerprint_or_die)"
+before="$(fingerprint_or_die)" || exit 3  # 2026-09-29 二轮评审#4:子 shell exit 不外传
 bash "${DIR}/scripts/selfcheck.sh" > "${GATE_OUT}" 2>&1; rc=$?
-after="$(fingerprint_or_die)"
+after="$(fingerprint_or_die)" || exit 3
 
 printf '文件 %d 个 · 门禁 rc=%s · 工作区==暂存(已验一致,D30) · 指纹 %s -> %s\n' "${n}" "${rc}" "${before}" "${after}"
 if [ "${before}" != "${after}" ]; then

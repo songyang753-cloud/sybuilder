@@ -13,11 +13,15 @@ const { connect, clickExpression, actionBlockReason, loadActionPolicy, privatePa
 
 const PORT = parseInt(process.argv[2]);
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) { console.error('port must be 1..65535'); process.exit(2); }
-const OUT = process.argv[3];
+const OUT_ARG = process.argv[3];
+if (!OUT_ARG) { console.error('missing OUT argument (output directory)'); process.exit(2); }  // 2026-09-29 二轮评审#6:缺参曾建字面量 undefined/ 目录
+const OUT = OUT_ARG;
 const argN = (k, d) => { const i = process.argv.indexOf(k); return i >= 0 ? parseInt(process.argv[i + 1]) : d; };
 const argS = (k, d) => { const i = process.argv.indexOf(k); return i >= 0 ? process.argv[i + 1] : d; };
 // 2026-09-29 评审 M14:NaN 会让预算上限静默失效仍退 0——非法即退 2(UNABLE),不产出受控证据。
-const intOrDie = (k, d, lo, hi) => { const v = argN(k, d);
+const intOrDie = (k, d, lo, hi) => { const i = process.argv.indexOf(k); const raw0 = i >= 0 ? process.argv[i + 1] : String(d);
+  if (!/^\d+$/.test(raw0)) { console.error(`${k} must be decimal digits`); process.exit(2); }  // 2026-09-29 二轮评审#7
+  const v = argN(k, d);
   if (!Number.isInteger(v) || v < lo || v > hi) { console.error(`${k} must be integer ${lo}..${hi}`); process.exit(2); }
   return v; };
 const MAX_DEPTH = intOrDie('--depth', 6, 1, 50);

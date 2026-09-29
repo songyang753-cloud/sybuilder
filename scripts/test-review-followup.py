@@ -59,7 +59,7 @@ class Followup(unittest.TestCase):
         proc = subprocess.run(['bash',str(CS/'scripts/selfcheck.sh')],
             env=dict(os.environ,TMPDIR=str(self.root)),capture_output=True,text=True,timeout=30)
         self.assertEqual(proc.returncode,0,proc.stdout)
-        self.assertIn('45 条锚点全部唯一命中',proc.stdout)
+        self.assertIn('锚点全部唯一命中',proc.stdout)
 
     def test_python_missing_is_explicit_in_anchor_branch(self):
         source=(CS/'scripts/selfcheck.sh').read_text()

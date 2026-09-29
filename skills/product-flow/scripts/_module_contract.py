@@ -10,7 +10,8 @@ import os
 from _workflow import (WorkflowError, canonical_bytes, claim_min, gate_result_dir,
                        load_active_run, load_registry, sha256_file,
                        validate_manifest, gate_evidence, evidence_current, output_was_tested,
-                       required_rule_ids)
+                       required_rule_ids,
+                       valid_runtime_id)
 
 
 def _read(path, label='JSON'):
@@ -84,6 +85,7 @@ def issue_result(root, draft_path):
     inputs_hash = _sha(inputs)
     result_id = draft.get('resultId') or 'MR-%s-%s-%s' % (
         manifest['runId'], module_id.replace('.', ''), inputs_hash[:12])
+    valid_runtime_id(result_id, 'draft.resultId')  # 用户 supplied 的路径成分,⛔ 必须过白名单
     module_rules = _rules_for_module(registry, module_id)
     gate_results, seen = [], set()
     for item in manifest.get('gatePlan', []):
@@ -261,6 +263,8 @@ def import_result(root, result_path):
         raise WorkflowError('导入要求 v2 活动运行')
     result_path = os.path.abspath(result_path)
     result = verify_result(result_path)
+    valid_runtime_id(result['resultId'], '导入结果 resultId')  # 跨仓读回,同样不可信
+    valid_runtime_id(result.get('sourceRunId'), '导入结果 sourceRunId')
     expected = {x['dependency'] for x in manifest.get('externalInputs', [])}
     if result['moduleId'] not in expected:
         raise WorkflowError('%s 不是当前计划声明的外部依赖：%s'

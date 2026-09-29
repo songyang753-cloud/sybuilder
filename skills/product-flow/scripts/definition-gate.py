@@ -614,30 +614,45 @@ def check(path, proposals=None):
         #   收窄：只查**表头含「现状」列**的那张表的该列；其它表（护栏/目标）不适用本判据。
         _bad = []
         _checked = 0
+        _lines = goal.splitlines()
         _in_tbl = False
-        _col = None
-        for l in goal.splitlines():
+        # 2026-09-29 二轮评审 opencode#3:表头判定加「下一行是分隔行」的 markdown 表头
+        #   形态约束(数据行某格以「现状」开头曾劫持状态机);短行(列数不足)按「现状空」记。
+        _is_sep = lambda x: bool(x.strip().startswith('|')) and set(x.replace('|', '').replace('-', '').replace(':', '').strip()) <= set()
+        for li, l in enumerate(_lines):
             t = l.strip()
             if not t.startswith('|'):
-                _in_tbl, _col = False, None
+                _in_tbl = False
                 continue
             cells = [c.strip() for c in t.strip('|').split('|')]
-            if set(''.join(cells)) <= set('-: '):
+            if _is_sep(t):
                 continue
             if not _in_tbl:
-                # 新表：表头行须含独立的「现状」列（整格等于或以「现状」开头），否则整表跳过
-                _col = next((i for i, c in enumerate(cells) if c == '现状' or c.startswith('现状')), None)
-                _in_tbl = _col is not None
+                # 新表：首行(表头)须含「现状」列 且 紧邻分隔行,否则整表跳过
+                nxt = _lines[li + 1].strip() if li + 1 < len(_lines) else ''
+                if _is_sep(nxt):
+                    _col = next((i for i, c in enumerate(cells) if c == '现状' or (c.startswith('现状') and len(c) <= 6)), None)
+                    _in_tbl = _col is not None
+                else:
+                    _in_tbl = False
                 continue
-            if _col is None or _col >= len(cells):
+            if _col is None:
+                continue
+            if _col >= len(cells):
+                # 短行:现状格缺失=没想过,按「现状空」记(此前静默 continue=渲染空格逃逸)
+                _bad.append('「%s」行列数不足(现状格缺失) —— 没想过 ≠ 没有现状' % (cells[0][:12] if cells else ''))
+                _checked += 1
                 continue
             base = cells[_col]
             name = cells[0] if cells else ''
             _checked += 1
+            _PROV = re.compile(r'[\[（(§]|CLM|business-map|访谈|报表|实测|估算|内部|历史|TBD|无[（(]|待')
             if not base or re.search(r'<|占位|待填', base):
                 _bad.append('「%s」现状空 —— 没想过 ≠ 没有现状' % name[:12])
-            elif re.fullmatch(r'[\d.,万亿%\s/~-]+', base):
-                _bad.append('「%s」现状裸数字「%s」无出处 —— 引 business-map 指标/调研 CLM/报表，或写 TBD+owner'
+            elif not _PROV.search(base):
+                # 2026-09-29 二轮评审 opencode#2:黑名单(纯数字)可被「12000 张」「约 41%」绕过——
+                # 改白名单:现状格必须带出处标记(引用/CLM/来源词/显式 TBD·无),其余一律红。
+                _bad.append('「%s」现状「%s」无出处标记 —— 引 business-map 指标/调研 CLM/报表(带§或[]或括号来源)，或写 TBD+owner/无(新业务)'
                             % (name[:12], base[:14]))
         add("metric-baseline-provenance", "指标现状带出处（承接 S3A 实测，⛔ 裸数字=拍脑袋覆盖上游；仅查含「现状」列的表）",
             (not _bad) if _checked else None,
@@ -885,6 +900,25 @@ def self_test():
         ("反例 指标名含「现状」且该列裸数字 → 必须红（首版曾整行跳过=反向漏检）",
          GOOD.replace("| 检索成功率 | 41%（business-map 指标树实测）| 70% | 上线后 3 个月 | 埋点 |",
                       "| 库现状照片数 | 12000 | 15000 | 上线后 3 个月 | 埋点 |"), 1),
+        ("反例 现状带量词的裸数字「12000 张」→ 红（首版黑名单可绕）",
+         GOOD.replace("| 检索成功率 | 41%（business-map 指标树实测）| 70% | 上线后 3 个月 | 埋点 |",
+                      "| 月活 | 12000 张 | 15000 张 | 上线后 3 个月 | 埋点 |"), 1),
+        ("反例 现状「约 41%」无出处 → 红（程度词不是出处）",
+         GOOD.replace("| 检索成功率 | 41%（business-map 指标树实测）| 70% | 上线后 3 个月 | 埋点 |",
+                      "| 留存 | 约 41% | 50% | 上线后 3 个月 | 埋点 |"), 1),
+        ("正例 现状列在第 3 列(列序锁定)→ 按列受检不误抓其它列",
+         GOOD.replace("| 指标 | 现状 | 目标 | 时间窗 | 数据从哪来 |",
+                      "| 指标 | 优先级 | 现状 | 目标 | 数据从哪来 |").replace(
+                      "| 检索成功率 | 41%（business-map 指标树实测）| 70% | 上线后 3 个月 | 埋点 |",
+                      "| 检索成功率 | P0 | 12000（运营周报 2026-09）| 70% | 埋点 |"), 0),
+        ("反例 现状列在第 3 列且裸数字 → 必红(硬编码 cells[1] 的实现会漏)",
+         GOOD.replace("| 指标 | 现状 | 目标 | 时间窗 | 数据从哪来 |",
+                      "| 指标 | 优先级 | 现状 | 目标 | 数据从哪来 |").replace(
+                      "| 检索成功率 | 41%（business-map 指标树实测）| 70% | 上线后 3 个月 | 埋点 |",
+                      "| 检索成功率 | P0 | 12000 张 | 70% | 埋点 |"), 1),
+        ("正例 现状带报表出处「12000（运营周报 2026-09）」→ 绿",
+         GOOD.replace("| 检索成功率 | 41%（business-map 指标树实测）| 70% | 上线后 3 个月 | 埋点 |",
+                      "| 月活 | 12000（运营周报 2026-09）| 15000 | 上线后 3 个月 | 埋点 |"), 0),
         # ── 2026-09-29 真机试产：桌面原生是合法载体形态（词表曾漏）──
         ("正例 载体写「仅 macOS」→ 合法（桌面原生形态）",
          GOOD.replace("| 仅 web | 是 | L |", "| 仅 macOS | 是 | L |"), 0),

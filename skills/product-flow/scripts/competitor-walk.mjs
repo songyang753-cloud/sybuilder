@@ -17,13 +17,16 @@ const { connect, clickExpression, actionBlockReason, loadActionPolicy, privatePa
 
 const A = process.argv.slice(2);
 const PORT = A[0], OUT = A[1];
+if (!OUT && !A.includes('--help') && !A.includes('-h')) { console.error('missing OUT argument'); process.exit(2); }  // 2026-09-29 二轮评审#6:path.join(undefined) 曾未捕获 rc=1 违约;help 例外(登记册#1)
 const pick = A.includes('--pick') ? A[A.indexOf('--pick') + 1] : '';
 // 2026-09-29 评审 M14:parseInt('abc')=NaN 会让「step>=steps」恒假、遍历预算静默失效仍退 0——
 // 与 competitor-sweep.mjs 的 1..1000 校验同源:非法即 UNABLE(退 2),不产出受控证据。
 const intArg = (name, dflt, lo, hi) => {
   const i = A.indexOf(name);
   if (i < 0) return dflt;
-  const v = parseInt(A[i + 1]);
+  const raw = A[i + 1];
+  if (!/^\d+$/.test(raw || '')) { console.error(`${name} must be decimal digits（实得 ${raw}）`); process.exit(2); }  // 2026-09-29 二轮评审#7:parseInt('40abc')=40 前缀偏宽
+  const v = parseInt(raw, 10);
   if (!Number.isInteger(v) || v < lo || v > hi) {
     console.error(`${name} must be integer ${lo}..${hi}（实得 ${A[i + 1]}）`);
     process.exit(2);

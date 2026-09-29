@@ -848,13 +848,18 @@ for f in files:
         if not os.path.exists(p):
             # 2026-09-29 评审 M15-1:指向 SYBuilder 套件根(本 skill 目录之上)的链接,
             # 缺的是**套件资产**而非本 skill 写错——归 UNABLE(没能测),不与「文档写错」混为 FAIL。
-            # 2026-09-29 变异套件当场抓到首版判定写反(绝对路径恒以 skill 目录为前缀,
-            # 一切死链都被归成套件资产缺席)。正确口径:解析结果相对 skill 目录以 '..' 开头
-            # = 指向套件根 → UNABLE;skill 内不存在的路径 = 文档写错 → FAIL。
-            if os.path.relpath(os.path.abspath(p), os.path.abspath(os.path.dirname(d))).startswith('..'):
+            # 2026-09-29 二轮评审 codex#8:词法 '..' 会把任意仓外错链(如 ../../../../typo.md)
+            # 也归成套件资产缺席——白名单化:只有**已知套件根资产**才 UNABLE,其余仍 FAIL。
+            _SUITE_ASSETS = ('docs/', 'THIRD_PARTY.md', 'NOTICE', 'licenses/',
+                             'PUBLICATION_CHECKLIST.md', 'RELEASE_BLOCKERS.md',
+                             'CONTRIBUTING.md', 'README.md', 'DEPENDENCIES.md')
+            _t = t.split('#')[0].lstrip('./')
+            if _t in _SUITE_ASSETS or any(_t.startswith(a) for a in _SUITE_ASSETS):
                 badsuite.append('%s → %s'%(os.path.basename(f),t))
             else:
-                badf.append('%s → %s'%(os.path.basename(f),t))
+                badf.append('%s → %s%s'%(os.path.basename(f),t,
+                             '(仓外但非已知套件资产)' if os.path.relpath(
+                                 os.path.abspath(p), os.path.abspath(os.path.dirname(d))).startswith('..') else ''))
 if total<20:
     print('UNABLE 只扫到 %d 个链接（下限 20）——是解析坏了'%total); raise SystemExit
 p=[]; u=[]
@@ -867,6 +872,22 @@ else: print('PASS 链接完整性：%d 个 inline 链接（`[x](path)` 形态）
 LKEOF
 )"
 dispatch "${_lk}"
+
+# 10i-b hash/hook 行为夹具(2026-09-29 二轮评审 codex#9:此前 hash 回退/退出码分诊只有
+# 静态形状,变异可回退而自证仍绿——补两条子 shell 级行为断言)
+_bh=$(bash -c '
+  hash256(){ return 1; }   # 模拟哈希工具缺席
+  snap64(){ files(){ echo a.sh; }; files | while IFS= read -r f; do hash256 "$f" || exit 3; done | hash256 || exit 3; }
+  fingerprint_or_die(){ local v; v="$(snap64)" || { echo UNABLE; exit 3; }; }
+  fingerprint_or_die
+' 2>/dev/null; echo "rc=$?")
+case "${_bh}" in *UNABLE*rc=3*) pass "hash 行为夹具:工具缺席→UNABLE(rc3),不静默 PASS" ;;
+  *) fail "hash 行为夹具未按契约报 UNABLE(实得 ${_bh})" ;; esac
+_bp=$(bash -c '
+  _raw=$(printf "" ; false) || { echo HOOK-FAILCLOSED; exit 1; }
+' 2>/dev/null; echo "rc=$?")
+case "${_bp}" in *HOOK-FAILCLOSED*rc=1*) pass "hook 行为夹具:producer 失败→fail-closed(rc1)" ;;
+  *) fail "hook 行为夹具未 fail-closed(实得 ${_bp})" ;; esac
 
 # 10i2 代码围栏配对
 # 实测 2026-09-10：rules-load-bearing.md 里有**一个孤立的闭栏**（A4 那段散文末尾多写了一行 ```），

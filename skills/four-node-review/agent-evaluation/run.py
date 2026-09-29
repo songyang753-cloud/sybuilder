@@ -14,6 +14,7 @@ from pathlib import Path
 import re
 import selectors
 import shutil
+import errno
 import signal
 import subprocess
 import sys
@@ -70,6 +71,42 @@ def confined_file(root, ref):
     return path
 
 
+def _verify_interpreter(candidate, invoked_as):
+    """解释器身份核验(2026-09-29 二轮评审 #1:自证探针可被 echo 伪造)。
+
+    两层:①文件头初筛——真解释器是二进制(ELF/Mach-O)或 shebang 指向 python*/node*;
+    一行 `echo "$0"` 的 sh 包装在这里出局。②行为自证——真 Python/Node 会报告自身路径。
+    ⚠️ 残余边界(声明):两层都可通过定制的二进制包装器伪造——身份自证在理论上不完美;
+    需要强保证的项目用 productionContract 登记解释器指纹并在此之外人工比对。"""
+    candidate = Path(candidate)
+    real = candidate.resolve()
+    head = real.read_bytes()[:64]
+    if not (head.startswith(b'\x7fELF') or head[:4] in (b'\xcf\xfa\xed\xfe', b'\xfe\xed\xfa\xcf',
+                                                        b'\xca\xfe\xba\xbe', b'\xbe\xba\xfe\xca')):
+        if head.startswith(b'#!'):
+            import shlex
+            try:
+                shebang = shlex.split(head[2:].split(b'\n')[0].decode('utf-8', 'replace'))[0]
+            except (IndexError, ValueError):
+                raise Unable('interpreter %r has an unparseable shebang' % str(candidate))
+            if not re.fullmatch(r'(?:/[^/\s]*)?(?:python(?:3(?:\.\d+)?)?|node(?:js)?)', Path(shebang).name):
+                raise Unable('interpreter %r is a script whose interpreter is %r (not Python/Node)'
+                             % (str(candidate), shebang))
+        else:
+            raise Unable('interpreter %r is neither a binary nor a #! script' % str(candidate))
+    try:
+        if real.name.startswith('python'):
+            probe = subprocess.run([str(candidate), '-c', 'import sys; print(sys.executable)'],
+                                   capture_output=True, text=True, timeout=15)
+        else:
+            probe = subprocess.run([str(candidate), '-e', 'console.log(process.execPath)'],
+                                   capture_output=True, text=True, timeout=15)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise Unable('interpreter self-identification failed for %r: %s' % (str(candidate), exc))
+    if probe.returncode != 0 or Path(probe.stdout.strip()).resolve() != candidate.resolve():
+        raise Unable('interpreter failed self-identification (invoked as %r)' % invoked_as)
+
+
 def validate_command(root, command, entry):
     if not isinstance(command, list) or not command or not all(isinstance(x, str) and x for x in command):
         raise Unable('runner/judge must be nonempty argv arrays')
@@ -101,23 +138,14 @@ def validate_command(root, command, entry):
         if not re.fullmatch(_INTERP, real.name):
             raise Unable('absolute interpreter resolves to %r (expected a Python/Node interpreter name)'
                          % real.name)
-        try:
-            if real.name.startswith('python'):
-                probe = subprocess.run([str(candidate), '-c', 'import sys; print(sys.executable)'],
-                                       capture_output=True, text=True, timeout=15)
-            else:
-                probe = subprocess.run([str(candidate), '-e', 'console.log(process.execPath)'],
-                                       capture_output=True, text=True, timeout=15)
-        except (OSError, subprocess.SubprocessError) as exc:
-            raise Unable('interpreter self-identification failed for %r: %s' % (command[0], exc))
-        # ⚠️ macOS 的 /var→/private/var 一类 OS 级 symlink 会让 sys.executable 报「解析后」
-        #    路径——比对两侧各 resolve,消除正规化差异;传给 Popen 的仍是原 candidate(venv 语义)。
-        if probe.returncode != 0 or Path(probe.stdout.strip()).resolve() != candidate.resolve():
-            raise Unable('absolute interpreter failed self-identification (not a real Python/Node '
-                         'interpreter at %r)' % command[0])
+        _verify_interpreter(candidate, command[0])
         executable = str(candidate)
     else:
         executable = shutil.which(command[0])
+        # 2026-09-29 二轮评审 #1:裸名分支此前完全不自证——PATH 里的同名包装器
+        # 会被直接执行。统一走 _verify_interpreter(文件头初筛+行为自证)。
+        if executable:
+            _verify_interpreter(executable, command[0])
     if not executable or not re.fullmatch(_INTERP, command[0] if '/' not in command[0] else Path(executable).name):
         raise Unable('command must directly invoke registered entry or Python/Node interpreter')
     index = 1
@@ -254,16 +282,17 @@ def write_private_json(path, value):
 def git_evidence_check(output):
     """Do not alter repository settings or publish evidence as part of a run."""
     try:
+        # 2026-09-29 二轮评审 #2:128 不只属于「不在仓库」——dubious ownership/损坏同码,
+        # 一律判 outside-git 会跳过保护检查。固定 LC_ALL=C 后按 stderr 前缀区分
+        # (固定 locale=让措辞可依赖的结构化前置,不算「测措辞」);其余非零=check-unavailable。
         repo = subprocess.run(['git', '-C', str(output.parent), 'rev-parse', '--show-toplevel'],
-                              capture_output=True, text=True, timeout=3)
+                              capture_output=True, text=True, timeout=3,
+                              env={**os.environ, 'LC_ALL': 'C', 'LANG': 'C'})
         if repo.returncode:
-            # 2026-09-29 评审 M16 建议:英文关键词判定在非英文 locale 失效(测措辞违背自家判据)。
-            # 结构化判定:rev-parse 的 128 = 不在仓库内(退出码是结构化信号,不依赖消息语言);
-            # 其它非零(git 缺失/损坏/权限)才 check-unavailable,stderr 原文保留在告警里。
-            if repo.returncode == 128:
+            if repo.returncode == 128 and repo.stderr.strip().startswith('fatal: not a git repository'):
                 return 'outside-git'
-            print('WARNING: could not establish whether evidence is in Git: %s'
-                  % repo.stderr.strip()[:200], file=sys.stderr)
+            print('WARNING: could not establish whether evidence is in Git (rc=%d): %s'
+                  % (repo.returncode, repo.stderr.strip()[:200]), file=sys.stderr)
             return 'check-unavailable'
         root = Path(repo.stdout.strip()).resolve()
         rel = output.resolve().relative_to(root).as_posix()
@@ -341,16 +370,27 @@ def run_owned(command, root, request_bytes, timeout, folder, max_output, budget)
         if child is not None:
             # 2026-09-29 评审 M16:子进程已被回收后对 child.pid killpg 存在 pgid 复用窗口;
             # 且 ProcessLookupError 之外的 OSError(如 EPERM)会从 finally 逃逸、跳过证据落盘。
+            cleanup_errors = []
             for sig in (signal.SIGTERM, signal.SIGKILL):
                 try:
-                    if child.returncode is None:
-                        os.killpg(child.pid, sig)
-                except OSError:
-                    pass
+                    # 2026-09-29 二轮评审 #3:主进程正常退出(returncode 已设)时此前的
+                    # 条件会跳过 killpg——同组后台后代继续存活。组是本运行创建的
+                    # (start_new_session),无条件清理;组已消亡时 ESRCH 走 OSError 分支。
+                    os.killpg(child.pid, sig)
+                except OSError as exc:
+                    if exc.errno != errno.ESRCH:
+                        cleanup_errors.append('killpg(%s): %s' % (sig.name, exc))
                 try:
                     child.wait(timeout=0.2 if sig == signal.SIGTERM else 3)
                 except subprocess.TimeoutExpired:
                     pass
+            if cleanup_errors:
+                # 挂外层 report 会 NameError(run_owned 无该闭包);清理错误作为
+                # 独立证据落盘,由读取侧聚合——语义同为「不吞」,载体更诚实。
+                with _private_fd(folder / 'cleanup-errors.json') as stream:
+                    stream.write(json.dumps(cleanup_errors, ensure_ascii=False, indent=2).encode('utf-8'))
+                    stream.flush()
+                    os.fsync(stream.fileno())
             for stream in (child.stdin, child.stdout, child.stderr):
                 if stream:
                     stream.close()

@@ -415,6 +415,22 @@ def validate_manifest(manifest, registry_path=REGISTRY_PATH):
     return expected
 
 
+_RUN_ID_RE = None  # 延迟 import re(模块头部若已 import re 则直接用)
+
+
+def valid_runtime_id(value, origin='runId'):
+    """runId/resultId 共享白名单(2026-09-29 二轮评审 opencode#1:此前 _valid_run_id
+    只活在 product-flow-run.py,issue/import 的 resultId 与 manifest 读回的 runId
+    都可携带 ../ 越界落盘——与 resume 曾缺白名单同一形状,全部入口统一走这里)。"""
+    import re
+    global _RUN_ID_RE
+    if _RUN_ID_RE is None:
+        _RUN_ID_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]*')
+    if not _RUN_ID_RE.fullmatch(str(value or '')):
+        raise WorkflowError('%s 只允许字母数字开头及 . _ -；禁止路径越界（实得 %r）' % (origin, value))
+    return value
+
+
 def load_active_run(root, required=False, registry_path=REGISTRY_PATH):
     pointer = os.path.join(root, '.product-flow', 'run-manifest.json')
     if not os.path.isfile(pointer):
@@ -424,6 +440,7 @@ def load_active_run(root, required=False, registry_path=REGISTRY_PATH):
     with io.open(pointer, encoding='utf-8') as f:
         data = json.load(f)
     if data.get('activeRunId') and data.get('manifestRef'):
+        valid_runtime_id(data['activeRunId'], '活动指针 activeRunId')
         ref = data['manifestRef']
         path = ref if os.path.isabs(ref) else os.path.join(root, '.product-flow', ref)
         with io.open(path, encoding='utf-8') as f:

@@ -379,8 +379,13 @@ def _sweep_locked(paths):
                     import tempfile as _tf
                     _fd = os.path.join(_tf.mkdtemp(prefix='ms-syn-'), 'm.mjs')
                     io.open(_fd, 'w', encoding='utf-8').write(mutated)
-                    if subprocess.run(['node', '--check', _fd],
-                                      capture_output=True, timeout=180).returncode != 0:
+                    # 2026-09-29 二轮评审 opencode#5:语法检查/变异体自证都补超时——单个挂死
+                    # 变异体不应把整轮 sweep 崩到 rc=2 丢掉全部已积累进度。
+                    try:
+                        _chk = subprocess.run(['node', '--check', _fd], capture_output=True, timeout=180)
+                    except subprocess.TimeoutExpired:
+                        _chk = subprocess.CompletedProcess([], 124, '', 'syntax-check timeout')
+                    if _chk.returncode != 0:
                         print("   ⚠️ %-28s 变异体语法不合法，跳过（不计入结论）" % rid); continue
                 else:
                     try:
@@ -392,8 +397,12 @@ def _sweep_locked(paths):
                 _mp = _mirror(p)
                 io.open(_mp, 'w', encoding='utf-8').write(mutated)
                 try:
-                    r = subprocess.run((['node'] if p.endswith('.mjs') else [sys.executable])
-                                       + [_mp, '--self-test'], capture_output=True, text=True, timeout=900)
+                    try:
+                        r = subprocess.run((['node'] if p.endswith('.mjs') else [sys.executable])
+                                           + [_mp, '--self-test'], capture_output=True, text=True, timeout=900)
+                    except subprocess.TimeoutExpired:
+                        # 变异体挂死=该变异体不可判,按「跳过」单列(不折叠进 killed,也不崩整轮)
+                        print("   ⏱ %-28s 变异体自证超时，记为不可判跳过（不计入结论分子）" % rid); continue
                 finally:
                     io.open(_mp, 'w', encoding='utf-8').write(src)
                 # ⛔ 真实文件必须原样：这条断言现在是**不变量**而不是「还原成功了吗」

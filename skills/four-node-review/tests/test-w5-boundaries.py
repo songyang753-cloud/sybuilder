@@ -123,7 +123,7 @@ class Boundaries(unittest.TestCase):
         proc, report, _ = self.run_config(dict(self.cfg, runner=[str(fake), 'adapter.py', 'runner']))
         self.assertEqual(proc.returncode, 3)
         self.assertEqual(report.get('records', []), [])
-        self.assertIn('self-identification', str(report.get('reason', '')))
+        self.assertTrue(any(k in str(report.get('reason','')) for k in ('self-identification','not Python/Node')), str(report.get('reason','')))
 
     def test_fail_dimensions_type_validated_for_all_fail_controls(self):
         # 2026-09-29 评审 M16 建议:无 scoreBounds 的 FAIL 控制例此前不校验 failDimensions,

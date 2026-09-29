@@ -55,15 +55,7 @@ def _read_json(path, label='JSON'):
         raise WorkflowError('%s 读不了：%s' % (label, e))
 
 
-_RUN_ID_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]*')
-
-
-def _valid_run_id(value, origin='runId'):
-    """plan/resume/issue 共享的白名单——resume 曾缺它,可 '../x' 越界落盘
-    (2026-09-29 外部评审 MR#14 严重#3)。manifest 读回的 runId 同样要过。"""
-    if not _RUN_ID_RE.fullmatch(str(value or '')):
-        raise WorkflowError('%s 只允许字母数字开头及 . _ -；禁止路径越界（实得 %r）' % (origin, value))
-    return value
+from _workflow import valid_runtime_id as _valid_run_id  # 单一正本(2026-09-29 二轮评审:白名单挪 _workflow,issue/import/load_active_run 边界共用)
 
 
 def _new_run_id():

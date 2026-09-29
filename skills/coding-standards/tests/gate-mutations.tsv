@@ -49,3 +49,4 @@ SKILL.md	覆盖 %d/%d 个判据组	覆盖 %d/%d 个判据组	1	自述判据组�
 references/foundation.md	密钥不进源码、不进日志	A97 密钥不进源码、不进日志	1	引用了不存在的条款	10
 references/authority.md	| **LCP** 最大内容绘制 | **2500 ms** | 4000 ms |	| **LCP** 最大内容绘制 | **2500 ms** | 9999 ms |	1	Z1 LCP 阈值对不上	10
 references/authority.md	> ```bash	> x```bash	1	代码围栏配对	10
+references/foundation.md	[`sources.md`](sources.md) 表一	[`sources.md`](../../../../typo-outside-suite.md) 表一	1	文件链接指向不存在的路径：foundation.md	10

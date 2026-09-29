@@ -37,7 +37,9 @@ python3 - "${TARGET}/product-flow/scripts" <<'PY'
 import pathlib,sys
 sys.path.insert(0,sys.argv[1])
 from _workflow import suite_script
-for name in ('test-w5.py','test-w5-boundaries.py','verify-portability.py'):
+# 2026-09-29 二轮评审#9:adapter 是两个测试的运行时依赖,进必备清单;
+# test-w5* 随 four-node-review/tests 分发,suite_script 双路径解析。
+for name in ('test-w5.py','test-w5-boundaries.py','test-w5-adapter.py','verify-portability.py'):
     assert suite_script(name).is_file()
 PY
 python3 "${TARGET}/product-flow/scripts/_research_package.py" --self-test
