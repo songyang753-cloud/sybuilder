@@ -26,10 +26,18 @@ import re
 import sys
 from pathlib import Path
 
-REQ_ID = re.compile(r"\b((?:N?FR)-\d+)\b")
+# ⭐ 2026-09-29 forward-trial 缺口2/3：STD（工程基线）成为合法需求项类型——
+#    此前来自安全/性能基线的用例只能挤进 FR（冒充产品需求）或进不了分母。
+#    AC 作为子断言粒度独立成行进分母：复合 FR 的「每条子断言被测」从此是机械保证，
+#    而不是手工追溯表的好心。
+REQ_ID = re.compile(r"\b((?:N?FR|STD)-\d+)\b")
+AC_ID = re.compile(r"\b(AC-\d+)\b")
 SKIP_MARK = "[待补规格·不生成]"
 CASE_HEAD = re.compile(r"^#{2,4}\s*(TC-\d+-\d+)\b")
-CASE_OWNER = re.compile(r"所属\s*((?:N?FR)-\d+)")
+CASE_OWNER = re.compile(r"所属\s*((?:N?FR|STD)-\d+)")
+# 头行上的 AC 附加粒度（「所属 FR-011 · AC-1」）；AC 未入分母时不算错（owner 层已对账），
+# 入了分母则该 AC 必须被标它的用例覆盖。
+CASE_AC = re.compile(r"\b(AC-\d+)\b")
 GAP_ID = re.compile(r"\b(GAP-\d+)\b")
 
 
@@ -41,7 +49,16 @@ def parse_requirements(path):
         if not ids:
             continue
         status = "skipped" if SKIP_MARK in line else "active"
-        for rid in ids:
+        # ⚠️ AC 只认**表格行首列**（requirements.md 的 AC 行形态 `| AC-1 | … |`）——
+        #   PRD 附件 A 的正文列表（`- **AC-1** Given…`）是子项描述不是对账目标，
+        #   全行抓会把它们误收进分母（配对夹具当场揭发过这个形状）。
+        ac_ids = []
+        if line.lstrip().startswith('|'):
+            first_cell = line.strip().strip('|').split('|')[0].strip()
+            m = re.fullmatch(r'AC-\d+', first_cell)
+            if m:
+                ac_ids = [m.group(0)]
+        for rid in ids + ac_ids:
             # 同一 ID 多次出现时，只要有一行标了不生成就记 skipped
             if reqs.get(rid) != "skipped":
                 reqs[rid] = status
@@ -84,8 +101,9 @@ def parse_cases(case_dir):
                 if current:
                     cases.append(current)
                 owner = CASE_OWNER.search(line)
+                ac = CASE_AC.search(line)
                 current = [head.group(1), owner.group(1) if owner else None, md.name,
-                           bool(CASE_SKIP.search(line)), False]
+                           bool(CASE_SKIP.search(line)), False, ac.group(1) if ac else None]
                 continue
             if not current:
                 continue
@@ -152,12 +170,12 @@ def main():
     # 同一 TC-011-1 写两遍会被静默双计进分子，追溯链从此指不清是哪一条。
     _seen_tc = {}
     dup_case_ids = []
-    for tc_id, _o, src, _s, _r in cases:
+    for tc_id, _o, src, _s, _r, _a in cases:
         if tc_id in _seen_tc:
             dup_case_ids.append((tc_id, _seen_tc[tc_id], src))
         else:
             _seen_tc[tc_id] = src
-    for tc_id, owner, src, skipped_case, has_reason in cases:
+    for tc_id, owner, src, skipped_case, has_reason, ac in cases:
         if skipped_case:
             case_skips.append((tc_id, owner, src))
             if not has_reason:
@@ -174,6 +192,10 @@ def main():
             skipped_but_cased.append((tc_id, owner, src))
             continue
         covered.setdefault(owner, []).append(tc_id)
+        # AC 粒度：标了 AC 的用例同时覆盖该 AC 条目；AC 条目进了分母就必须被标到
+        # ——「FR 级有用例」从此证明不了「每条子断言被测」（forward-trial 缺口3）。
+        if ac and ac in reqs:
+            covered.setdefault(ac, []).append(tc_id)
 
     active = [r for r, s in reqs.items() if s == "active"]
     skipped = [r for r, s in reqs.items() if s == "skipped"]
@@ -361,6 +383,25 @@ def _self_test():
                     "**SKIPPED 理由**：依赖尚未落地\n")), 3),
         ("正例 标题内联加粗「验证**未执行**任务」→ 不误标（净 gaps 返 0）",
          run(*mk(R, "### TC-011-1 所属 FR-011 · 验证**未执行**任务的提示页\n"
+                    "### TC-012-1 所属 FR-012\n", G_clean)), 0),
+        # ── 2026-09-29 forward-trial 缺口2/3：STD 类型化追溯 + AC 子断言机械保证 ──
+        ("正例 STD 工程基线用例（类型化追溯，不再冒充 FR）",
+         run(*mk("FR-011 登录\nSTD-001 敏感字段不进日志（S8·STD 追溯表）\n",
+                 "### TC-011-1 所属 FR-011\n### TC-901-1 所属 STD-001\n", G_clean)), 0),
+        ("反例 STD 基线条目无用例 → 1（基线也是分母）",
+         run(*mk("FR-011 登录\nSTD-001 敏感字段不进日志\n",
+                 "### TC-011-1 所属 FR-011\n", G_clean)), 1),
+        ("正例 AC 入分母（表格行）且被标到 → 0（复合 FR 子断言机械保证）",
+         run(*mk("FR-011 登录\n| AC-1 | 附件A · FR-011 | 验收子项 | 可测 | |\n",
+                 "### TC-011-1 所属 FR-011 · AC-1\n", G_clean)), 0),
+        ("反例 AC 入分母但用例只标 FR → 1（FR 级覆盖证明不了子断言被测）",
+         run(*mk("FR-011 登录\n| AC-1 | 附件A · FR-011 | 验收子项 | 可测 | |\n",
+                 "### TC-011-1 所属 FR-011\n", G_clean)), 1),
+        ("正例 PRD 正文的 AC 列表描述不进分母（表格首列才算对账目标）",
+         run(*mk("FR-011 登录\n- **AC-1** Given 已锁 When 重试 Then 计数从1重新计\n",
+                 "### TC-011-1 所属 FR-011\n", G_clean)), 0),
+        ("正例 用例标了 AC 但分母无 AC 行 → 0（未登记 AC 不红，owner 层已对账）",
+         run(*mk(R, "### TC-011-1 所属 FR-011 · AC-9\n"
                     "### TC-012-1 所属 FR-012\n", G_clean)), 0),
     ]
     # ── JSON 正本断言（C2）：标志必须跟着数据进 coverage.json，不许只活在 stdout ──

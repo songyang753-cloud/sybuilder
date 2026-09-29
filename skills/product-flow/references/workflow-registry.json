@@ -1130,6 +1130,16 @@
         "2": "UNABLE",
         "3": "PASS_WITH_GAPS（不算完成）"
       },
+      "verificationScopes": {
+        "test-design": {
+          "flag": "--design-only",
+          "exit0Means": "用例设计对账通过：coverage.json 记 verification_scope=test-design 且 product_execution=NOT_VERIFIED。声明上限＝module-approved（设计半边），⛔ 不得陈述为已测或被测充分；S9 执行不得以设计档替代"
+        },
+        "coverage-and-execution-readiness": {
+          "flag": "",
+          "exit0Means": "覆盖与执行就绪对账通过。⛔ 本门只是执行**就绪**：产品执行完成度由 S9.2 的当前构建实测证据声明，本门不替代、不预告"
+        }
+      },
       "maxClaim": "module-approved",
       "track": "eng",
       "temperature": "source"

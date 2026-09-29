@@ -159,7 +159,7 @@ ID 链、双向对账、格式边界、元素身份，全都是为「接手的�
 | 入口 | 什么时候用 | 怎么走 |
 |---|---|---|
 | **全流程** | 从零定义产品、要交接要验收 | **S1→S10** 顺序执行（⚠️ **S10 在上线后，别把它当可选尾巴**），`.product-flow/` 目录承载全部产物 |
-| **单跑某阶段** | 手上已有上游产物，只要某一步 | `--only S6` 做 demo、`--only S8` 出协作文档技术/算法/测试联合方案、`--only testcases` 出独立测试用例、`--only S9` 跑研发到上线…… 此时**不需要建 `.product-flow/` 全套目录** |
+| **单跑某阶段** | 手上已有上游产物，只要某一步 | `--only S6` 做 demo、`--only S8` 出协作文档技术/算法/测试联合方案、`--only testcases` 出独立测试用例、`--only S9` 跑研发到上线…… 此时**不需要建 `.product-flow/` 全套目录**（runs/ 签发链除外——单跑也先 `product-flow-run.py plan --mode only --modules <模块> --write` 生成自己的 run-manifest（mode=only，claimCeiling 自动封顶 module-approved），`module-result.json` 的 `sourceRunId/sourceManifestRef/sourceManifestHash` 指向它——单跑的运行元数据与全流程同一套链，⛔ 不许留占位或省略） |
 
 ⭐ 具名模块入口（等价于对应编号；合同表见 `flow-tailoring.md`「各独立模块的硬边界」）：
 `--only business`=S3A · `definition`=S3B · `structure`=S4A · `prd`=S4B · `research`=S2 ·

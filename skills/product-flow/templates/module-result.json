@@ -1,5 +1,5 @@
 {
-  "_说明": "独立模块的机器交接合同。每次结果写到唯一文件 .product-flow/runs/<runId>/modules/<moduleId>/<resultId>.json；禁止覆盖固定 module-result.json。moduleResultHash 是移除本字段后对 canonical JSON（UTF-8、key 排序、无空白）的 SHA-256。",
+  "_说明": "独立模块的机器交接合同。每次结果写到唯一文件 .product-flow/runs/<runId>/modules/<moduleId>/<resultId>.json；禁止覆盖固定 module-result.json。单跑（mode=only）时 sourceRunId/sourceManifestRef/sourceManifestHash 指向**本模块自己的 plan manifest**（`product-flow-run.py plan --mode only` 生成），与全流程同一套链——没跑全十阶段不等于可以省略运行元数据。moduleResultHash 是移除本字段后对 canonical JSON（UTF-8、key 排序、无空白）的 SHA-256。",
   "schemaVersion": "1.0",
   "resultId": "MR-<唯一 ID>",
   "sourceRunId": "PF-<来源运行>",

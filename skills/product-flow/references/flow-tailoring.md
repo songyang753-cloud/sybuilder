@@ -45,13 +45,13 @@
 | S9.2 | 可运行应用 + S8 测试方案 + PRD AC/NFR | 飞书质量报告 + 功能/回归/安全/性能/可访问性/算法评测与覆盖报告 + 测试工程师当前构建 GUI 全流程实走证据 | 自主：用例组合、GUI 主流程/分支/失败恢复实走与终审执行 ／ 拍板：需求缺陷回灌归产品，风险接受归责任人 | 缺口回流 S9.1、S8 或 G7.5；**只有同构建 PASS** 才给 S9.3 | module-approved；⛔ 未执行或 GUI 证据不绑定当前构建不得记 PASS |
 | S9.3 | **S9.2 同构建 PASS** + 冻结 PRD/Figma/HTML 四件原物可访问 | 飞书产品经理 GUI 走查与四方验收报告、独立逐步证据、偏差登记、产品批准记录 | 自主：产品经理依据 PRD 与产品经验亲自 GUI 实走、开放探索、对账与问题归类 ／ 拍板：偏差接受与产品放行归产品负责人 | APPROVED 后给 S9.4；产品 delta 回灌对应权威并使旧冻结/质量 PASS 失效 | module-approved；⛔ 不以 Node qa、自动化、测试录像或截图相似替代产品经理亲自走查 |
 | S9.4 | S9.2/S9.3 全部证据 + 灰度/回滚条件 | 灰度结论、上线记录、监测与观察计划 | 自主：批次与监测执行 ／ 拍板：上线/回滚归责任人 | 给 S10 | module-approved；⛔ 灰度成功不等于 production-validated |
-| testcases（用例工程单跑） | PRD/合同 | 五件套（**唯一正本＝`s8-testcases.md` ⑤**；本表与 `workflow-registry.json` 都只做指针，⛔ 不各写一份会漂移的清单；模板=`templates/testcases-pack.md`）+ 覆盖对账：**`coverage_check` 四态退出码，0 才算完成**（3=对账过但不能声称被测充分——有缺口/有 SKIPPED/没给 `--gaps`，⛔ 不是通过） | 自主：用例结构、选择器策略 ／ 拍板：无；⛔ 不改需求本身 | 可导入 S8 测试方案；缺口回灌 prd | module-approved；⛔ 生成≠已执行 |
+| testcases（用例工程单跑） | PRD/合同 | 五件套（**唯一正本＝`s8-testcases.md` ⑤**；本表与 `workflow-registry.json` 都只做指针，⛔ 不各写一份会漂移的清单；模板=`templates/testcases-pack.md`）+ 覆盖对账：**`coverage_check` 四态退出码，0 才算对账完成**（3=对账过但不能声称被测充分——有缺口/有 SKIPPED/没给 `--gaps`，⛔ 不是通过）；两档声明合同（机器正本＝registry `TESTCASES.verificationScopes`）：`--design-only` 的 0＝**设计对账通过**（product_execution 恒 NOT_VERIFIED，⛔ 不得说已测）；默认档 0＝执行**就绪**——执行完成度由 S9.2 实测声明 | 自主：用例结构、选择器策略 ／ 拍板：无；⛔ 不改需求本身 | 可导入 S8 测试方案；缺口回灌 prd | module-approved；⛔ 生成≠已执行 |
 | retro（S10） | 真实观察周期数据 | `retro.md` 四本账 | 自主：读数与归因分析 ／ 拍板：**四决定（继续/扩大/调整/停止）归用户** | 回流 S1/S2/S3 | 无真实数据只能 PENDING/UNABLE |
 | reverse（反向提取） | 已上线产品 | `baseline.md`（事实/推断/未知分离） | 自主：事实/推断/未知归类 ／ 拍板：**基线锁定须用户确认** | 可导入各模块 | 仅可观察范围 module-approved；⛔ 读不到的不编造 |
 
 ### 独立模块的七步小闭环（`--only <模块>` 一律走这套，不是直接套模板）
 
-1. **Route** 确认用户要的模块与交付级别 → 2. **Intake** 读最小输入，记录访问等级
+1. **Route** 确认用户要的模块与交付级别，并 `product-flow-run.py plan --mode only --modules <模块> --write` 生成单跑 run-manifest（mode=only；第 7 步的 `sourceManifest*` 字段指向它，⛔ 不留占位） → 2. **Intake** 读最小输入，记录访问等级
 （原生/镜像/截图/链接）与版本 → 3. **Gap** 缺口分三类：可假设（ASM-xxx）/必须停止（SL-xxx）/
 N/A —— ⛔ **不许伪造空上游文件让路径检查通过** → 4. **Work** 模块内部循环 →
 5. **Validate** 只跑本模块适用门禁 → 6. **Backfill/Handoff** 对上游出 delta
