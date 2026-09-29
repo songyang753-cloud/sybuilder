@@ -5,9 +5,9 @@
     "python": "3.14.7",
     "os": "Darwin"
   },
-  "measuredAt": "2026-09-29T12:17:57",
+  "measuredAt": "2026-09-29T13:31:33",
   "scripts": 86,
-  "cases": 1463,
+  "cases": 1464,
   "failures": 0,
   "failedScripts": [],
   "unableScripts": [],
@@ -19,7 +19,7 @@
     "_delivery_check.py": "e71154072ae966e156ae5cba389d71a57672c3de",
     "_diagram_contract.py": "73d174b5b02f1576002db42b5b4d13231b023008",
     "_dingtalk.py": "151e32b92a734d9511335160c6abe0319a4e2d9c",
-    "_document_sync.py": "cba65c44161893b7c45702746ae3c0216bba90dd",
+    "_document_sync.py": "6af906bc5239ff0e46eac53476a4a1c8f12ee54e",
     "_feishu.py": "9383f3b1fba15357277ffa94e8e763b5579d5eb1",
     "_image.py": "af33cbb2c785ad5cfe7f555feeb86053fed48acc",
     "_module_contract.py": "8655e100b32c0da65b502c0c241f3534d2fc9678",
@@ -45,7 +45,7 @@
     "coordination-gate.py": "f3adaec83537587bc0052c33166cb5946a897b76",
     "coverage_check.py": "e1c6bb756236b3b27e5e75c1fc04611669e56c05",
     "dead-click-gate.mjs": "0989d66d8d335dd696b1bffb69dcbeff775e7d14",
-    "definition-gate.py": "d9dd2ec0625d9fec70a6ba1e91ac548ebee44dbf",
+    "definition-gate.py": "9bc80b275c490b190c838a38cf76c963727f1414",
     "demo-anchor-gate.py": "8465d6bd9236453ec7dbd4499630f78fc3e1b87a",
     "design-intent-gate.py": "2bfeb621e720ce4daf0cc13e5b47d697433ca601",
     "design-to-tokens.py": "5e4e49677e09f6ccb36be96a84a7265318c80cfa",
@@ -258,7 +258,7 @@
       "negLabel": 5
     },
     "definition-gate.py": {
-      "cases": 55,
+      "cases": 56,
       "negNumeric": 39,
       "negLabel": 38
     },
@@ -537,5 +537,5 @@
   "negativesByLabel": 772,
   "command": "python3 scripts/selftest-all.py --fresh",
   "treeDiff": [],
-  "headAt": "e4a4917"
+  "headAt": "e0f2924"
 }
