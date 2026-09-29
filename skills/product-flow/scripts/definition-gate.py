@@ -639,7 +639,10 @@ def check(path, proposals=None):
     else:
         bad = []
         for fid, rest in feat_rows:
-            if not re.search(r'两端|仅\s*web|仅移动端|web|移动', rest, re.I): bad.append("%s 缺载体" % fid)
+            # ⭐ 2026-09-29 真机试产发现：载体词表漏了**桌面原生**形态——
+            #   Mac 原生 app 写「仅 macOS」被判缺载体（复发率最高的判据打红了合法写法）。
+            if not re.search(r'两端|仅\s*web|仅移动端|仅\s*macos|仅桌面|web|移动|macos|桌面', rest, re.I):
+                bad.append("%s 缺载体" % fid)
             if not re.search(r'S2|research|§|\[.*\]', rest): bad.append("%s 缺 S2 出处" % fid)
         add("feature-evidence", "每个功能有载体与 S2 出处（载体是复发率最高的返工来源）",
             not bad, bad or "%d 个功能齐备" % len(feat_rows))
@@ -856,6 +859,9 @@ def self_test():
          GOOD.replace("41%（business-map 指标树实测）", "41%［S2·CLM-003·2026-09］"), 0),
         ("反例 指标现状留空（没想过 ≠ 没有现状）",
          GOOD.replace("41%（business-map 指标树实测）", ""), 1),
+        # ── 2026-09-29 真机试产：桌面原生是合法载体形态（词表曾漏）──
+        ("正例 载体写「仅 macOS」→ 合法（桌面原生形态）",
+         GOOD.replace("| 仅 web | 是 | L |", "| 仅 macOS | 是 | L |"), 0),
         ("反例 功能缺载体", GOOD.replace("| 仅 web | 是 | L |", "|  | 是 | L |"), 1),
         ("反例 功能缺 S2 出处", GOOD.replace("`[S2·功能报告 §2.1]`", "我觉得需要"), 1),
         ("反例 未标拍板状态", GOOD.replace("**拍板状态**：已由 张三 于 2026-08-31 拍板\n", ""), 1),

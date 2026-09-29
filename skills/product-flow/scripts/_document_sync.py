@@ -79,13 +79,20 @@ def content_model(markdown):
                     parts.append(' ')
                 elif item.type == 'link_open':
                     parts.append('[link:' + (item.attrGet('href') or '') + ']')
-            content = re.sub(r'\s+', ' ', ''.join(parts)).strip()
+            # ⭐ 2026-09-29 真机投递实测（飞书往返）：<br> 会回来成「空格+<br/>」，
+            #    是换行排版伪影不是内容——break 统一折叠为空格（softbreak 同义）。
+            content = re.sub(r'\s*<br\s*/?>\s*', ' ', ''.join(parts))
+            content = re.sub(r'\s+', ' ', content).strip()
             # Known platform artifact: adjacent bold spans around inline code.
             content = content.replace('****', '')
             if content:
                 result.append(['inline', content])
         elif token.type in ('html_block',):
             value = re.sub(r'<!--.*?-->|<(?:img|image)\b[^>]*>', '', token.content, flags=re.S | re.I).strip()
+            # ⭐ 2026-09-29 真机投递实测：平台回读会在文首带 <title>…</title> 元数据块，
+            #    那是文档属性不是正文——忽略，不让它制造假「远端多一块」。
+            if re.fullmatch(r'<title>[^<]*</title>', value, re.I):
+                value = ''
             if value: result.append(['html', value])
         elif token.type in ('fence', 'code_block'):
             result.append(['code', token.info, token.content.rstrip('\n')])

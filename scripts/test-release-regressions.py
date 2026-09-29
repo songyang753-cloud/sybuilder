@@ -74,6 +74,21 @@ class ReleaseRegressionTests(unittest.TestCase):
             (root / 'example.md').write_text('Contact: <PHONE>; hash: a' + digits + 'b')
             self.assertEqual(scanner.scan(root), [])
 
+    def test_privacy_scan_ignores_svg_path_coordinates_but_not_text(self):
+        # 2026-09-29 真机投递实测：d2 渲染 SVG 的贝塞尔坐标恰好匹配手机号模式。
+        # 图形坐标不是个人数据——剥离 path data 后再扫；文本节点里的号码仍必须报。
+        scanner = load('privacy_phone_svg', ROOT / 'scripts/verify-portability.py')
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / 'coords.svg').write_text(
+                '<path d="M 143.4 C 92.198997 106 79 126 79 162"/>')
+            self.assertEqual(scanner.scan(root), [])
+            digits = '139' + '0' * 8
+            (root / 'coords.svg').write_text(
+                '<path d="M 1 2"/><text>联系 ' + digits + '</text>')
+            self.assertEqual(scanner.scan(root),
+                             ['coords.svg:1: phone-like-personal-data'])
+
     def test_project_gate_can_read_its_own_preserved_transcript(self):
         import contextlib
         import io
