@@ -5,7 +5,7 @@
     "python": "3.14.7",
     "os": "Darwin"
   },
-  "measuredAt": "2026-09-29T11:15:19",
+  "measuredAt": "2026-09-29T12:17:57",
   "scripts": 86,
   "cases": 1463,
   "failures": 0,
@@ -536,15 +536,6 @@
   "negativesByExpectation": 556,
   "negativesByLabel": 772,
   "command": "python3 scripts/selftest-all.py --fresh",
-  "treeDiff": [
-    "skills/product-flow/SKILL.md",
-    "skills/product-flow/references/flow-tailoring.md",
-    "skills/product-flow/references/no-loss-renames.md",
-    "skills/product-flow/references/s8-testcases.md",
-    "skills/product-flow/references/workflow-registry.json",
-    "skills/product-flow/scripts/coverage_check.py",
-    "skills/product-flow/templates/module-result.json",
-    "skills/product-flow/templates/testcases-pack.md"
-  ],
-  "headAt": "5e4c3e2"
+  "treeDiff": [],
+  "headAt": "e4a4917"
 }
